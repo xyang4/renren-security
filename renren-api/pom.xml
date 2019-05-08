@@ -19,7 +19,7 @@
         </dependency>
  <!--       <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-websocket</artifactId>
+            <artifactId>spring-boot-starter-netty</artifactId>
         </dependency>-->
         <dependency>
             <groupId>io.netty</groupId>

@@ -39,6 +39,3 @@ renren:
     open: false  # 是否开启redis缓存  true开启   false关闭
   auth:
     open: true
-  netty:
-    port: 10001
-  web-socket-url: "ws://localhost:10001/websocket"

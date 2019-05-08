@@ -11,8 +11,10 @@ package io.renren.common.utils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.renren.common.enums.RRExceptionEnum;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class R {
 
     @JsonProperty("code")
@@ -57,6 +59,5 @@ public class R {
 
     public static R ok(Object data) {
         return new R(data);
-
     }
 }

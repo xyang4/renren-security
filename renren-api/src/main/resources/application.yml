@@ -4,7 +4,7 @@ server:
     uri-encoding: UTF-8
     max-threads: 1000
     min-spare-threads: 30
-  port: 8080
+  port: 8180
   servlet:
     context-path: /renren-api
 
@@ -33,7 +33,10 @@ spring:
 renren:
   jwt-expire: 30 # jwt 过期时间 （分钟）
   decimal-format: "##.##" # decimal 数值格式化
-
+  netty:
+    port: 10001
+  web-socket-path: "/ws"
+  http-obj-max-content-length: 65536
 #mybatis
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml

@@ -1,7 +1,7 @@
 package io.renren.common.listener;
 
 import io.renren.common.config.RenrenProperties;
-import io.renren.modules.websocket.service.INettyService;
+import io.renren.modules.netty.service.INettyService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;

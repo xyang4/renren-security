@@ -8,9 +8,8 @@
 
 package io.renren.common.config;
 
-import io.renren.dao.*;
-import io.renren.modules.user.dao.*;
-import io.renren.utils.RRException;
+import io.renren.modules.user.dao.GeneratorDao;
+import io.renren.modules.user.dao.MySQLGeneratorDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -28,26 +27,26 @@ public class DbConfig {
     private String database;
     @Autowired
     private MySQLGeneratorDao mySQLGeneratorDao;
-    @Autowired
-    private OracleGeneratorDao oracleGeneratorDao;
-    @Autowired
-    private SQLServerGeneratorDao sqlServerGeneratorDao;
-    @Autowired
-    private PostgreSQLGeneratorDao postgreSQLGeneratorDao;
+//    @Autowired
+//    private OracleGeneratorDao oracleGeneratorDao;
+//    @Autowired
+//    private SQLServerGeneratorDao sqlServerGeneratorDao;
+//    @Autowired
+//    private PostgreSQLGeneratorDao postgreSQLGeneratorDao;
 
     @Bean
     @Primary
     public GeneratorDao getGeneratorDao(){
-        if("mysql".equalsIgnoreCase(database)){
+//        if("mysql".equalsIgnoreCase(database)){
             return mySQLGeneratorDao;
-        }else if("oracle".equalsIgnoreCase(database)){
-            return oracleGeneratorDao;
-        }else if("sqlserver".equalsIgnoreCase(database)){
-            return sqlServerGeneratorDao;
-        }else if("postgresql".equalsIgnoreCase(database)){
-            return postgreSQLGeneratorDao;
-        }else {
-            throw new RRException("不支持当前数据库：" + database);
-        }
+//        }else if("oracle".equalsIgnoreCase(database)){
+//            return oracleGeneratorDao;
+//        }else if("sqlserver".equalsIgnoreCase(database)){
+//            return sqlServerGeneratorDao;
+//        }else if("postgresql".equalsIgnoreCase(database)){
+//            return postgreSQLGeneratorDao;
+//        }else {
+//            throw new RRException("不支持当前数据库：" + database);
+//        }
     }
 }

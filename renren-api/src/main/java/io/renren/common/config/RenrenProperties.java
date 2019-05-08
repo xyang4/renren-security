@@ -12,11 +12,13 @@ public class RenrenProperties {
     private boolean authOpen = false;
 
     private int nettyPort = 10001;
-    private String webSocketUrl;
+    private String webSocketPath;
     /**
      * 默认30分钟
      */
     private Long jwtExpire = 30L;
 
     private String decimalFormat;
+
+    private int httpObjMaxContentLength = 65536;
 }
