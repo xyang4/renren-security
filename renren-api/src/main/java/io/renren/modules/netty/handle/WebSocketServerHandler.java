@@ -46,7 +46,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<TextWebS
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) {
         Channel channel = ctx.channel();
-        log.info("用户[ Channel - {}] 上线~~", channel.id().asShortText());
+        log.info("用户[{}]（ChannelId） 已上线...", channel.id().asShortText());
         ONLINE_USER_GROUP.add(channel);
     }
 
@@ -59,7 +59,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<TextWebS
     public void handlerRemoved(ChannelHandlerContext ctx) {
 
         String channelId = ctx.channel().id().asShortText();
-        log.info("用户[ Channel - {}]下线!", channelId);
+        log.info("用户[{}]（ChannelId）已下线!", channelId);
 
         // 当触发handlerRemoved，ChannelGroup会自动移除对应客户端的channel
         ONLINE_USER_GROUP.remove(ctx.channel());

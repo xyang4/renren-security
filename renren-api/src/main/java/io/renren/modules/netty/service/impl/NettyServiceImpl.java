@@ -35,20 +35,24 @@ public class NettyServiceImpl implements INettyService {
                     @Override
                     protected void initChannel(SocketChannel ch) {
                         ChannelPipeline pipeline = ch.pipeline();
+                        //  添加 http 编解码器，webSocket基于http
                         pipeline.addLast(new HttpServerCodec());
                         pipeline.addLast(new HttpObjectAggregator(renrenProperties.getHttpObjMaxContentLength()));
-                        ch.pipeline().addLast(new ChunkedWriteHandler());
-                        ch.pipeline().addLast(new WebSocketServerProtocolHandler(renrenProperties.getWebSocketPath()));
+                        // 添加对大数据流的支持
+                        pipeline.addLast(new ChunkedWriteHandler());
+                        // 添加 webSocket 服务器处理协议，使用 传输数据frames
+                        pipeline.addLast(new WebSocketServerProtocolHandler(renrenProperties.getWebSocketPath()));
+                        // 添加自定义 handler
                         pipeline.addLast(new WebSocketServerHandler());
                     }
                 });
 //
         try {
             serverBootstrap.bind(port).sync().channel();
-            log.info("Web socket Server Started at port {}.", port);
+            log.info("WebSocket Server Started at port {}.", port);
 //            ch.closeFuture().sync();
         } catch (InterruptedException e) {
-            log.error("Netty Server Error:", e);
+            log.error("Netty Server 绑定异常:", e);
         } /*finally {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();

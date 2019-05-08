@@ -35,7 +35,7 @@ renren:
   decimal-format: "##.##" # decimal 数值格式化
   netty:
     port: 10001
-  web-socket-path: "/ws"
+  web-socket-path: "/ws"  # webSocket 客户端访问路由
   http-obj-max-content-length: 65536
 #mybatis
 mybatis-plus:
