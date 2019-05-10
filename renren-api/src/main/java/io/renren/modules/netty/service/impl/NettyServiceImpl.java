@@ -1,22 +1,32 @@
 package io.renren.modules.netty.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.renren.common.config.RenrenProperties;
+import io.renren.common.enums.RRExceptionEnum;
+import io.renren.common.util.StaticConstant;
+import io.renren.common.utils.Constant;
+import io.renren.common.utils.R;
+import io.renren.modules.common.service.IRedisService;
+import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 import io.renren.modules.netty.handle.WebSocketServerHandler;
 import io.renren.modules.netty.service.INettyService;
+import io.renren.modules.user.entity.TokenEntity;
+import io.renren.modules.user.service.TokenService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 
 @Slf4j
 @Service
@@ -57,6 +67,73 @@ public class NettyServiceImpl implements INettyService {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
         }*/
+    }
+
+    @Override
+    public R sendMessage(WebSocketActionTypeEnum actionTypeEnum, String mobile, Object message, boolean toQueue) {
+        String content;
+        if (message instanceof String) {
+            content = (String) message;
+        } else {
+            content = JSON.toJSONString(message);
+        }
+
+        if (toQueue) {
+            iRedisService.sendMessageToQueue(actionTypeEnum.getCommand(), content);
+        } else {
+            Channel channel = getChannelViaLongTextChannelId(mobile);
+            if (null == channel) {
+                return R.error(RRExceptionEnum.USER_NOT_ONLINE);
+            }
+            channel.writeAndFlush(new TextWebSocketFrame(content));
+        }
+        // TODO 发送结果处理
+        return R.ok();
+    }
+
+    /**
+     * 获取 channel
+     *
+     * @param mobile
+     * @return
+     */
+    public Channel getChannelViaLongTextChannelId(String mobile) {
+        String channelIdLongText = iRedisService.hGet(StaticConstant.REDIS_CACHE_KEY_PREFIX_ONLINE, mobile);
+        return WebSocketServerHandler.USER_CHANNEL_MAP.get(channelIdLongText);
+    }
+
+    @Autowired
+    TokenService tokenService;
+    @Autowired
+    IRedisService iRedisService;
+
+    @Override
+    public R handleWebSocketRequest(WebSocketActionTypeEnum webSocketAction, Channel channel, String token, String content) {
+        R r;
+        // 登录凭证校验
+        TokenEntity tokenEntity = tokenService.queryByToken(token);
+
+        if (null != (r = tokenService.checkToken(tokenEntity))) {
+            return r;
+        }
+
+        switch (webSocketAction) {
+            case BEGIN_RECEIPT:
+                // TODO 简单处理 将用户存到redis中
+                ChannelId channelId = channel.id();
+                iRedisService.putHashKeyWithObject(StaticConstant.REDIS_CACHE_KEY_PREFIX_ONLINE, tokenEntity.getMobile(), channelId.asLongText());
+                WebSocketServerHandler.USER_CHANNEL_MAP.put(channelId.asLongText(), channel);
+                log.info(">>> R Msg:{}", content);
+                r = R.ok(channelId.asShortText() + Constant.SPLIT_CHAR_COLON + channelId.asLongText());
+                break;
+            case PRINT_SERVER_TIME:
+                r = R.ok(LocalDateTime.now());
+                break;
+            default:
+                r = R.error(RRExceptionEnum.BAD_REQUEST_PARAMS, "command[ " + (null == webSocketAction ? "null" : webSocketAction.getCommand()) + " ]");
+        }
+
+        return r;
     }
 
 }

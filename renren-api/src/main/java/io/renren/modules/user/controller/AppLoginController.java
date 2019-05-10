@@ -9,8 +9,7 @@
 package io.renren.modules.user.controller;
 
 
-import io.renren.common.annotation.Login;
-import io.renren.common.util.StaticConstant;
+import io.renren.common.annotation.AppLogin;
 import io.renren.common.utils.R;
 import io.renren.modules.common.controller.BaseController;
 import io.renren.modules.common.service.ISmsService;
@@ -30,8 +29,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * 登录接口
@@ -39,9 +36,9 @@ import java.util.Map;
  * @author Mark sunlightcs@gmail.com
  */
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/app")
 @Api(tags = "注册登录接口")
-public class ApiLoginController extends BaseController {
+public class AppLoginController extends BaseController {
 
     @Autowired
     ISmsService iSmsService;
@@ -66,22 +63,29 @@ public class ApiLoginController extends BaseController {
         return R.ok(token.getToken());
     }
 
-    @Login
+    @AppLogin
     @PostMapping("logout")
-    @ApiOperation("退出")
+    @ApiOperation("注销")
     public R logout() {
         TokenEntity tokenEntity = getToken();
+        R r;
+        if (null != (r = checkToken(tokenEntity))) {
+            return r;
+        }
         tokenService.expireToken(tokenEntity.getUserId());
-        Map<String, Object> rMap = new HashMap<>(2);
-        rMap.put(StaticConstant.TOKEN_KEY, tokenEntity.getToken());
-        rMap.put("expire", tokenEntity.getExpireTime());
-        return R.ok(tokenEntity.getToken());
+        return R.ok();
     }
 
     @PostMapping("update")
     @ApiOperation("密码修改")
+    @AppLogin
     public R register(@RequestBody @Validated UserInfoForm form, BindingResult br) {
+        TokenEntity tokenEntity = getToken();
 
+        R r;
+        if (null != (r = checkToken(tokenEntity))) {
+            return r;
+        }
         UserEntity user = new UserEntity();
         user.setMobile(form.getMobile());
         user.setName(form.getName());

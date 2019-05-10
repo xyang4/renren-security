@@ -8,7 +8,7 @@
 
 package io.renren.modules.user.controller;
 
-import io.renren.common.annotation.Login;
+import io.renren.common.annotation.AppLogin;
 import io.renren.common.annotation.LoginUser;
 import io.renren.common.utils.R;
 import io.renren.modules.user.entity.UserEntity;
@@ -25,11 +25,11 @@ import springfox.documentation.annotations.ApiIgnore;
  * @author Mark sunlightcs@gmail.com
  */
 @RestController
-@RequestMapping("/api/test")
+@RequestMapping("/app/test")
 @Api(tags = "测试接口")
-public class ApiTestController {
+public class AppTestController {
 
-    @Login
+    @AppLogin
     @GetMapping("userInfo")
     @ApiOperation(value = "获取用户信息", response = UserEntity.class)
     public R userInfo(@ApiIgnore @LoginUser UserEntity user) {

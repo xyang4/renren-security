@@ -46,7 +46,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         if (renrenProperties.isAuthOpen()) {
-            registry.addInterceptor(new AuthorizationInterceptor()).addPathPatterns("/api/**");
+            registry.addInterceptor(new AuthorizationInterceptor()).addPathPatterns("/app/**");
         }
     }
 

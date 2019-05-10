@@ -41,12 +41,12 @@ public class R {
         this.data = data;
     }
 
-    public static R error(String msg) {
-        return R.error(RRExceptionEnum.UNKNOWN_ERROR.getCode(), RRExceptionEnum.UNKNOWN_ERROR.getMsg() + ":" + msg);
-    }
-
     public static R error(RRExceptionEnum rrExceptionEnum) {
         return error(rrExceptionEnum.getCode(), rrExceptionEnum.getMsg());
+    }
+
+    public static R error(RRExceptionEnum rrExceptionEnum, String msg) {
+        return new R(rrExceptionEnum.getCode(), rrExceptionEnum.getMsg() + Constant.SPLIT_CHAR_COLON + msg);
     }
 
     public static R error(int code, String msg) {
@@ -54,7 +54,7 @@ public class R {
     }
 
     public static R ok() {
-        return new R(RRExceptionEnum.REQUEST_SUCCESS);
+        return ok(null);
     }
 
     public static R ok(Object data) {

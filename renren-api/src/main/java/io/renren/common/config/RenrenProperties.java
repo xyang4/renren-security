@@ -4,9 +4,9 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+@Data
 @Configuration
 @ConfigurationProperties(prefix = "renren")
-@Data
 public class RenrenProperties {
     private boolean redisOpen = false;
     private boolean authOpen = false;
@@ -21,4 +21,8 @@ public class RenrenProperties {
     private String decimalFormat;
 
     private int httpObjMaxContentLength = 65536;
+    /**
+     * redis 操作日志记录
+     */
+    private boolean openRedisLogger;
 }

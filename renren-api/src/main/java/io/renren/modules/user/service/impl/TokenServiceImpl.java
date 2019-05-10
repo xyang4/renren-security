@@ -11,7 +11,9 @@ package io.renren.modules.user.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.renren.common.config.RenrenProperties;
+import io.renren.common.enums.RRExceptionEnum;
 import io.renren.common.util.StaticConstant;
+import io.renren.common.utils.R;
 import io.renren.modules.user.dao.TokenDao;
 import io.renren.modules.user.entity.TokenEntity;
 import io.renren.modules.user.service.TokenService;
@@ -22,7 +24,7 @@ import java.util.Date;
 import java.util.UUID;
 
 
-@Service("tokenService")
+@Service
 public class TokenServiceImpl extends ServiceImpl<TokenDao, TokenEntity> implements TokenService {
 
     @Autowired
@@ -37,7 +39,6 @@ public class TokenServiceImpl extends ServiceImpl<TokenDao, TokenEntity> impleme
     public TokenEntity createToken(String userId, String mobile) {
         //当前时间
         Date now = new Date();
-        //过期时间
         Date expireTime = new Date(now.getTime() + renrenProperties.getJwtExpire() * 60 * 1000);
 
         //生成token
@@ -50,7 +51,7 @@ public class TokenServiceImpl extends ServiceImpl<TokenDao, TokenEntity> impleme
         tokenEntity.setToken(token);
         tokenEntity.setUpdateTime(now);
         tokenEntity.setExpireTime(expireTime);
-        this.saveOrUpdate(tokenEntity);
+        saveOrUpdate(tokenEntity);
 
         return tokenEntity;
     }
@@ -64,6 +65,22 @@ public class TokenServiceImpl extends ServiceImpl<TokenDao, TokenEntity> impleme
         tokenEntity.setUpdateTime(now);
         tokenEntity.setExpireTime(now);
         this.saveOrUpdate(tokenEntity);
+    }
+
+    @Override
+    public boolean isExpire(TokenEntity tokenEntity) {
+        return tokenEntity.getExpireTime().compareTo(new Date()) < 0;
+    }
+
+    @Override
+    public R checkToken(TokenEntity tokenEntity) {
+        if (null == tokenEntity) {
+            return R.error(RRExceptionEnum.BAD_REQUEST_PARAMS);
+        } else if (isExpire(tokenEntity)) {
+            return R.error(RRExceptionEnum.LOGIN_TOKEN_EXPIRE);
+        } else {
+            return null;
+        }
     }
 
     private String generateToken() {
