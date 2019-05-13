@@ -36,7 +36,7 @@ public class TokenServiceImpl extends ServiceImpl<TokenDao, TokenEntity> impleme
     }
 
     @Override
-    public TokenEntity createToken(String userId, String mobile) {
+    public TokenEntity createToken(Integer userId, String mobile) {
         //当前时间
         Date now = new Date();
         Date expireTime = new Date(now.getTime() + renrenProperties.getJwtExpire() * 60 * 1000);
@@ -57,7 +57,7 @@ public class TokenServiceImpl extends ServiceImpl<TokenDao, TokenEntity> impleme
     }
 
     @Override
-    public void expireToken(String userId) {
+    public void expireToken(Integer userId) {
         Date now = new Date();
 
         TokenEntity tokenEntity = new TokenEntity();

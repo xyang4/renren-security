@@ -31,7 +31,7 @@ public class TokenEntity implements Serializable {
      * 用户ID
      */
     @TableId(type = IdType.INPUT)
-    private String userId;
+    private Integer userId;
     private String mobile;
     private String token;
     /**

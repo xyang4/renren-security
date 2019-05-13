@@ -37,12 +37,12 @@ public class UserServiceImpl extends ServiceImpl<UserDao, UserEntity> implements
     }
 
     @Override
-    public String registeredQuickly(String mobile) {
+    public Integer registeredQuickly(String mobile) {
         UserEntity entity = new UserEntity();
         entity.setMobile(mobile);
-        entity.setPassword(DigestUtils.sha256Hex(mobile.substring(mobile.length() - 7)));
+        entity.setPasswd(DigestUtils.sha256Hex(mobile.substring(mobile.length() - 7)));
         save(entity);
-        return entity.getId();
+        return entity.getUserId();
     }
 
 }
