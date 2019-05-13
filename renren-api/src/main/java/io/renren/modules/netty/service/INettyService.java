@@ -2,6 +2,7 @@ package io.renren.modules.netty.service;
 
 import io.netty.channel.Channel;
 import io.renren.common.utils.R;
+import io.renren.modules.netty.domain.RedisMessageDomain;
 import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 
 /**
@@ -17,17 +18,16 @@ public interface INettyService {
     void start(int port);
 
     /**
-     * 给指定的在线用户发送推送消息
+     * 给指定的在线用户发送消息
      *
-     * @param mobile
-     * @param message
-     * @param toQueue
+     * @param messageDomain
+     * @param async         是否异步 true|false，true :
      * @return
      */
-    R sendMessage(WebSocketActionTypeEnum actionTypeEnum, String mobile, Object message, boolean toQueue);
+    R sendMessage(RedisMessageDomain messageDomain, boolean async);
 
     /**
-     * 处理webSocket 请求
+     * 处理webSocket 请求a
      *
      * @param webSocketAction command
      * @param channel         netty channel

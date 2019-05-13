@@ -5,7 +5,6 @@ import java.util.concurrent.TimeUnit;
 public interface IRedisService {
     String getHash(String H, String HK);
 
-
     String getHashStrVal(String key, String hashKey);
 
     void set(String key, String value, long timeout, TimeUnit timeUnit);
@@ -26,6 +25,12 @@ public interface IRedisService {
 
     void putHashKeyWithObject(String h, String hKey, String hVal);
 
-    void sendMessageToQueue(String queneName, Object message);
+    /**
+     * 发送消息至指定队列
+     *
+     * @param queueName
+     * @param message
+     */
+    void sendMessageToQueue(String queueName, Object message);
 
 }

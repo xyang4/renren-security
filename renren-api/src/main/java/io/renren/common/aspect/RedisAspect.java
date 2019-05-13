@@ -20,7 +20,7 @@ public class RedisAspect {
     public Object around(ProceedingJoinPoint point) throws Throwable {
         if (renrenProperties.isOpenRedisLogger()) {
 //            TODO
-            log.info(">>> Exe redis logger...");
+            log.info("Execution Redis handle...");
 
         }
         return point.proceed();

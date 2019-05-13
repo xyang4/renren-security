@@ -3,6 +3,7 @@ package io.renren.modules.netty;
 import io.renren.common.annotation.AppLogin;
 import io.renren.common.utils.R;
 import io.renren.modules.common.controller.BaseController;
+import io.renren.modules.netty.domain.RedisMessageDomain;
 import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 import io.renren.modules.netty.service.INettyService;
 import io.renren.modules.user.entity.TokenEntity;
@@ -29,6 +30,7 @@ public class WebSocketController extends BaseController {
         if (null != (r = checkToken(tokenEntity))) {
             return r;
         }
-        return iNettyService.sendMessage(WebSocketActionTypeEnum.BEGIN_RECEIPT, tokenEntity.getMobile(), vo, (Boolean) vo.get("sync"));
+        RedisMessageDomain messageDomain = new RedisMessageDomain(WebSocketActionTypeEnum.BEGIN_RECEIPT.getCommand(), tokenEntity.getMobile(), vo);
+        return iNettyService.sendMessage(messageDomain, (Boolean) vo.get("async"));
     }
 }

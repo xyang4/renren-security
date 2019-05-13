@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 
 /**
  * redis 消息队列配置 // TODO 多队列配置
+ * <a href="https://spring.io/guides/gs/messaging-redis/>官网Demo</a>
  */
 @Configuration
 @AutoConfigureAfter({RedisMessageReceiver.class})
@@ -22,22 +23,27 @@ public class RedisMessageSubscriberConfig {
 
     private static List<String> topicList = WebSocketActionTypeEnum.getCommands();
 
+    /**
+     * @param receiver
+     * @return
+     * @describe 注册统一的消费者
+     */
     @Bean
     public MessageListenerAdapter listenerAdapter(RedisMessageReceiver receiver) {
         return new MessageListenerAdapter(receiver);
     }
 
     /**
-     * 创建消息监听容器
-     *
      * @param redisConnectionFactory
      * @param listenerAdapter
      * @return
+     * @describe 注册消息监听器，使用发布订阅者模式
      */
     @Bean
     public RedisMessageListenerContainer getRedisMessageListenerContainer(RedisConnectionFactory redisConnectionFactory, MessageListenerAdapter listenerAdapter) {
         RedisMessageListenerContainer redisMessageListenerContainer = new RedisMessageListenerContainer();
         redisMessageListenerContainer.setConnectionFactory(redisConnectionFactory);
+        // 便于简化处理，所有主题交由 RedisMessageReceiver 统一处理
         redisMessageListenerContainer.addMessageListener(listenerAdapter, topicList.stream().map(v -> new PatternTopic(v)).collect(Collectors.toList()));
         return redisMessageListenerContainer;
     }

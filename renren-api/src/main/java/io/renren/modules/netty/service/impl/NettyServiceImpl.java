@@ -17,12 +17,14 @@ import io.renren.common.util.StaticConstant;
 import io.renren.common.utils.Constant;
 import io.renren.common.utils.R;
 import io.renren.modules.common.service.IRedisService;
+import io.renren.modules.netty.domain.RedisMessageDomain;
 import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 import io.renren.modules.netty.handle.WebSocketServerHandler;
 import io.renren.modules.netty.service.INettyService;
 import io.renren.modules.user.entity.TokenEntity;
 import io.renren.modules.user.service.TokenService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -70,24 +72,23 @@ public class NettyServiceImpl implements INettyService {
     }
 
     @Override
-    public R sendMessage(WebSocketActionTypeEnum actionTypeEnum, String mobile, Object message, boolean toQueue) {
-        String content;
-        if (message instanceof String) {
-            content = (String) message;
-        } else {
-            content = JSON.toJSONString(message);
+    public R sendMessage(RedisMessageDomain redisMessageDomain, boolean async) {
+        if (null == redisMessageDomain || StringUtils.isAnyBlank(redisMessageDomain.getMobile())) {
+            return R.error(RRExceptionEnum.MUST_PARAMS_DEFECT_ERROR, redisMessageDomain.toString());
         }
 
-        if (toQueue) {
-            iRedisService.sendMessageToQueue(actionTypeEnum.getCommand(), content);
+        String messageContent = JSON.toJSONString(redisMessageDomain);
+
+        if (async) { // 异步处理
+            iRedisService.sendMessageToQueue(redisMessageDomain.getTopic(), messageContent);
         } else {
-            Channel channel = getChannelViaLongTextChannelId(mobile);
+            // 先获取Client channel
+            Channel channel = getChannelViaLongTextChannelId(redisMessageDomain.getMobile());
             if (null == channel) {
                 return R.error(RRExceptionEnum.USER_NOT_ONLINE);
             }
-            channel.writeAndFlush(new TextWebSocketFrame(content));
+            channel.writeAndFlush(new TextWebSocketFrame(messageContent));
         }
-        // TODO 发送结果处理
         return R.ok();
     }
 
@@ -116,11 +117,11 @@ public class NettyServiceImpl implements INettyService {
         if (null != (r = tokenService.checkToken(tokenEntity))) {
             return r;
         }
-
+        ChannelId channelId = channel.id();
+        log.info("Begin handle WebSocketAction [{}] Token[{}] ChannelId[{}] .", webSocketAction, token, channelId.asLongText());
         switch (webSocketAction) {
             case BEGIN_RECEIPT:
                 // TODO 简单处理 将用户存到redis中
-                ChannelId channelId = channel.id();
                 iRedisService.putHashKeyWithObject(StaticConstant.REDIS_CACHE_KEY_PREFIX_ONLINE, tokenEntity.getMobile(), channelId.asLongText());
                 WebSocketServerHandler.USER_CHANNEL_MAP.put(channelId.asLongText(), channel);
                 log.info(">>> R Msg:{}", content);
@@ -132,7 +133,6 @@ public class NettyServiceImpl implements INettyService {
             default:
                 r = R.error(RRExceptionEnum.BAD_REQUEST_PARAMS, "command[ " + (null == webSocketAction ? "null" : webSocketAction.getCommand()) + " ]");
         }
-
         return r;
     }
 
