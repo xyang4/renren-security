@@ -17,12 +17,14 @@ import io.renren.common.util.StaticConstant;
 import io.renren.common.utils.Constant;
 import io.renren.common.utils.R;
 import io.renren.modules.common.service.IRedisService;
+import io.renren.modules.netty.domain.RedisMessageDomain;
 import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 import io.renren.modules.netty.handle.WebSocketServerHandler;
 import io.renren.modules.netty.service.INettyService;
 import io.renren.modules.user.entity.TokenEntity;
 import io.renren.modules.user.service.TokenService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -33,6 +35,10 @@ import java.time.LocalDateTime;
 public class NettyServiceImpl implements INettyService {
     @Autowired
     RenrenProperties renrenProperties;
+    @Autowired
+    TokenService tokenService;
+    @Autowired
+    IRedisService iRedisService;
 
     @Override
     public void start(int port) {
@@ -79,23 +85,16 @@ public class NettyServiceImpl implements INettyService {
 
         if (async) { // 异步处理
             iRedisService.sendMessageToQueue(redisMessageDomain.getTopic(), messageContent);
-        if (toQueue) {
             //发送待抢单订单到客户端
             //查询待抢单队列
-
             //查询在线用户列表
-
             //判断用户状态
-
-
             //判断用户金额
-
-
-
             //这个应该是放在创建订单的地方
             // iRedisService.sendMessageToQueue(actionTypeEnum.getCommand(), content);
-
-
+            //下发账户余额
+            //下发已被抢订单
+            //下发用户已付款，确认收款情况
         } else {
             // 先获取Client channel
             Channel channel = getChannelViaLongTextChannelId(redisMessageDomain.getMobile());
@@ -104,16 +103,6 @@ public class NettyServiceImpl implements INettyService {
             }
             channel.writeAndFlush(new TextWebSocketFrame(messageContent));
         }
-
-
-        //下发账户余额
-
-        //下发已被抢订单
-
-        //下发用户已付款，确认收款情况
-
-
-
         // TODO 发送结果处理
         return R.ok();
     }
@@ -129,13 +118,9 @@ public class NettyServiceImpl implements INettyService {
         return WebSocketServerHandler.USER_CHANNEL_MAP.get(channelIdLongText);
     }
 
-    @Autowired
-    TokenService tokenService;
-    @Autowired
-    IRedisService iRedisService;
-
     @Override
-    public R handleWebSocketRequest(WebSocketActionTypeEnum webSocketAction, Channel channel, String token, String content) {
+    public R handleWebSocketRequest(WebSocketActionTypeEnum webSocketAction, Channel channel, String token, String
+            content) {
         R r;
         // 登录凭证校验
         TokenEntity tokenEntity = tokenService.queryByToken(token);
@@ -146,10 +131,7 @@ public class NettyServiceImpl implements INettyService {
         ChannelId channelId = channel.id();
         log.info("Begin handle WebSocketAction [{}] Token[{}] ChannelId[{}] .", webSocketAction, token, channelId.asLongText());
         switch (webSocketAction) {
-            case BEGIN_RECEIPT:
-                // TODO 简单处理 将用户存到redis中
-            case INIT:// 初始化数据 将用户存到redis中，添加超时时间  TODO
-                ChannelId channelId = channel.id();
+            case INIT:// 初始化数据 将用户存到redis中，添加超时时间
                 iRedisService.putHashKeyWithObject(StaticConstant.REDIS_CACHE_KEY_PREFIX_ONLINE, tokenEntity.getMobile(), channelId.asLongText());
                 WebSocketServerHandler.USER_CHANNEL_MAP.put(channelId.asLongText(), channel);
                 log.info(">>> R Msg:{}", content);
@@ -168,26 +150,22 @@ public class NettyServiceImpl implements INettyService {
                 break;
 
             case STOP_RECEIPT://停止接单
-               break;
+                break;
 
             case RUSH_ORDERS://抢单
-            //ridis事物开始 ?
-            //查询已抢中订单数据集
-            //如果已存在该订单，直接返回，订单已被抢
-            //如果不存在则保存订单到已抢订单中
-            //计算amount实际订单金额，增加小数点，区分不同订单
-            //更新订单状态及信息
-            //ridis事物提交
-            //下发订单被抢消息
+                //ridis事物开始 ?
+                //查询已抢中订单数据集
+                //如果已存在该订单，直接返回，订单已被抢
+                //如果不存在则保存订单到已抢订单中
+                //计算amount实际订单金额，增加小数点，区分不同订单
+                //更新订单状态及信息
+                //ridis事物提交
+                //下发订单被抢消息
                 break;
-
             case ONGOING_ORDERS://查询用户订单：已抢进行中的订单
                 break;
-
             case SUCCESS_ORDERS://查询用户订单：完成状态的订单
                 break;
-
-
             case PRINT_SERVER_TIME:
                 r = R.ok(LocalDateTime.now());
                 break;
