@@ -17,5 +17,5 @@ public class StaticConstant extends Constant {
 
     public static final String DATE_FORMAT_DATE = "yyyy-MM-dd HH:mm:ss";
     public static final String CHARSET_UTF8 = "utf-8";
-    public static final String REDIS_CACHE_KEY_PREFIX_ONLINE = "online";
+
 }

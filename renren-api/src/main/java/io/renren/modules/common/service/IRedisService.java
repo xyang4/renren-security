@@ -1,5 +1,6 @@
 package io.renren.modules.common.service;
 
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public interface IRedisService {
@@ -23,7 +24,14 @@ public interface IRedisService {
 
     String hGet(String key, String field);
 
+    void setAdd(String key, String val);
+
     void putHashKeyWithObject(String h, String hKey, String hVal);
+
+
+    void leftPush(String key, String val);
+
+    String pull(String key);
 
     /**
      * 发送消息至指定队列
@@ -32,5 +40,14 @@ public interface IRedisService {
      * @param message
      */
     void sendMessageToQueue(String queueName, Object message);
+
+    boolean isSetMember(String key, String o);
+
+    Long removeSetMember(String key, String val);
+
+    /**
+     * 获取集合中的所有元素
+     */
+    Set<String> setMembers(String key);
 
 }

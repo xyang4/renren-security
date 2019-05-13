@@ -13,9 +13,8 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.renren.common.config.RenrenProperties;
 import io.renren.common.enums.RRExceptionEnum;
-import io.renren.common.util.StaticConstant;
-import io.renren.common.utils.Constant;
 import io.renren.common.utils.R;
+import io.renren.modules.common.domain.RedisCacheKeyConstant;
 import io.renren.modules.common.service.IRedisService;
 import io.renren.modules.netty.domain.RedisMessageDomain;
 import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
@@ -29,6 +28,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -57,7 +60,7 @@ public class NettyServiceImpl implements INettyService {
                         // 添加对大数据流的支持
                         pipeline.addLast(new ChunkedWriteHandler());
                         // 添加 webSocket 服务器处理协议，使用 传输数据frames
-                        pipeline.addLast(new WebSocketServerProtocolHandler(renrenProperties.getWebSocketPath()));
+                        pipeline.addLast(new WebSocketServerProtocolHandler(renrenProperties.getWebSocketServerPath()));
                         // 添加自定义 handler
                         pipeline.addLast(new WebSocketServerHandler());
                     }
@@ -108,14 +111,15 @@ public class NettyServiceImpl implements INettyService {
     }
 
     /**
-     * 获取 channel
+     * 获取 channel // TODO 过期处理??
      *
      * @param mobile
      * @return
      */
     public Channel getChannelViaLongTextChannelId(String mobile) {
-        String channelIdLongText = iRedisService.hGet(StaticConstant.REDIS_CACHE_KEY_PREFIX_ONLINE, mobile);
-        return WebSocketServerHandler.USER_CHANNEL_MAP.get(channelIdLongText);
+//        String channelIdLongText = iRedisService.hGet(RedisCacheKeyConstant.ONLINE, mobile);
+        String channelIdLongText = iRedisService.getVal(RedisCacheKeyConstant.ONLINE_PREFIX + mobile);
+        return WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.get(channelIdLongText);
     }
 
     @Override
@@ -128,31 +132,34 @@ public class NettyServiceImpl implements INettyService {
         if (null != (r = tokenService.checkToken(tokenEntity))) {
             return r;
         }
+
         ChannelId channelId = channel.id();
         log.info("Begin handle WebSocketAction [{}] Token[{}] ChannelId[{}] .", webSocketAction, token, channelId.asLongText());
         switch (webSocketAction) {
-            case INIT:// 初始化数据 将用户存到redis中，添加超时时间
-                iRedisService.putHashKeyWithObject(StaticConstant.REDIS_CACHE_KEY_PREFIX_ONLINE, tokenEntity.getMobile(), channelId.asLongText());
-                WebSocketServerHandler.USER_CHANNEL_MAP.put(channelId.asLongText(), channel);
-                log.info(">>> R Msg:{}", content);
-                r = R.ok(channelId.asShortText() + Constant.SPLIT_CHAR_COLON + channelId.asLongText());
+            case ACTIVE:// 保活
+                iRedisService.set(RedisCacheKeyConstant.ONLINE_PREFIX + tokenEntity.getMobile(), channelId.asLongText(), renrenProperties.getWebSocketExpire() * 60L, TimeUnit.SECONDS);
+                if (!WebSocketServerHandler.ONLINE_USER_CHANNEL_ID.contains(channelId.asLongText())) {
+                    WebSocketServerHandler.ONLINE_USER_CHANNEL_ID.add(channelId.asLongText());
+                    WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.put(channelId.asLongText(), channel);
+                }
                 break;
+            case BEGIN_RECEIPT:// 开始接单，将用户追加至可接单队列中
+                if (!checkWebSocketUserIsActive(tokenEntity.getMobile(), channel)) {
+                    return R.error(RRExceptionEnum.USER_NOT_ONLINE, "请先进行 active 操作");
+                }
 
-            case ONLINE:// 刷新超时时间，保活连接
-                break;
+                // add user to redis set:  key=order_list_can_buy
+                if (!iRedisService.isSetMember(RedisCacheKeyConstant.ORDER_LIST_CAN_BUY, tokenEntity.getMobile())) {
+                    iRedisService.setAdd(RedisCacheKeyConstant.ORDER_LIST_CAN_BUY, tokenEntity.getMobile());
+                }
+                return R.ok();
 
-            case BEGIN_RECEIPT://开始接单 TODO 简单处理 将用户存到redis中
-                channelId = channel.id();
-                iRedisService.putHashKeyWithObject(StaticConstant.REDIS_CACHE_KEY_PREFIX_ONLINE, tokenEntity.getMobile(), channelId.asLongText());
-                WebSocketServerHandler.USER_CHANNEL_MAP.put(channelId.asLongText(), channel);
-                log.info(">>> R Msg:{}", content);
-                r = R.ok(channelId.asShortText() + Constant.SPLIT_CHAR_COLON + channelId.asLongText());
-                break;
-
-            case STOP_RECEIPT://停止接单
-                break;
+            case STOP_RECEIPT://停止接单,将用户存集合中移除
+                Long no = iRedisService.removeSetMember(RedisCacheKeyConstant.ORDER_LIST_CAN_BUY, tokenEntity.getMobile());
+                return R.ok("Ele No:" + no);
 
             case RUSH_ORDERS://抢单
+                // TODO 有新建的订单时将订单推送到可接单的用户中 redis set key:order_list_can_buy??
                 //ridis事物开始 ?
                 //查询已抢中订单数据集
                 //如果已存在该订单，直接返回，订单已被抢
@@ -162,17 +169,37 @@ public class NettyServiceImpl implements INettyService {
                 //ridis事物提交
                 //下发订单被抢消息
                 break;
-            case ONGOING_ORDERS://查询用户订单：已抢进行中的订单
-                break;
-            case SUCCESS_ORDERS://查询用户订单：完成状态的订单
-                break;
             case PRINT_SERVER_TIME:
-                r = R.ok(LocalDateTime.now());
+                r = R.ok(LocalDateTime.now(ZoneId.of("Asia/Shanghai")));
                 break;
             default:
                 r = R.error(RRExceptionEnum.BAD_REQUEST_PARAMS, "command[ " + (null == webSocketAction ? "null" : webSocketAction.getCommand()) + " ]");
         }
         return r;
+    }
+
+    @Override
+    public boolean checkWebSocketUserIsActive(String mobile, Channel channel) {
+        ChannelId channelId = channel.id();
+        boolean r;
+        Long expire = iRedisService.getExpire(RedisCacheKeyConstant.ONLINE_PREFIX + mobile, TimeUnit.SECONDS);
+        if (null == expire) {
+            r = false;
+            if (!WebSocketServerHandler.ONLINE_USER_CHANNEL_ID.contains(channelId.asLongText())) {
+                WebSocketServerHandler.ONLINE_USER_CHANNEL_ID.add(channelId.asLongText());
+                WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.put(channelId.asLongText(), channel);
+            }
+        } else {
+            r = expire > 0;
+        }
+
+        return r;
+    }
+
+    @Override
+    public List<Object> listOnlineUser() {
+        List<Object> mobileList = WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.keySet().stream().collect(Collectors.toList());
+        return mobileList;
     }
 
 }

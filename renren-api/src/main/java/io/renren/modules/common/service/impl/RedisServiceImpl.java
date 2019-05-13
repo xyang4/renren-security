@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -17,7 +18,6 @@ public class RedisServiceImpl implements IRedisService {
     @Autowired
     StringRedisTemplate stringRedisTemplate;
     // 复杂的对象类型，不做任何转换的
-
     @Autowired
     RedisTemplate redisTemplate;
     @Autowired
@@ -94,13 +94,44 @@ public class RedisServiceImpl implements IRedisService {
     }
 
     @Override
+    public void setAdd(String key, String val) {
+        setOperations.add(key, val);
+    }
+
+    @Override
     public void putHashKeyWithObject(String key, String hKey, String hVal) {
         hashOperations.put(key, hKey, hVal);
     }
 
     @Override
+    public void leftPush(String key, String val) {
+        listOperations.leftPush(key, val);
+    }
+
+    @Override
+    public String pull(String key) {
+        return listOperations.leftPop(key);
+    }
+
+    @Override
     public void sendMessageToQueue(String channel, Object message) {
         stringRedisTemplate.convertAndSend(channel, message);
+    }
+
+    @Override
+    public boolean isSetMember(String key, String val) {
+
+        return setOperations.isMember(key, val);
+    }
+
+    @Override
+    public Long removeSetMember(String key, String val) {
+        return setOperations.remove(key, val);
+    }
+
+    @Override
+    public Set<String> setMembers(String key) {
+        return setOperations.members(key);
     }
 
 

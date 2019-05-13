@@ -40,6 +40,5 @@ spring:
 
 # 自定义属性配置
 renren:
-  open-redis-logger: true
-  auth:
-    open: true
+  open-redis-logger: false
+  auth-open: true

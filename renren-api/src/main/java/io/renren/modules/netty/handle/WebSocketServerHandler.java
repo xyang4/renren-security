@@ -17,7 +17,9 @@ import io.renren.modules.netty.service.INettyService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -27,7 +29,8 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<TextWebS
      */
     public static ChannelGroup ONLINE_USER_GROUP = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
 
-    public static Map<String, Channel> USER_CHANNEL_MAP = new HashMap<>();
+    public static Map<String, Channel> ONLINE_USER_CHANNEL_MAP = new HashMap<>(20);
+    public static List<String> ONLINE_USER_CHANNEL_ID = new ArrayList<>(20);
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, TextWebSocketFrame textWebSocketFrame) {
