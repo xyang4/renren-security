@@ -32,14 +32,14 @@ public interface TokenService extends IService<TokenEntity> {
      * @param userId 用户ID
      * @return 返回token信息
      */
-    TokenEntity createToken(String userId, String mobile);
+    TokenEntity createToken(Integer userId, String mobile);
 
     /**
      * 设置token过期
      *
      * @param userId 用户ID
      */
-    void expireToken(String userId);
+    void expireToken(Integer userId);
 
     /**
      * 判断 Token 是否过期

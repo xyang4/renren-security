@@ -20,5 +20,5 @@ public interface UserService extends IService<UserEntity> {
 
     UserEntity queryByMobile(String mobile);
 
-    String registeredQuickly(String mobile);
+    Integer registeredQuickly(String mobile);
 }

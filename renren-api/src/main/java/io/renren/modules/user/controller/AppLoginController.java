@@ -10,6 +10,7 @@ package io.renren.modules.user.controller;
 
 
 import io.renren.common.annotation.AppLogin;
+import io.renren.common.utils.DateUtils;
 import io.renren.common.utils.R;
 import io.renren.modules.common.controller.BaseController;
 import io.renren.modules.common.service.ISmsService;
@@ -52,11 +53,11 @@ public class AppLoginController extends BaseController {
 
         // 2 未注册快速注册，
         UserEntity userEntity = userService.queryByMobile(vo.getMobile());
-        String userId;
+        Integer userId;
         if (null == userEntity) {
             userId = userService.registeredQuickly(vo.getMobile());
         } else {
-            userId = userEntity.getId();
+            userId = userEntity.getUserId();
         }
         TokenEntity token = tokenService.createToken(userId, userEntity.getMobile());
         // 3 返回token
@@ -88,9 +89,9 @@ public class AppLoginController extends BaseController {
         }
         UserEntity user = new UserEntity();
         user.setMobile(form.getMobile());
-        user.setName(form.getName());
-        user.setPassword(DigestUtils.sha256Hex(form.getPassword()));
-        user.setCreateTime(new Date());
+        user.setNickName(form.getName());
+        user.setPasswd(DigestUtils.sha256Hex(form.getPassword()));
+        user.setCreateTime(DateUtils.format(new Date(),DateUtils.DATE_TIME_PATTERN));
         userService.save(user);
 
         return R.ok();
