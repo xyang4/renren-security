@@ -8,6 +8,8 @@ import org.aspectj.lang.annotation.Aspect;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
+
 @Slf4j
 @Aspect
 @Component
@@ -19,8 +21,8 @@ public class RedisAspect {
     @Around("this(io.renren.modules.common.service.IRedisService)")
     public Object around(ProceedingJoinPoint point) throws Throwable {
         if (renrenProperties.isOpenRedisLogger()) {
-//            TODO
-            log.info("Execution Redis handle...");
+//            TODO Redis 操作日志记录
+            log.info("Execution Redis handle!!! Method[{}] Args {}.", point.getSignature().getName(), Arrays.asList(point.getArgs()));
 
         }
         return point.proceed();

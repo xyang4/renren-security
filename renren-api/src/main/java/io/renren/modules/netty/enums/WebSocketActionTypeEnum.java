@@ -12,14 +12,11 @@ import java.util.stream.Collectors;
  */
 @Getter
 public enum WebSocketActionTypeEnum {
-    /**
-     * 初始化数据
-     */
-    INIT("init", "初始化数据"),
+
     /**
      * 在线，保活连接
      */
-    ONLINE("online", "在线，保活连接"),
+    ACTIVE("active", "存活/在线"),
     /**
      * 开始接单
      */
@@ -32,14 +29,6 @@ public enum WebSocketActionTypeEnum {
      * 抢单
      */
     RUSH_ORDERS("rush_orders", "抢单"),
-    /**
-     * 查询用户订单：已抢进行中的订单
-     */
-    ONGOING_ORDERS("ongoing_orders", "查询进行中订单"),
-    /**
-     * 查询用户订单：完成状态的订单
-     */
-    SUCCESS_ORDERS("success_orders", "查询完成状态订单"),
 
     PRINT_SERVER_TIME("print_server_time", "打印系统时间"),;
 

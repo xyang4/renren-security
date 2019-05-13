@@ -20,7 +20,7 @@ public class NettyBooterListener implements ApplicationListener<ContextRefreshed
     public void onApplicationEvent(ContextRefreshedEvent event) {
         if (event.getApplicationContext().getParent() == null) {
             try {
-                iNettyService.start(renrenProperties.getNettyPort());
+                iNettyService.start(renrenProperties.getWebSocketServerPort());
             } catch (Exception e) {
                 log.error("Netty Server Start Error:", e);
             }

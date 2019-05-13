@@ -33,9 +33,11 @@ spring:
 renren:
   jwt-expire: 30 # jwt 过期时间 （分钟）
   decimal-format: "##.##" # decimal 数值格式化
-  netty:
-    port: 10001
-  web-socket-path: "/ws"  # webSocket 客户端访问路由
+  web-socket:
+    server:
+      port: 10001
+      path: "/ws"  # webSocket 客户端访问路由
+    expire: 4
   http-obj-max-content-length: 65536
 #mybatis
 mybatis-plus:
