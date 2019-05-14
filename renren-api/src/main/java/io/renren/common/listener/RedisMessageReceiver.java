@@ -32,16 +32,21 @@ public class RedisMessageReceiver implements MessageListener {
     IRedisService iRedisService;
     @Autowired
     INettyService iNettyService;
+    private static int no = 0;
 
     @Override
     public void onMessage(Message message, byte[] pattern) {
         String topic = new String(pattern);
+        String m = message.toString();
+        log.info("Redis 消息队列消费开始：Message[{}].", m);
+        if (!m.startsWith("{") || !m.endsWith("}")) {
+            log.warn("消息格式错误");
+            return;
+        }
 
-        RedisMessageDomain messageDomain = JSONObject.parseObject(message.toString(), RedisMessageDomain.class);
-        log.info("Consumer Execution Begin：Message[{}].", message.toString());
-
+        RedisMessageDomain messageDomain = JSONObject.parseObject(m, RedisMessageDomain.class);
         if (null == messageDomain || null == messageDomain.getTopic() || null == messageDomain.getContent()) {
-            log.warn("Consumer Execution Done!! {}", RRExceptionEnum.MUST_PARAMS_DEFECT_ERROR.getMsg());
+            log.warn("Redis 消息队列消费完成!! {}", RRExceptionEnum.MUST_PARAMS_DEFECT_ERROR.getMsg());
             return;
         }
 
