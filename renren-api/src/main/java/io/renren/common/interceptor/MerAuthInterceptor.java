@@ -2,6 +2,7 @@ package io.renren.common.interceptor;
 
 import io.renren.common.util.HttpUtils;
 import io.renren.common.util.StaticConstant;
+import io.renren.common.utils.SpringContextUtils;
 import io.renren.modules.mer.service.MerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +16,6 @@ import javax.servlet.http.HttpServletResponse;
  */
 @Slf4j
 public class MerAuthInterceptor extends HandlerInterceptorAdapter {
-    @Autowired
-    MerService merService;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -30,7 +29,7 @@ public class MerAuthInterceptor extends HandlerInterceptorAdapter {
         Integer merId = Integer.parseInt(request.getParameter(StaticConstant.MER_KEY));
         String sign = request.getParameter(StaticConstant.SIGN_KEY);
         //校验时间戳，链接请求5分钟有效 TODO
-
+        MerService merService = SpringContextUtils.getBean(MerService.class);
         //商户有效性,可从缓存中获取商户状态 TODO 改进
         boolean checkMer = merService.checkMer(merId);
         if (checkMer == false) {
