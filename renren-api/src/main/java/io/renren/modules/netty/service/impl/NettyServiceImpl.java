@@ -1,6 +1,5 @@
 package io.renren.modules.netty.service.impl;
 
-import com.alibaba.fastjson.JSON;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -23,13 +22,15 @@ import io.renren.modules.netty.service.INettyService;
 import io.renren.modules.user.entity.TokenEntity;
 import io.renren.modules.user.service.TokenService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -62,7 +63,7 @@ public class NettyServiceImpl implements INettyService {
                         // 添加 webSocket 服务器处理协议，使用 传输数据frames
                         pipeline.addLast(new WebSocketServerProtocolHandler(renrenProperties.getWebSocketServerPath()));
                         // 添加自定义 handler
-                        pipeline.addLast(new WebSocketServerHandler());
+                        pipeline.addLast(new WebSocketServerHandler(renrenProperties.getOnlineUserInitCapacity()));
                     }
                 });
 //
@@ -80,14 +81,14 @@ public class NettyServiceImpl implements INettyService {
 
     @Override
     public R sendMessage(RedisMessageDomain redisMessageDomain, boolean async) {
-        if (null == redisMessageDomain || StringUtils.isAnyBlank(redisMessageDomain.getMobile())) {
+        if (null == redisMessageDomain || null == redisMessageDomain.getTimestamp() || null == redisMessageDomain.getContent()) {
             return R.error(RRExceptionEnum.MUST_PARAMS_DEFECT_ERROR, redisMessageDomain.toString());
         }
 
-        String messageContent = JSON.toJSONString(redisMessageDomain);
-
+        R r;
+        WebSocketActionTypeEnum actionTypeEnum = redisMessageDomain.getTopic();
         if (async) { // 异步处理
-            iRedisService.sendMessageToQueue(redisMessageDomain.getTopic(), messageContent);
+            iRedisService.sendMessageToQueue(redisMessageDomain);
             //发送待抢单订单到客户端
             //查询待抢单队列
             //查询在线用户列表
@@ -98,28 +99,25 @@ public class NettyServiceImpl implements INettyService {
             //下发账户余额
             //下发已被抢订单
             //下发用户已付款，确认收款情况
+            r = R.ok("推送成功!");
         } else {
-            // 先获取Client channel
-            Channel channel = getChannelViaLongTextChannelId(redisMessageDomain.getMobile());
-            if (null == channel) {
-                return R.error(RRExceptionEnum.USER_NOT_ONLINE);
+            // TODO 同步推送处理
+            switch (actionTypeEnum) {
+                case PRINT_SERVER_TIME:
+                    String mobile = redisMessageDomain.getContent();
+                    Channel channel = WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.get(mobile);
+                    if (null == channel) {
+                        return R.error(RRExceptionEnum.USER_NOT_ONLINE);
+                    }
+                    channel.writeAndFlush(new TextWebSocketFrame("Now:" + LocalTime.now()));
+                    break;
+                default:
+                    log.warn("不支持的事件类型[{}/{}].", actionTypeEnum.getCommand(), actionTypeEnum.getDescribe());
+                    break;
             }
-            channel.writeAndFlush(new TextWebSocketFrame(messageContent));
+            r = R.ok();
         }
-        // TODO 发送结果处理
-        return R.ok();
-    }
-
-    /**
-     * 获取 channel // TODO 过期处理??
-     *
-     * @param mobile
-     * @return
-     */
-    public Channel getChannelViaLongTextChannelId(String mobile) {
-//        String channelIdLongText = iRedisService.hGet(RedisCacheKeyConstant.ONLINE, mobile);
-        String channelIdLongText = iRedisService.getVal(RedisCacheKeyConstant.ONLINE_PREFIX + mobile);
-        return WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.get(channelIdLongText);
+        return r;
     }
 
     @Override
@@ -134,13 +132,13 @@ public class NettyServiceImpl implements INettyService {
         }
 
         ChannelId channelId = channel.id();
-        log.info("Begin handle WebSocketAction [{}] Token[{}] ChannelId[{}] .", webSocketAction, token, channelId.asLongText());
+        log.info("Begin handle WebSocketAction [{}] Token[{}] ChannelId[{}] .", webSocketAction.getDescribe(), token, channelId.asLongText());
         switch (webSocketAction) {
-            case ACTIVE:// 保活
-                iRedisService.set(RedisCacheKeyConstant.ONLINE_PREFIX + tokenEntity.getMobile(), channelId.asLongText(), renrenProperties.getWebSocketExpire() * 60L, TimeUnit.SECONDS);
-                if (!WebSocketServerHandler.ONLINE_USER_CHANNEL_ID.contains(channelId.asLongText())) {
-                    WebSocketServerHandler.ONLINE_USER_CHANNEL_ID.add(channelId.asLongText());
-                    WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.put(channelId.asLongText(), channel);
+            case ACTIVE:// 保活 存储 mobile:longTextId ,保证同一账户 多终端可登录
+                iRedisService.set(RedisCacheKeyConstant.ONLINE_PREFIX + channelId.asLongText(), tokenEntity.getMobile(), renrenProperties.getWebSocketExpire() * 60L, TimeUnit.SECONDS);
+                if (!WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.contains(tokenEntity.getMobile())) {
+                    WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.add(tokenEntity.getMobile());
+                    WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.put(tokenEntity.getMobile(), channel);
                 }
                 break;
             case BEGIN_RECEIPT:// 开始接单，将用户追加至可接单队列中
@@ -149,17 +147,17 @@ public class NettyServiceImpl implements INettyService {
                 }
 
                 // add user to redis set:  key=order_list_can_buy
-                if (!iRedisService.isSetMember(RedisCacheKeyConstant.ORDER_LIST_CAN_BUY, tokenEntity.getMobile())) {
-                    iRedisService.setAdd(RedisCacheKeyConstant.ORDER_LIST_CAN_BUY, tokenEntity.getMobile());
+                if (!iRedisService.isSetMember(RedisCacheKeyConstant.USERS_CAN_RUSH_BUY, tokenEntity.getMobile())) {
+                    iRedisService.setAdd(RedisCacheKeyConstant.USERS_CAN_RUSH_BUY, tokenEntity.getMobile());
                 }
                 return R.ok();
 
             case STOP_RECEIPT://停止接单,将用户存集合中移除
-                Long no = iRedisService.removeSetMember(RedisCacheKeyConstant.ORDER_LIST_CAN_BUY, tokenEntity.getMobile());
+                Long no = iRedisService.removeSetMember(RedisCacheKeyConstant.USERS_CAN_RUSH_BUY, tokenEntity.getMobile());
                 return R.ok("Ele No:" + no);
 
             case RUSH_ORDERS://抢单
-                // TODO 有新建的订单时将订单推送到可接单的用户中 redis set key:order_list_can_buy??
+                // TODO 抢单处理
                 //ridis事物开始 ?
                 //查询已抢中订单数据集
                 //如果已存在该订单，直接返回，订单已被抢
@@ -182,12 +180,12 @@ public class NettyServiceImpl implements INettyService {
     public boolean checkWebSocketUserIsActive(String mobile, Channel channel) {
         ChannelId channelId = channel.id();
         boolean r;
-        Long expire = iRedisService.getExpire(RedisCacheKeyConstant.ONLINE_PREFIX + mobile, TimeUnit.SECONDS);
+        Long expire = iRedisService.getExpire(RedisCacheKeyConstant.ONLINE_PREFIX + channelId.asLongText(), TimeUnit.SECONDS);
         if (null == expire) {
             r = false;
-            if (!WebSocketServerHandler.ONLINE_USER_CHANNEL_ID.contains(channelId.asLongText())) {
-                WebSocketServerHandler.ONLINE_USER_CHANNEL_ID.add(channelId.asLongText());
-                WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.put(channelId.asLongText(), channel);
+            if (!WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.contains(mobile)) {
+                WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.add(mobile);
+                WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.put(mobile, channel);
             }
         } else {
             r = expire > 0;
@@ -197,9 +195,12 @@ public class NettyServiceImpl implements INettyService {
     }
 
     @Override
-    public List<Object> listOnlineUser() {
+    public Object listOnlineUser() {
+        Map<String, Object> rMap = new HashMap<>(2);
         List<Object> mobileList = WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.keySet().stream().collect(Collectors.toList());
-        return mobileList;
+        rMap.put("list", mobileList);
+        rMap.put("size", WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.size());
+        return rMap;
     }
 
 }

@@ -39,6 +39,7 @@ renren:
       path: "/ws"  # webSocket 客户端访问路由
     expire: 4
   http-obj-max-content-length: 65536
+  online-user-init-capacity: 20  # 初始在线人数
 #mybatis
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml

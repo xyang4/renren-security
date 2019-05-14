@@ -43,4 +43,6 @@ public class RenrenProperties {
      * redis 操作日志记录
      */
     private boolean openRedisLogger;
+
+    private int onlineUserInitCapacity;
 }

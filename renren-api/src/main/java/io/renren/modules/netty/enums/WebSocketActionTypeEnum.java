@@ -30,6 +30,10 @@ public enum WebSocketActionTypeEnum {
      */
     RUSH_ORDERS("rush_orders", "抢单"),
 
+    PUSH_ORDER_TO_SPECIAL_USER("canRushOrdersQueue", "下发订单至指定用户队列"),
+
+    DISTRIBUTE_ORDER("distribute_order", "派发订单"),
+
     PRINT_SERVER_TIME("print_server_time", "打印系统时间"),;
 
     private String command;

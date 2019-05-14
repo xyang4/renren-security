@@ -1,5 +1,7 @@
 package io.renren.modules.common.service;
 
+import io.renren.modules.netty.domain.RedisMessageDomain;
+
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -36,10 +38,9 @@ public interface IRedisService {
     /**
      * 发送消息至指定队列
      *
-     * @param queueName
      * @param message
      */
-    void sendMessageToQueue(String queueName, Object message);
+    void sendMessageToQueue(RedisMessageDomain message);
 
     boolean isSetMember(String key, String o);
 

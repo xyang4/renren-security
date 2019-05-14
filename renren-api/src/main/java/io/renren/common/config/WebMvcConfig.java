@@ -8,7 +8,8 @@
 
 package io.renren.common.config;
 
-import io.renren.common.interceptor.AuthorizationInterceptor;
+import io.renren.common.interceptor.AppAuthInterceptor;
+import io.renren.common.interceptor.MerAuthInterceptor;
 import io.renren.common.resolver.LoginUserHandlerMethodArgumentResolver;
 import io.renren.common.util.StaticConstant;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,15 +39,21 @@ import java.util.List;
 public class WebMvcConfig implements WebMvcConfigurer {
 
     @Autowired
-    private LoginUserHandlerMethodArgumentResolver loginUserHandlerMethodArgumentResolver;
+    LoginUserHandlerMethodArgumentResolver loginUserHandlerMethodArgumentResolver;
 
     @Autowired
     RenrenProperties renrenProperties;
 
+    /**
+     * 注册拦截器
+     *
+     * @param registry
+     */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         if (renrenProperties.isAuthOpen()) {
-            registry.addInterceptor(new AuthorizationInterceptor()).addPathPatterns("/app/**");
+            registry.addInterceptor(new AppAuthInterceptor()).addPathPatterns("/app/**");
+            registry.addInterceptor(new MerAuthInterceptor()).addPathPatterns("/mer/**");
         }
     }
 
@@ -61,7 +68,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setReadTimeout(10000);
         requestFactory.setConnectTimeout(10000);
-        // MessageConverter set
+
+        // MessageConverter config
         List<HttpMessageConverter<?>> messageConverters = new ArrayList<>();
         messageConverters.add(new StringHttpMessageConverter(Charset.forName(StaticConstant.CHARSET_UTF8)));
         messageConverters.add(new MappingJackson2HttpMessageConverter());

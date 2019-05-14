@@ -5,8 +5,6 @@ import io.renren.common.utils.R;
 import io.renren.modules.netty.domain.RedisMessageDomain;
 import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 
-import java.util.List;
-
 /**
  * netty 服务相关
  */
@@ -53,5 +51,5 @@ public interface INettyService {
      *
      * @return
      */
-    List<Object> listOnlineUser();
+    Object listOnlineUser();
 }

@@ -2,6 +2,8 @@ package io.renren.modules.orders.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.renren.modules.common.service.IRedisService;
+import io.renren.modules.netty.domain.RedisMessageDomain;
+import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 import io.renren.modules.orders.dao.OrdersDao;
 import io.renren.modules.orders.entity.OrdersEntity;
 import io.renren.modules.orders.service.OrdersService;
@@ -35,7 +37,9 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         if(boo==true && (orders.getOrderId()!=null &&orders.getOrderId()>0)){//检查订单是否创建成功
             //发送到redis待抢单队列 商户id、订单编号、支付类型
             //TODO
-            iRedisService.sendMessageToQueue("command?", orders);
+
+            RedisMessageDomain messageDomain = new RedisMessageDomain(WebSocketActionTypeEnum.DISTRIBUTE_ORDER, System.currentTimeMillis(), orders);
+            iRedisService.sendMessageToQueue(messageDomain);
 
             Integer orderId = orders.getOrderId();
             returnMap.put("orders",orders);//返回订单

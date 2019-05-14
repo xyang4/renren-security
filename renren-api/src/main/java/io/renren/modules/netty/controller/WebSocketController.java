@@ -1,6 +1,5 @@
-package io.renren.modules.netty;
+package io.renren.modules.netty.controller;
 
-import io.renren.common.annotation.AppLogin;
 import io.renren.common.utils.R;
 import io.renren.modules.common.controller.BaseController;
 import io.renren.modules.netty.domain.RedisMessageDomain;
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("ws")
-@AppLogin
 @Api(tags = "WebSocket相关")
 public class WebSocketController extends BaseController {
 
@@ -30,13 +28,14 @@ public class WebSocketController extends BaseController {
         if (null != (r = checkToken(tokenEntity))) {
             return r;
         }
-        RedisMessageDomain messageDomain = new RedisMessageDomain(WebSocketActionTypeEnum.BEGIN_RECEIPT.getCommand(), tokenEntity.getMobile(), vo);
+        RedisMessageDomain messageDomain = new RedisMessageDomain(WebSocketActionTypeEnum.BEGIN_RECEIPT, System.currentTimeMillis(), vo.getContent());
         return iNettyService.sendMessage(messageDomain, "async".equals(handleType));
     }
 
-    @GetMapping("onliner")
+    @GetMapping("online")
     @ApiOperation("在线用户查询")
     public R listOnlineUser() {
+
         return R.ok(iNettyService.listOnlineUser());
     }
 }

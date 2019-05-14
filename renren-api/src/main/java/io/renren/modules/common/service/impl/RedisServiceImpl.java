@@ -1,7 +1,9 @@
 package io.renren.modules.common.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
+import io.renren.common.enums.RRExceptionEnum;
 import io.renren.modules.common.service.IRedisService;
+import io.renren.modules.netty.domain.RedisMessageDomain;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.*;
@@ -114,8 +116,18 @@ public class RedisServiceImpl implements IRedisService {
     }
 
     @Override
-    public void sendMessageToQueue(String channel, Object message) {
-        stringRedisTemplate.convertAndSend(channel, message);
+    public void sendMessageToQueue(RedisMessageDomain message) {
+        if (null == message || null == message.getTopic()) {
+            log.warn(RRExceptionEnum.MUST_PARAMS_DEFECT_ERROR.getMsg());
+            return;
+        }
+        String content;
+        if (message.getContent() instanceof String) {
+            content = (String) message.getContent();
+        } else {
+            content = JSONObject.toJSONString(message);
+        }
+        stringRedisTemplate.convertAndSend(message.getTopic().getCommand(), content);
     }
 
     @Override

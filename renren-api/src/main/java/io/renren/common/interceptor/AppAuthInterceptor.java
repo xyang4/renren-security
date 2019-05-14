@@ -15,13 +15,10 @@ import io.renren.common.exception.RRException;
 import io.renren.common.util.HttpUtils;
 import io.renren.common.util.StaticConstant;
 import io.renren.common.utils.SpringContextUtils;
-import io.renren.modules.mer.service.MerService;
 import io.renren.modules.user.entity.TokenEntity;
-import io.renren.modules.user.entity.UserEntity;
 import io.renren.modules.user.service.TokenService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
@@ -29,39 +26,22 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * 权限(Token)验证
+ * APP 鉴权权限(Token)验证
  *
  * @author Mark sunlightcs@gmail.com
  */
 @Slf4j
-public class AuthorizationInterceptor extends HandlerInterceptorAdapter {
-    @Autowired
-    MerService merService;
+public class AppAuthInterceptor extends HandlerInterceptorAdapter {
+
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         String requestURI = request.getRequestURI();
-        String requestPath = requestURI.substring(request.getContextPath().length(), requestURI.length());
-        log.info("Execute Access Intercept：content-type[{}] method-type[{}] uri[{}] remoteAddr[{}:{}] url[{}].",
+
+        log.info("App 鉴权拦截处理开始：content-type[{}] method-type[{}] uri[{}] remoteAddr[{}:{}] url[{}].",
                 request.getContentType(), request.getMethod(),
                 requestURI, HttpUtils.getRemoteAddr(request), request.getRemotePort(), request.getRequestURL());
 
-        // mer 商户接口请求过滤 公共校验
-        if (requestURI.startsWith(request.getContextPath() + "/mer" )) {
-            String timeStamp = request.getParameter(StaticConstant.TIMESTAMP_KEY);
-            Integer merId = Integer.parseInt(request.getParameter(StaticConstant.MER_KEY));
-            String sign = request.getParameter(StaticConstant.SIGN_KEY);
-            //校验时间戳，链接请求5分钟有效 TODO
-
-            //商户有效性,可从缓存中获取商户状态 TODO 改进
-            boolean checkMer = merService.checkMer(merId);
-            if(checkMer==false){
-                return false;
-            }
-            //校验签名sign 从缓存中获取签名key? TODO
-
-            return true;
-        }
         //app 客户端接口请求过滤
         if (!(handler instanceof HandlerMethod)) {
             log.info("Request Handle[{}]", handler.getClass().getTypeName());
