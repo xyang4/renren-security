@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.renren.modules.account.dao.AccountLogDao">
+
+	<!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="io.renren.modules.account.entity.AccountLogEntity" id="accountLogMap">
+        <result property="accountLogId" column="ACCOUNT_LOG_ID"/>
+        <result property="userId" column="USER_ID"/>
+        <result property="orderId" column="ORDER_ID"/>
+        <result property="orderType" column="ORDER_TYPE"/>
+        <result property="flowType" column="FLOW_TYPE"/>
+        <result property="flow" column="FLOW"/>
+        <result property="amount" column="AMOUNT"/>
+        <result property="balance" column="BALANCE"/>
+        <result property="canuseAmount" column="CANUSE_AMOUNT"/>
+        <result property="frozenAmount" column="FROZEN_AMOUNT"/>
+        <result property="remark" column="REMARK"/>
+        <result property="modifyUser" column="MODIFY_USER"/>
+        <result property="modifyTime" column="MODIFY_TIME"/>
+        <result property="createUser" column="CREATE_USER"/>
+        <result property="createTime" column="CREATE_TIME"/>
+    </resultMap>
+
+
+</mapper>
