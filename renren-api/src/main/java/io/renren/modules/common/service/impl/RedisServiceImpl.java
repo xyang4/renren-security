@@ -16,12 +16,12 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class RedisServiceImpl implements IRedisService {
 
+    @Autowired
+    RedisTemplate redisTemplate;
     // 符串/字符串类型数据
     @Autowired
     StringRedisTemplate stringRedisTemplate;
     // 复杂的对象类型，不做任何转换的
-    @Autowired
-    RedisTemplate redisTemplate;
     @Autowired
     ValueOperations<String, String> valueOperations;
 
