@@ -9,10 +9,7 @@ import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
@@ -33,6 +30,7 @@ public class MerController {
      */
     @PostMapping("/order/applyRecharge")
     @ApiOperation("商户充值订单预申请")
+    @ResponseBody
     public R applyRecharge(HttpServletRequest request,
                            @RequestParam(value="merId",required=true) Integer merId,
                            @RequestParam(value="orderDate",required=true) String orderDate,

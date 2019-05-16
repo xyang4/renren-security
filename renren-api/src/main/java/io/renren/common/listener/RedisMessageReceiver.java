@@ -93,20 +93,21 @@ public class RedisMessageReceiver implements MessageListener {
 //        TODO
         int validUserCount = 0;
         //2 用户校验
-        List<String> validUsers = users.stream().map(u -> {
+        List<Integer> validUsers = users.stream().map(u -> {
             AccountEntity accountEntity = accountService.getById(u);
             if (null == accountEntity) {
                 return null;
             } else {
-                return u;
+                return accountEntity.getUserId();
             }
-        }).collect(Collectors.toList());
+        }).filter(v -> null != v).collect(Collectors.toList());
+
         // 3 派发
         if (!CollectionUtils.isEmpty(validUsers)) {
             validUserCount = validUsers.size();
             validUsers.forEach(v -> {
                 OrdersEntity o = entity;
-                o.setRecvUserId(Integer.valueOf(v));
+                o.setRecvUserId(v);
                 iRedisService.sendMessageToQueue(new RedisMessageDomain(WebSocketActionTypeEnum.PUSH_ORDER_TO_SPECIAL_USER, System.currentTimeMillis(), o));
             });
         }
