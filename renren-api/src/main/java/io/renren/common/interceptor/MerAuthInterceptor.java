@@ -32,9 +32,10 @@ public class MerAuthInterceptor extends HandlerInterceptorAdapter {
         MerService merService = SpringContextUtils.getBean(MerService.class);
         //商户有效性,可从缓存中获取商户状态 TODO 改进
         boolean checkMer = merService.checkMer(merId);
-        if (checkMer == false) {
-            return false;
-        }
+        // TODO 临时不校验
+//        if (checkMer == false) {
+//            return false;
+//        }
         //校验签名sign 从缓存中获取签名key? TODO
 
         return true;

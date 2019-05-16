@@ -4,9 +4,12 @@ import io.renren.common.utils.R;
 import io.renren.modules.mer.service.MerService;
 import io.renren.modules.orders.entity.OrdersEntity;
 import io.renren.modules.orders.service.OrdersService;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -18,6 +21,7 @@ import java.util.Map;
 @Controller
 @RequestMapping("mer")
 @Slf4j
+@Api(tags = "商户接口")
 public class MerController {
 
     @Autowired
@@ -27,9 +31,11 @@ public class MerController {
     /**
      * 商户充值订单预申请
      */
-    @RequestMapping("/order/applyRecharge")
+    @PostMapping("/order/applyRecharge")
+    @ApiOperation("商户充值订单预申请")
     public R applyRecharge(HttpServletRequest request,
                            @RequestParam(value="merId",required=true) Integer merId,
+                           @RequestParam(value="orderDate",required=true) String orderDate,
                            @RequestParam(value="orderSn",required=true) String orderSn,
                            @RequestParam(value="payType",required=true) String payType,
                            @RequestParam(value="sendAmount",required=true) String sendAmount,
@@ -46,7 +52,7 @@ public class MerController {
         //校验notifyUrl回调地址
 
         //创建预处理订单
-        Map retMap= ordersService.applyOrder(merId, orderSn, payType, sendAmount, notifyUrl);
+        Map retMap= ordersService.applyOrder(merId, orderDate,3, orderSn,  payType,  sendAmount,  notifyUrl);
         if((int)retMap.get("code")==0){//返回成功，返回给冲值订单页面：带签名/orderId"
             OrdersEntity ordersEntity = (OrdersEntity)retMap.get("orders");
             Map merMap = new HashMap();

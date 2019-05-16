@@ -16,7 +16,8 @@ public interface OrdersService extends IService<OrdersEntity> {
     /**
      * 订单申请预处理
      */
-    public Map applyOrder(Integer merId, String orderSn, String payType, String sendAmount, String notifyUrl);
+    public Map applyOrder(Integer merId, String orderDate,int orderType,String orderSn,
+                          String payType, String sendAmount, String notifyUrl);
 
 
 }

@@ -22,12 +22,15 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     /**
      * 订单申请，创建:外围接口做必要的数据校验后调用本方法
      */
-    public Map applyOrder(Integer merId,String orderSn, String payType, String sendAmount, String notifyUrl){
+    public Map applyOrder(Integer merId, String orderDate,int orderType,
+                          String orderSn, String payType, String sendAmount, String notifyUrl){
         Map returnMap = new HashMap();
         //外围接口做必要的数据校验后调用本方法
         //创建新订单
         OrdersEntity orders = new OrdersEntity();
         orders.setSendUserId(merId);//发送用户
+        orders.setOrderDate(orderDate);
+        orders.setOrderType(orderType);
         orders.setOrderSn(orderSn);//商户原始订单
         orders.setPayType(payType);//付款类型
         orders.setSendAmount(new BigDecimal(sendAmount));//发送金额

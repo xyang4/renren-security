@@ -121,13 +121,13 @@ public class RedisServiceImpl implements IRedisService {
             log.warn(RRExceptionEnum.MUST_PARAMS_DEFECT_ERROR.getMsg());
             return;
         }
-        String content;
+      /*  String content;
         if (message.getContent() instanceof String) {
             content = (String) message.getContent();
         } else {
             content = JSONObject.toJSONString(message);
-        }
-        stringRedisTemplate.convertAndSend(message.getTopic().getCommand(), content);
+        }*/
+        stringRedisTemplate.convertAndSend(message.getTopic().getCommand(), JSONObject.toJSONString(message));
     }
 
     @Override
