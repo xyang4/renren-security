@@ -1,7 +1,6 @@
 package io.renren.modules.account.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import io.renren.common.utils.PageUtils;
 import io.renren.modules.account.entity.AccountLogEntity;
 
 import java.util.Map;
@@ -14,6 +13,8 @@ import java.util.Map;
  * @date 2019-05-13 18:39:26
  */
 public interface AccountLogService extends IService<AccountLogEntity> {
+
+
 
 }
 

@@ -14,5 +14,10 @@ import java.util.Map;
  */
 public interface AccountService extends IService<AccountEntity> {
 
+    /**
+     * 全面校验用户账户：所有账户状态校验
+     */
+    public boolean overallCheckUserAccount(AccountEntity accountEntity);
+
 }
 

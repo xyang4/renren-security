@@ -177,6 +177,18 @@
             <artifactId>janino</artifactId>
             <version>${org.codehaus.janino.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpmime</artifactId>
+            <version>4.5.5</version>
+        </dependency>
+
     </dependencies>
 
     <!-- 阿里云maven仓库 -->

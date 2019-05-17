@@ -21,4 +21,9 @@ public interface UserService extends IService<UserEntity> {
     UserEntity queryByMobile(String mobile);
 
     Integer registeredQuickly(String mobile);
+
+    /**
+     * 全面校验用户：所有用户状态校验
+     */
+    public boolean overallCheckUser(UserEntity userEntity);
 }

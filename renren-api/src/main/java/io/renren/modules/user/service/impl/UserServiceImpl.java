@@ -11,20 +11,13 @@ package io.renren.modules.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import io.renren.common.exception.RRException;
-import io.renren.common.validator.Assert;
 import io.renren.modules.user.dao.UserDao;
-import io.renren.modules.user.entity.TokenEntity;
 import io.renren.modules.user.entity.UserEntity;
-import io.renren.modules.user.form.LoginForm;
 import io.renren.modules.user.service.TokenService;
 import io.renren.modules.user.service.UserService;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserDao, UserEntity> implements UserService {
@@ -43,6 +36,17 @@ public class UserServiceImpl extends ServiceImpl<UserDao, UserEntity> implements
         entity.setPasswd(DigestUtils.sha256Hex(mobile.substring(mobile.length() - 7)));
         save(entity);
         return entity.getUserId();
+    }
+
+    /**
+     * 全面校验用户：所有用户状态校验
+     */
+    public boolean overallCheckUser(UserEntity userEntity){
+        //校验用户状态
+        if(userEntity.getStatus()!=1){
+            return false;
+        }
+        return true;
     }
 
 }
