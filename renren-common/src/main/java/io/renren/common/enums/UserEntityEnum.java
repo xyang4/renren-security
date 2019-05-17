@@ -5,7 +5,6 @@ import lombok.Getter;
 /**
  * 用户枚举
  */
-
 public class UserEntityEnum {
 
     /**
