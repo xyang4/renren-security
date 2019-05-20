@@ -53,7 +53,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         if (renrenProperties.isAuthOpen()) {
             registry.addInterceptor(new AppAuthInterceptor()).addPathPatterns("/app/**");
-            registry.addInterceptor(new MerAuthInterceptor()).addPathPatterns("/templates/mer/**");
+            registry.addInterceptor(new MerAuthInterceptor()).addPathPatterns("/mer/**");
         }
     }
 
