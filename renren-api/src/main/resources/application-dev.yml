@@ -45,3 +45,10 @@ spring:
 renren:
   open-redis-logger: false
   auth-open: true
+  data-sign-key: "Hello World!"
+  sms-account: N6081253
+  sms-password: SdJmGUYWEq1291
+  sms-url: https://sms.253.com/msg/send
+  sms-template: 【xxx】验证码${verifyCode}，用于您注册成为用户，5分钟内有效，请勿泄露他人，如非本人操作请忽略。
+  sms-send-open: false
+  sms-code-default: "123456"

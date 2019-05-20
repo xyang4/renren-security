@@ -16,7 +16,7 @@ import io.renren.modules.user.entity.UserEntity;
  *
  * @author Mark sunlightcs@gmail.com
  */
-public interface UserService extends IService<UserEntity> {
+public interface IUserService extends IService<UserEntity> {
 
     UserEntity queryByMobile(String mobile);
 
@@ -25,5 +25,5 @@ public interface UserService extends IService<UserEntity> {
     /**
      * 全面校验用户：所有用户状态校验
      */
-    public boolean overallCheckUser(UserEntity userEntity);
+    boolean overallCheckUser(UserEntity userEntity);
 }

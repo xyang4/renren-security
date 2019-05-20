@@ -11,7 +11,7 @@ package io.renren.common.resolver;
 import io.renren.common.annotation.LoginUser;
 import io.renren.common.util.StaticConstant;
 import io.renren.modules.user.entity.UserEntity;
-import io.renren.modules.user.service.UserService;
+import io.renren.modules.user.service.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Component;
@@ -29,7 +29,7 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 @Component
 public class LoginUserHandlerMethodArgumentResolver implements HandlerMethodArgumentResolver {
     @Autowired
-    private UserService userService;
+    IUserService iUserService;
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
@@ -46,7 +46,7 @@ public class LoginUserHandlerMethodArgumentResolver implements HandlerMethodArgu
         }
 
         // 获取用户信息
-        UserEntity user = userService.getById((Long) object);
+        UserEntity user = iUserService.getById((Long) object);
 
         return user;
     }

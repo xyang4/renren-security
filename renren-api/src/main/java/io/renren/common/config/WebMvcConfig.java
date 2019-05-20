@@ -10,6 +10,7 @@ package io.renren.common.config;
 
 import io.renren.common.interceptor.AppAuthInterceptor;
 import io.renren.common.interceptor.MerAuthInterceptor;
+import io.renren.common.interceptor.RequestDataSignInterceptor;
 import io.renren.common.resolver.LoginUserHandlerMethodArgumentResolver;
 import io.renren.common.util.StaticConstant;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +55,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
         if (renrenProperties.isAuthOpen()) {
             registry.addInterceptor(new AppAuthInterceptor()).addPathPatterns("/app/**");
             registry.addInterceptor(new MerAuthInterceptor()).addPathPatterns("/mer/**");
+            registry.addInterceptor(new RequestDataSignInterceptor());
+
         }
     }
 

@@ -20,7 +20,7 @@ import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 import io.renren.modules.netty.handle.WebSocketServerHandler;
 import io.renren.modules.netty.service.INettyService;
 import io.renren.modules.user.entity.TokenEntity;
-import io.renren.modules.user.service.TokenService;
+import io.renren.modules.user.service.ITokenService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,6 +31,7 @@ import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -40,7 +41,7 @@ public class NettyServiceImpl implements INettyService {
     @Autowired
     RenrenProperties renrenProperties;
     @Autowired
-    TokenService tokenService;
+    ITokenService iTokenService;
     @Autowired
     IRedisService iRedisService;
 
@@ -125,9 +126,9 @@ public class NettyServiceImpl implements INettyService {
             content) {
         R r;
         // 登录凭证校验
-        TokenEntity tokenEntity = tokenService.queryByToken(token);
+        TokenEntity tokenEntity = iTokenService.queryByToken(token);
 
-        if (null != (r = tokenService.checkToken(tokenEntity))) {
+        if (null != (r = iTokenService.checkToken(tokenEntity))) {
             return r;
         }
 
@@ -203,4 +204,12 @@ public class NettyServiceImpl implements INettyService {
         return rMap;
     }
 
+    public void send() {
+        // 群组用户筛选
+        Set<Channel> collect = WebSocketServerHandler.ONLINE_USER_GROUP.stream().filter(v -> {
+            ChannelId channelId = v.id();
+            return true;
+        }).collect(Collectors.toSet());
+
+    }
 }

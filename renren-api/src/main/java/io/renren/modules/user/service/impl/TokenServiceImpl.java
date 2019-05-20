@@ -16,7 +16,7 @@ import io.renren.common.util.StaticConstant;
 import io.renren.common.utils.R;
 import io.renren.modules.user.dao.TokenDao;
 import io.renren.modules.user.entity.TokenEntity;
-import io.renren.modules.user.service.TokenService;
+import io.renren.modules.user.service.ITokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,7 +25,7 @@ import java.util.UUID;
 
 
 @Service
-public class TokenServiceImpl extends ServiceImpl<TokenDao, TokenEntity> implements TokenService {
+public class TokenServiceImpl extends ServiceImpl<TokenDao, TokenEntity> implements ITokenService {
 
     @Autowired
     RenrenProperties renrenProperties;

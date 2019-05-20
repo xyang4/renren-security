@@ -17,7 +17,7 @@ import io.renren.modules.user.entity.TokenEntity;
  *
  * @author Mark sunlightcs@gmail.com
  */
-public interface TokenService extends IService<TokenEntity> {
+public interface ITokenService extends IService<TokenEntity> {
     /**
      * token 查询
      *

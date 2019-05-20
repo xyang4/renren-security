@@ -13,7 +13,7 @@ import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 import io.renren.modules.netty.service.INettyService;
 import io.renren.modules.orders.entity.OrdersEntity;
 import io.renren.modules.user.entity.UserEntity;
-import io.renren.modules.user.service.UserService;
+import io.renren.modules.user.service.IUserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.Message;
@@ -82,7 +82,7 @@ public class RedisMessageReceiver implements MessageListener {
     @Autowired
     AccountService accountService;
     @Autowired
-    UserService userService;
+    IUserService iUserService;
 
     /**
      * 派发订单处理
@@ -101,7 +101,7 @@ public class RedisMessageReceiver implements MessageListener {
         //2 用户校验
 //        TODO
         List<Integer> validUsers = users.stream().map(u -> {
-            UserEntity userEntity = userService.getOne(new QueryWrapper<UserEntity>().eq("mobile", u));
+            UserEntity userEntity = iUserService.getOne(new QueryWrapper<UserEntity>().eq("mobile", u));
             if (null == entity) {
                 return null;
             } else {

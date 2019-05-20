@@ -1,27 +1,26 @@
 package io.renren.modules.account.controller;
 
 import io.renren.modules.account.service.AccountService;
+import io.swagger.annotations.Api;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 
-
 /**
- * 
- *
  * @author Mark
  * @email 18610450436@163.com
  * @date 2019-05-13 18:22:50
  */
 @RestController
 @RequestMapping("goods/account")
+@Api("账户相关")
 public class AccountController {
     @Autowired
     private AccountService accountService;
 
 
-
+// TODO 账户信息查询
 
 //    /**
 //     * 信息

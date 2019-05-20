@@ -1,19 +1,11 @@
-/**
- * Copyright (c) 2016-2019 人人开源 All rights reserved.
- * <p>
- * https://www.renren.io
- * <p>
- * 版权所有，侵权必究！
- */
-
 package io.renren.modules.user.controller;
 
-
 import io.renren.common.annotation.AppLogin;
+import io.renren.common.annotation.RequestDataSign;
 import io.renren.common.utils.DateUtils;
 import io.renren.common.utils.R;
 import io.renren.modules.common.controller.BaseController;
-import io.renren.modules.common.service.ISmsService;
+import io.renren.modules.system.service.ISmsService;
 import io.renren.modules.user.entity.TokenEntity;
 import io.renren.modules.user.entity.UserEntity;
 import io.renren.modules.user.form.LoginForm;
@@ -31,35 +23,32 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Date;
 
-/**
- * 登录接口
- *
- * @author Mark sunlightcs@gmail.com
- */
+@Api("用户相关")
 @RestController
-@RequestMapping("/app")
-@Api(tags = "注册登录接口")
-public class AppLoginController extends BaseController {
+@RequestMapping("app/user")
+public class AppUserController extends BaseController {
 
     @Autowired
     ISmsService iSmsService;
 
     @PostMapping("login")
     @ApiOperation("登录")
+    @RequestDataSign
     public R loginOrRegister(@RequestBody @Validated LoginForm vo, BindingResult br) {
 
         // 1 验证码校验
         iSmsService.validCode(vo.getMobile(), vo.getSmsCode());
 
-        // 2 未注册快速注册，
-        UserEntity userEntity = userService.queryByMobile(vo.getMobile());
+        // 2 未注册快速注册
+        UserEntity userEntity = iUserService.queryByMobile(vo.getMobile());
         Integer userId;
         if (null == userEntity) {
-            userId = userService.registeredQuickly(vo.getMobile());
+            // 快速注册
+            userId = iUserService.registeredQuickly(vo.getMobile());
         } else {
             userId = userEntity.getUserId();
         }
-        TokenEntity token = tokenService.createToken(userId, userEntity.getMobile());
+        TokenEntity token = iTokenService.createToken(userId, userEntity.getMobile());
         // 3 返回token
         return R.ok(token.getToken());
     }
@@ -73,7 +62,7 @@ public class AppLoginController extends BaseController {
         if (null != (r = checkToken(tokenEntity))) {
             return r;
         }
-        tokenService.expireToken(tokenEntity.getUserId());
+        iTokenService.expireToken(tokenEntity.getUserId());
         return R.ok();
     }
 
@@ -91,8 +80,8 @@ public class AppLoginController extends BaseController {
         user.setMobile(form.getMobile());
         user.setNickName(form.getName());
         user.setPasswd(DigestUtils.sha256Hex(form.getPassword()));
-        user.setCreateTime(DateUtils.format(new Date(),DateUtils.DATE_TIME_PATTERN));
-        userService.save(user);
+        user.setCreateTime(DateUtils.format(new Date(), DateUtils.DATE_TIME_PATTERN));
+        iUserService.save(user);
 
         return R.ok();
     }

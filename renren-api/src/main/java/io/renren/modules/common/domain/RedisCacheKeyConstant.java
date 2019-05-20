@@ -16,4 +16,7 @@ public class RedisCacheKeyConstant {
      * 可抢购用户
      */
     public static final String USERS_CAN_RUSH_BUY = "users_can_rush_buy";
+    public static final String SMS_CODE_PREFIX = "sms_code:";
+    public static final String SMS_CODE_COUNT = "sms_code_count";
+    public static final String SMS_CODE_COUNT_PREDIX = "sms_code_count:";
 }

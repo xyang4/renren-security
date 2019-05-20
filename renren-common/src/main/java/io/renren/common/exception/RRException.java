@@ -8,6 +8,8 @@
 
 package io.renren.common.exception;
 
+import io.renren.common.enums.RRExceptionEnum;
+import io.renren.common.utils.Constant;
 import lombok.Data;
 
 /**
@@ -25,6 +27,14 @@ public class RRException extends RuntimeException {
     public RRException(String msg) {
         super(msg);
         this.msg = msg;
+    }
+
+    public RRException(RRExceptionEnum exceptionEnum) {
+        this(exceptionEnum.getMsg(), exceptionEnum.getCode());
+    }
+
+    public RRException(RRExceptionEnum exceptionEnum, String errorMsg) {
+        this(exceptionEnum.getMsg() + Constant.SPLIT_CHAR_COLON + errorMsg, exceptionEnum.getCode());
     }
 
     public RRException(String msg, Throwable e) {

@@ -16,7 +16,7 @@ import io.renren.common.util.HttpUtils;
 import io.renren.common.util.StaticConstant;
 import io.renren.common.utils.SpringContextUtils;
 import io.renren.modules.user.entity.TokenEntity;
-import io.renren.modules.user.service.TokenService;
+import io.renren.modules.user.service.ITokenService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.web.method.HandlerMethod;
@@ -73,7 +73,7 @@ public class AppAuthInterceptor extends HandlerInterceptorAdapter {
                 throw new RRException(StaticConstant.TOKEN_KEY + "不能为空");
             }
 
-            TokenService tokenService = SpringContextUtils.getBean(TokenService.class);
+            ITokenService tokenService = SpringContextUtils.getBean(ITokenService.class);
             // 查询token信息
             TokenEntity tokenEntity = tokenService.queryByToken(token);
 

@@ -45,4 +45,14 @@ public class RenrenProperties {
     private boolean openRedisLogger;
 
     private int onlineUserInitCapacity;
+
+    private String dataSignKey;
+
+    private boolean smsSendOpen = false;
+    private String smsCodeDefault;
+    private String smsAccount;
+    private String smsPassword;
+    private String smsUrl;
+    private String smsTemplate;
+
 }

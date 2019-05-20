@@ -1,4 +1,4 @@
-package io.renren.modules.schedual.task;
+package io.renren.modules.task.schedual;
 
 import io.renren.modules.common.service.IRedisService;
 import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
