@@ -30,6 +30,11 @@ spring:
         max-wait: -1ms      # 连接池最大阻塞等待时间（使用负值表示没有限制）
         max-idle: 10      # 连接池中的最大空闲连接
         min-idle: 5       # 连接池中的最小空闲连接
+
+  freemarker:
+    suffix: .html
+    request-context-attribute: request
+
 renren:
   jwt-expire: 30 # jwt 过期时间 （分钟）
   decimal-format: "##.##" # decimal 数值格式化
@@ -40,6 +45,7 @@ renren:
     expire: 4
   http-obj-max-content-length: 65536
   online-user-init-capacity: 20  # 初始在线人数
+  batch-push-order-num-max: 10  # 每次可抢订单下发最大数
 #mybatis
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml

@@ -37,9 +37,7 @@ spring:
     port: 6379
     database: 4
     password: 123456
-  freemarker:
-    suffix: .html
-    request-context-attribute: request
+
 
 # 自定义属性配置
 renren:

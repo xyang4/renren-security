@@ -19,11 +19,12 @@ import java.util.Map;
 public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> implements OrdersService {
     @Autowired
     IRedisService iRedisService;
+
     /**
      * 订单申请，创建:外围接口做必要的数据校验后调用本方法
      */
-    public Map applyOrder(Integer merId, String orderDate,int orderType,
-                          String orderSn, String payType, String sendAmount, String notifyUrl){
+    public Map applyOrder(Integer merId, String orderDate, int orderType,
+                          String orderSn, String payType, String sendAmount, String notifyUrl) {
         Map returnMap = new HashMap();
         //外围接口做必要的数据校验后调用本方法
         //创建新订单
@@ -37,7 +38,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         orders.setNotifyUrl(notifyUrl);//回调地址
         boolean boo = this.save(orders);
         // TODO orders.getOrderId() 验证
-        if(boo==true && (orders.getOrderId()!=null &&orders.getOrderId()>0)){//检查订单是否创建成功
+        if (boo == true && (orders.getOrderId() != null && orders.getOrderId() > 0)) {//检查订单是否创建成功
             //发送到redis待抢单队列 商户id、订单编号、支付类型
             //TODO
 
@@ -45,13 +46,26 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
             iRedisService.sendMessageToQueue(messageDomain);
 
             Integer orderId = orders.getOrderId();
-            returnMap.put("orders",orders);//返回订单
-            returnMap.put("code",0);
+            returnMap.put("orders", orders);//返回订单
+            returnMap.put("code", 0);
             return returnMap;//添加成功
-        }else {
-            returnMap.put("code",-1);
+        } else {
+            returnMap.put("code", -1);
             return returnMap;//添加失败
         }
+    }
+
+    @Override
+    public boolean checkValidity(Object orderInfo) {
+        boolean r = true;
+        if (orderInfo instanceof OrdersEntity) {
+            // TODO
+
+        } else if (orderInfo instanceof String) {
+            // 同 RedisMessageReceiver.onMessage : PUSH_ORDER_TO_SPECIAL_USER 处理
+            return true;
+        }
+        return r;
     }
 
 //    /**
@@ -80,7 +94,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     /**
      * 查询用户订单：已抢,完成
      */
-    public Map selectOrder(String recvUserId,String orderType,String orderState){
+    public Map selectOrder(String recvUserId, String orderType, String orderState) {
         Map returnMap = new HashMap();
 
         //查询订单状态及信息
@@ -95,7 +109,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     /**
      * 确认收款
      */
-    public Map recvAmount(BigDecimal recvAmount,String orderType,String orderState){
+    public Map recvAmount(BigDecimal recvAmount, String orderType, String orderState) {
         Map returnMap = new HashMap();
 
         //查询订单状态及信息
@@ -110,7 +124,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     /**
      * 订单超时,系统取消
      */
-    public Map orderTimeout(String recvUserId,String orderType,String orderState){
+    public Map orderTimeout(String recvUserId, String orderType, String orderState) {
         Map returnMap = new HashMap();
 
         //{"a":45,"code":0,"order_id":2528445,"is_api":"1",
@@ -118,10 +132,11 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
 
         return returnMap;
     }
+
     /**
      * 订单查询提醒：用户已付款，下发提醒
      */
-    public Map orderRemind(String recvUserId,String orderType,String orderState){
+    public Map orderRemind(String recvUserId, String orderType, String orderState) {
         Map returnMap = new HashMap();
 
         //{"a":64,"code":0,"order_id":2654348}
@@ -132,7 +147,6 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
 
 
     //下发余额
-
 
 
 }

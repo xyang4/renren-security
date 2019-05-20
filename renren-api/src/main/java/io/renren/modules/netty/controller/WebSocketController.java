@@ -10,9 +10,10 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-@RestController
+@Controller
 @RequestMapping("ws")
 @Api(tags = "WebSocket相关")
 public class WebSocketController extends BaseController {
@@ -22,6 +23,7 @@ public class WebSocketController extends BaseController {
 
     @ApiOperation("推送消息")
     @PostMapping("{type}")
+    @ResponseBody
     public R send(@ApiParam(allowableValues = "sync,async") @PathVariable("type") String handleType, @RequestBody RedisMessageDomain vo) {
         TokenEntity tokenEntity = getToken();
         R r;
@@ -34,8 +36,14 @@ public class WebSocketController extends BaseController {
 
     @GetMapping("online")
     @ApiOperation("在线用户查询")
+    @ResponseBody
     public R listOnlineUser() {
 
         return R.ok(iNettyService.listOnlineUser());
+    }
+
+    @GetMapping
+    public String toTestIndex() {
+        return "ws_index";
     }
 }

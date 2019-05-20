@@ -55,19 +55,18 @@ public class RedisMessageReceiver implements MessageListener {
         R r = null;
         WebSocketActionTypeEnum actionTypeEnum = WebSocketActionTypeEnum.getByCode(topic);
         switch (actionTypeEnum) {
-            case BEGIN_RECEIPT: // 追加用户至可抢订单的用户集合中，并定时拉去可抢的订单
-                // TODO 定时从可抢订单队列里拉数据，进行推送
+            case BEGIN_RECEIPT: // 追加用户至可抢订单的用户集合中, 定时从该集合便历用户，并进行订单推送?
                 String mobile = messageDomain.getContent();
                 iRedisService.setAdd(RedisCacheKeyConstant.USERS_CAN_RUSH_BUY, mobile);
-            case DISTRIBUTE_ORDER: // 派发订单处理
-                // TODO 派发至用户可抢订单队列，通过定时任务拽去订单，并完成推送
+            case DISTRIBUTE_ORDER: // 派发订单处理: 派发订单至[可抢单用户] 的[可抢订单队列]中，通过定时任务拽去订单，并完成推送
                 OrdersEntity entity = JSONObject.parseObject(messageDomain.getContent(), OrdersEntity.class);
-                r = doDisteributeOrderHandle(entity);
+                r = doPushOrderHandle(entity);
                 break;
             case PUSH_ORDER_TO_SPECIAL_USER: // 追加订单至指定用户的可抢订单队列中
                 // TODO 抢单处理,存储格式为:  orderSn+":"+timeOutTime,抢单开始后从该队列里取单并进行订单filter
+                // OrderEntity 添加 mobile
                 OrdersEntity t = JSONObject.parseObject(messageDomain.getContent(), OrdersEntity.class);
-                iRedisService.leftPush(RedisCacheKeyConstant.ORDER_LIST_CAN_BUY_PREFIX + t.getRecvUserId(), t.getOrderSn() + StaticConstant.SPLIT_CHAR_COLON + (null == t.getTimeoutRecv() ? "" : System.currentTimeMillis() + t.getTimeoutRecv()));
+                iRedisService.leftPush(RedisCacheKeyConstant.ORDER_LIST_CAN_BUY_PREFIX + t.getRemark(), t.getOrderSn() + StaticConstant.SPLIT_CHAR_COLON + (null == t.getTimeoutRecv() ? "" : System.currentTimeMillis() + t.getTimeoutRecv()));
                 break;
             case PRINT_SERVER_TIME: // 测试使用，打印系统时间
                 r = iNettyService.sendMessage(messageDomain, false);
@@ -90,7 +89,7 @@ public class RedisMessageReceiver implements MessageListener {
      *
      * @param entity
      */
-    private R doDisteributeOrderHandle(OrdersEntity entity) {
+    private R doPushOrderHandle(OrdersEntity entity) {
         // 1 取出可抢单用户
         Set<String> users = iRedisService.setMembers(RedisCacheKeyConstant.USERS_CAN_RUSH_BUY);
 
@@ -100,21 +99,21 @@ public class RedisMessageReceiver implements MessageListener {
         int validUserCount = 0;
         //2 用户校验
 //        TODO
-        List<Integer> validUsers = users.stream().map(u -> {
+        List<String> validUsers = users.stream().map(u -> {
             UserEntity userEntity = iUserService.getOne(new QueryWrapper<UserEntity>().eq("mobile", u));
             if (null == entity) {
                 return null;
             } else {
-                return userEntity.getUserId();
+                return userEntity.getMobile();
             }
         }).filter(u -> null != u).collect(Collectors.toList());
 
-        // 3 派发
+        // 3 订单派发
         if (!CollectionUtils.isEmpty(validUsers)) {
             validUserCount = validUsers.size();
             validUsers.stream().forEach(v -> {
                 OrdersEntity o = entity;
-                o.setRecvUserId(v);
+                o.setRemark(v);
                 iRedisService.sendMessageToQueue(new RedisMessageDomain(WebSocketActionTypeEnum.PUSH_ORDER_TO_SPECIAL_USER, System.currentTimeMillis(), o));
             });
         }

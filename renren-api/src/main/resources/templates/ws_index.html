@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <title>WebSocket测试页面</title>
+</head>
+<body>
+    <div class="bodyContent">
+        <h3>WebSocket 请求</h3>
+        <form onsubmit="return false;">
+            Command: <input type="text" name="command" value="active"/> [print_server_time,&nbsp;begin_receipt,&nbsp;active]<br>
+            Token: <input type="text" name="token"/><br>
+            Message: <input type="text" name="message" value="Netty Socket 消息"/><br>
+
+            <br>
+            <input type="button" value="发送WebSocket请求消息"
+                   onclick="send(this.form.command.value,this.form.token.value,this.form.message.value)"/>
+            <hr color="blue"/>
+
+        </form>
+        <h3>WebSocket 响应</h3>
+        <textarea id="responseText" style="width: 98%; height: 300px; background: beige;"></textarea>
+    </div>
+</body>
+<script type="text/javascript">
+    var socket;
+    var index = 0;
+    if (!window.WebSocket) {
+        window.WebSocket = window.MozWebSocket;
+    }
+    if (window.WebSocket) {
+        // socket = new WebSocket("ws://localhost:8080/websocket");
+        socket = new WebSocket("ws://localhost:10001/ws");
+        socket.onmessage = function (event) {
+            var ta = document.getElementById('responseText');
+            console.info(event)
+            ta.value += '\n No:' + index++ + ' ' + event.data
+        };
+        socket.onopen = function (event) {
+            var ta = document.getElementById('responseText');
+            ta.value = "打开WebSocket服务正常，浏览器支持WebSocket!";
+        };
+        socket.onclose = function (event) {
+            var ta = document.getElementById('responseText');
+            ta.value = "";
+            ta.value = "WebSocket 关闭!";
+        };
+    } else {
+        alert("抱歉，您的浏览器不支持WebSocket协议!");
+    }
+
+    function send(command, token, message) {
+        if (!window.WebSocket) {
+            return;
+        }
+        if (socket.readyState == WebSocket.OPEN) {
+            var msgContent = {
+                "command": command,
+                "token": token,
+                "content": message
+            }
+            console.info("Msg:", msgContent)
+            var r = socket.send(JSON.stringify(msgContent));
+            console.info("r:", r)
+        } else {
+            alert("WebSocket连接没有建立成功!");
+        }
+    }
+</script>
+</html>

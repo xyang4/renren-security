@@ -9,7 +9,7 @@ public class RedisCacheKeyConstant {
      */
     public static final String ORDER_LIST_CAN_BUY_PREFIX = "order_list_can_buy:";
     /**
-     * 在线用户前缀
+     * 在线用户前缀:心跳监测
      */
     public static final String ONLINE_PREFIX = "online:";
     /**

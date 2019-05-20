@@ -116,6 +116,11 @@ public class RedisServiceImpl implements IRedisService {
     }
 
     @Override
+    public long listSize(String key) {
+        return listOperations.size(key);
+    }
+
+    @Override
     public void sendMessageToQueue(RedisMessageDomain message) {
         if (null == message || null == message.getTopic()) {
             log.warn(RRExceptionEnum.MUST_PARAMS_DEFECT_ERROR.getMsg());

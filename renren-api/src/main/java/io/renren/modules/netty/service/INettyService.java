@@ -4,6 +4,7 @@ import io.netty.channel.Channel;
 import io.renren.common.utils.R;
 import io.renren.modules.netty.domain.RedisMessageDomain;
 import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
+import org.springframework.scheduling.annotation.Async;
 
 /**
  * netty 服务相关
@@ -25,6 +26,9 @@ public interface INettyService {
      * @return
      */
     R sendMessage(RedisMessageDomain messageDomain, boolean async);
+    
+    @Async
+    void asyncSendMessage(String mobile, Object content);
 
     /**
      * 处理webSocket 请求a
@@ -52,4 +56,5 @@ public interface INettyService {
      * @return
      */
     Object listOnlineUser();
+
 }

@@ -6,17 +6,18 @@
 **项目结构** 
 ```
 renren-security
-├─renren-common     公共模块
+├─ renren-common     公共模块
 │ 
-├─renren-api        API服务
+├─ renren-api        API服务
 │ 
-├─renren-generator  代码生成器
+├─ renren-generator  代码生成器
 │        └─resources 
 │           ├─mapper   MyBatis文件
 │           ├─template 代码生成器模板（可增加或修改相应模板）
 │           ├─application.yml    全局配置文件
 │           └─generator.properties   代码生成器，配置文件
-│
+├─ doc  运行脚本及其他文档
+├─ db   数据库脚本
 ```
 <br>
 
@@ -47,7 +48,9 @@ renren-security
 <br>
 
  **集群部署**
-
+```
+// TODO 待补充
+```
 
 <br>
 
@@ -71,8 +74,8 @@ renren-security
    - 短信验证 √
    - 登录注册 √ （账户信息待补充）
    
-2. 用户信息
-   - 用户&账户基本信息
+2. 用户相关
+   - 用户 & 账户基本信息
    
 3. WebSocket 相关
    - 心跳功能        √
@@ -87,3 +90,8 @@ renren-security
     - 抢单处理       √
     - 取消抢单       √
     - 支付订单
+    - 历史订单查询
+    
+5. 定时任务
+   - 定时推送可抢订单
+   - 定时清理 redis 数据

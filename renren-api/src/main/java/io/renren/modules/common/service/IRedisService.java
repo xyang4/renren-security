@@ -30,10 +30,11 @@ public interface IRedisService {
 
     void putHashKeyWithObject(String h, String hKey, String hVal);
 
-
     void leftPush(String key, String val);
 
     String pull(String key);
+
+    long listSize(String key);
 
     /**
      * 发送消息至指定队列
