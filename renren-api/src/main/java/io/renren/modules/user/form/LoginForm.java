@@ -8,7 +8,7 @@
 
 package io.renren.modules.user.form;
 
-import io.renren.modules.common.vo.BaseVo;
+import io.renren.common.domain.BaseForm;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -22,7 +22,7 @@ import javax.validation.constraints.NotBlank;
  */
 @Data
 @ApiModel(value = "登录表单")
-public class LoginForm extends BaseVo {
+public class LoginForm extends BaseForm {
     @ApiModelProperty(value = "手机号")
     @NotBlank(message = "手机号不能为空")
     private String mobile;

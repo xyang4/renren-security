@@ -8,6 +8,7 @@
 
 package io.renren.modules.user.form;
 
+import io.renren.common.domain.BaseForm;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -21,7 +22,7 @@ import org.hibernate.validator.constraints.Length;
  */
 @Data
 @ApiModel(value = "用户信息表单")
-public class UserInfoForm {
+public class UserInfoForm extends BaseForm {
 
     @ApiModelProperty(value = "手机号")
     @Length(max = 12)

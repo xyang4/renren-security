@@ -1,5 +1,6 @@
 package io.renren.common.config;
 
+import io.renren.common.util.StaticConstant;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -7,13 +8,14 @@ import org.springframework.context.annotation.Configuration;
 
 @Data
 @Configuration
-@ConfigurationProperties(prefix = "renren")
+@ConfigurationProperties(prefix = StaticConstant.PROJECT_PREFIX)
 public class RenrenProperties {
 
     /**
      * token 鉴权是否开启
      */
     private boolean authOpen = false;
+    private boolean signOpen = false;
     /**
      * ws 服务端口
      */

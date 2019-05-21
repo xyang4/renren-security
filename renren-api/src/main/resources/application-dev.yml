@@ -49,4 +49,5 @@ renren:
   sms-url: https://sms.253.com/msg/send
   sms-template: 【xxx】验证码${verifyCode}，用于您注册成为用户，5分钟内有效，请勿泄露他人，如非本人操作请忽略。
   sms-send-open: false
-  sms-code-default: "123456"
+  sms-code-default: #"123456"
+  sign-open: false

@@ -5,6 +5,7 @@ import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.alibaba.fastjson.serializer.ToStringSerializer;
 import com.alibaba.fastjson.support.config.FastJsonConfig;
 import com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter;
+import io.renren.common.converter.WithSignMessageConverter;
 import io.renren.common.util.StaticConstant;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -27,7 +28,7 @@ public class DefaultFastjsonConfig {
 
     @Bean
     public FastJsonHttpMessageConverter fastJsonHttpMessageConverter() {
-        FastJsonHttpMessageConverter converter = new FastJsonHttpMessageConverter();
+        FastJsonHttpMessageConverter converter = new WithSignMessageConverter();
         converter.setFastJsonConfig(fastjsonConfig());
         converter.setSupportedMediaTypes(getSupportedMediaType());
         return converter;
