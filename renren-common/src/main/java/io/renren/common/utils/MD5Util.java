@@ -17,6 +17,10 @@ public class MD5Util {
         return encodeMd5(source.getBytes());
     }
 
+    public String encrypt(String source, String key) {
+        return encrypt(source + Constant.SPLIT_CHAR_COLON + key);
+    }
+
     private static String encodeMd5(byte[] source) {
         try {
             return encodeHex(MessageDigest.getInstance("MD5").digest(source));

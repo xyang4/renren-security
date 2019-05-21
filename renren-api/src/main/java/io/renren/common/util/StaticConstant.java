@@ -27,4 +27,5 @@ public class StaticConstant extends Constant {
 
     public static final String SYSTEM_DICT_SMS_CONFIG = "sms_config";
 
+
 }

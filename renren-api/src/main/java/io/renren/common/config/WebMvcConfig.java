@@ -9,7 +9,6 @@
 package io.renren.common.config;
 
 import io.renren.common.interceptor.AppAuthInterceptor;
-import io.renren.common.interceptor.MerAuthInterceptor;
 import io.renren.common.interceptor.RequestDataSignInterceptor;
 import io.renren.common.resolver.LoginUserHandlerMethodArgumentResolver;
 import io.renren.common.util.StaticConstant;
@@ -54,7 +53,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         if (renrenProperties.isAuthOpen()) {
             registry.addInterceptor(new AppAuthInterceptor()).addPathPatterns("/app/**");
-            registry.addInterceptor(new MerAuthInterceptor()).addPathPatterns("/mer/**");
             registry.addInterceptor(new RequestDataSignInterceptor());
 
         }

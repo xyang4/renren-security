@@ -1,8 +1,8 @@
 /**
  * Copyright (c) 2016-2019 人人开源 All rights reserved.
- *
+ * <p>
  * https://www.renren.io
- *
+ * <p>
  * 版权所有，侵权必究！
  */
 
@@ -44,21 +44,22 @@ public class XssHttpServletRequestWrapper extends HttpServletRequestWrapper {
 
     @Override
     public ServletInputStream getInputStream() throws IOException {
-        // 非json类型，直接返回
-        if(!MediaType.APPLICATION_JSON_VALUE.equalsIgnoreCase(super.getHeader(HttpHeaders.CONTENT_TYPE))){
-            return super.getInputStream();
-        }
+
 
         // 为空，直接返回
         String json = IOUtils.toString(super.getInputStream(), "utf-8");
         if (StringUtils.isBlank(json)) {
             return super.getInputStream();
         }
-
-        //xss过滤
+        // 非json类型，直接返回
+        if (!MediaType.APPLICATION_JSON_VALUE.equalsIgnoreCase(getHeader(HttpHeaders.CONTENT_TYPE))) {
+            return super.getInputStream();
+        }
+        // xss过滤
         json = xssEncode(json);
 
         final ByteArrayInputStream bis = new ByteArrayInputStream(json.getBytes("utf-8"));
+
         return new ServletInputStream() {
             @Override
             public boolean isFinished() {
@@ -80,6 +81,7 @@ public class XssHttpServletRequestWrapper extends HttpServletRequestWrapper {
             }
         };
     }
+
 
     @Override
     public String getParameter(String name) {
@@ -104,9 +106,9 @@ public class XssHttpServletRequestWrapper extends HttpServletRequestWrapper {
     }
 
     @Override
-    public Map<String,String[]> getParameterMap() {
-        Map<String,String[]> map = new LinkedHashMap<>();
-        Map<String,String[]> parameters = super.getParameterMap();
+    public Map<String, String[]> getParameterMap() {
+        Map<String, String[]> map = new LinkedHashMap<>();
+        Map<String, String[]> parameters = super.getParameterMap();
         for (String key : parameters.keySet()) {
             String[] values = parameters.get(key);
             for (int i = 0; i < values.length; i++) {
