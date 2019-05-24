@@ -1,10 +1,13 @@
 package io.renren.modules.orders.service.impl;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import io.renren.common.enums.OrdersEntityEnum;
 import io.renren.modules.common.service.IRedisService;
 import io.renren.modules.netty.domain.RedisMessageDomain;
 import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 import io.renren.modules.orders.dao.OrdersDao;
+import io.renren.modules.orders.domain.OrderRule;
 import io.renren.modules.orders.entity.OrdersEntity;
 import io.renren.modules.orders.service.OrdersService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,13 +15,39 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
-@Service("ordersService")
+@Service
 public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> implements OrdersService {
     @Autowired
     IRedisService iRedisService;
+
+    @Override
+    public List<Map<String, Object>> receiveValidOrder(String mobile, OrderRule orderRule, int size) {
+        //        TODO
+        return null;
+    }
+
+    @Override
+    public Map<String, Object> rushToBuy(String mobile, String orderSn) {
+
+        //        TODO
+        return null;
+    }
+
+    @Override
+    public List<Map<String, Object>> listOrder(Page<Map<String, Object>> page, OrdersEntityEnum.OrderType orderType, byte orderStatus) {
+        //        TODO
+        return null;
+    }
+
+    @Override
+    public Map<String, Object> createOrder(OrdersEntityEnum.OrderSources orderSources, String mobile, double amount) {
+        //        TODO
+        return null;
+    }
 
     /**
      * 订单申请，创建:外围接口做必要的数据校验后调用本方法

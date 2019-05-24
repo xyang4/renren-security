@@ -20,6 +20,7 @@ import io.renren.modules.netty.domain.RedisMessageDomain;
 import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 import io.renren.modules.netty.handle.WebSocketServerHandler;
 import io.renren.modules.netty.service.INettyService;
+import io.renren.modules.orders.service.OrdersService;
 import io.renren.modules.user.entity.TokenEntity;
 import io.renren.modules.user.service.ITokenService;
 import lombok.extern.slf4j.Slf4j;
@@ -137,6 +138,9 @@ public class NettyServiceImpl implements INettyService {
             }
         }
     }
+
+    @Autowired
+    OrdersService ordersService;
 
     @Override
     public R handleWebSocketRequest(WebSocketActionTypeEnum webSocketAction, Channel channel, String token, String
