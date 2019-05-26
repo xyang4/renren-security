@@ -18,9 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @RestController
 @RequestMapping("/payChannel")
@@ -95,12 +93,15 @@ public class PayChannelController extends BaseController {
 
     @ApiOperation("查询支付方式")
     @RequestMapping("/list")
-    public List<PayChannelEntity> payChannelFormList(){
+    public List<PayChannelEntity> payChannelFormList(String payType){
         TokenEntity tokenEntity = getToken();
         if(tokenEntity == null){
             return null;
         }
         Integer userId = tokenEntity.getUserId();
-        return payChannelService.getPayChannelListByUserId(userId);
+        Map<String,Object> params =new HashMap<>();
+        params.put("userId",userId);
+        params.put("payType",payType);
+        return payChannelService.getPayChannelListByUserId(params);
     }
 }

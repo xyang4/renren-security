@@ -2,10 +2,10 @@ package io.renren.modules.account.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import io.renren.modules.account.entity.PayChannelEntity;
-import io.renren.modules.account.form.PayChannelForm;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 
@@ -17,5 +17,5 @@ import java.util.List;
 @Mapper
 public interface PayChannelDao extends BaseMapper<PayChannelEntity> {
 
-    List<PayChannelEntity> getPayChannelListByUserId(Integer userId);
+    List<PayChannelEntity> getPayChannelListByUserId(Map<String, Object> param);
 }
