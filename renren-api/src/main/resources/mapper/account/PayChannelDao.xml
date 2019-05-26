@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.renren.modules.account.dao.PayChannelDao">
+
+	<!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="io.renren.modules.account.entity.PayChannelEntity" id="payChannelMap">
+        <result property="payChannelId" column="PAY_CHANNEL_ID"/>
+        <result property="userId" column="USER_ID"/>
+        <result property="payType" column="PAY_TYPE"/>
+        <result property="accountNo" column="ACCOUNT_NO"/>
+        <result property="accountName" column="ACCOUNT_NAME"/>
+        <result property="accountUid" column="ACCOUNT_UID"/>
+        <result property="bankName" column="BANK_NAME"/>
+        <result property="qrimgId" column="QRIMG_ID"/>
+        <result property="useStatus" column="USE_STATUS"/>
+        <result property="bindStatus" column="BIND_STATUS"/>
+        <result property="manageStatus" column="MANAGE_STATUS"/>
+        <result property="modifyUser" column="MODIFY_USER"/>
+        <result property="modifyTime" column="MODIFY_TIME"/>
+        <result property="createUser" column="CREATE_USER"/>
+        <result property="createTime" column="CREATE_TIME"/>
+    </resultMap>
+
+
+    <select id="getPayChannelListByUserId" parameterType="java.lang.Integer" resultMap="payChannelMap">
+        select PAY_CHANNEL_ID,USER_ID,PAY_TYPE,ACCOUNT_NO,ACCOUNT_NAME,ACCOUNT_UID,BANK_NAME,USE_STATUS,BIND_STATUS
+        from pay_channel where USER_ID = #{userId}
+    </select>
+</mapper>
