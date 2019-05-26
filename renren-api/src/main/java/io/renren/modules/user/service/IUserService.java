@@ -20,7 +20,7 @@ public interface IUserService extends IService<UserEntity> {
 
     UserEntity queryByMobile(String mobile);
 
-    Integer registeredQuickly(String mobile);
+    //Integer registeredQuickly(String mobile);
 
     /**
      * 全面校验用户：所有用户状态校验

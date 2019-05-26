@@ -87,11 +87,19 @@ public class MerController {
                            @RequestParam(value="sign",required=true) String sign){
         //查询订单信息
         OrdersEntity ordersEntity = ordersService.getById(orderId);
+        //校验订单状态
+//        if(ordersEntity.getOrderState()){//超时返回
+//            return "mer/error";
+//        }
+        //校验订单时间
+//        if(ordersEntity.getTimeoutPay()){//超时返回
+//          return "mer/error";
+//        }
+
         Map ordersMap = new HashMap();
         ordersMap.put("orderSn",ordersEntity.getOrderSn());//商户订单orderSn
         ordersMap.put("createTime",ordersEntity.getCreateTime());//创建时间
         ordersMap.put("timeOut","");//订单超时时间秒数 TODO
-        ordersMap.put("amount",ordersEntity.getAmount());//应支付金额
         //原timeStamp+sign
         ordersMap.put("timeStamp",timeStamp);//timeStamp
         ordersMap.put("sign",sign);//sign
@@ -103,10 +111,20 @@ public class MerController {
      * 商户充值订单抢单结果查询（查询被分配的支付付款通道）：页面ajax查询使用
      */
     @RequestMapping(value={"/order/selectRechargePayChannel"}, method = {RequestMethod.POST,RequestMethod.GET})
-    public R selectRechargePayChannel(HttpServletRequest request,
+    public R selectRechargePayChannel(HttpServletRequest request,Model model,
                                       @RequestParam(value="orderId",required=true) String orderId,
                                       @RequestParam(value="timeStamp",required=true) String timeStamp){
-        //查询订单
+        //查询订单信息
+        OrdersEntity ordersEntity = ordersService.getById(orderId);
+        Map ordersMap = new HashMap();
+        ordersMap.put("orderSn",ordersEntity.getOrderSn());//商户订单orderSn
+        ordersMap.put("createTime",ordersEntity.getCreateTime());//创建时间
+        ordersMap.put("timeOut","");//订单超时时间秒数 TODO
+        ordersMap.put("amount",ordersEntity.getAmount());//应支付金额
+        //原timeStamp+sign
+        ordersMap.put("timeStamp",timeStamp);//timeStamp
+
+        model.addAttribute("pageMap",ordersMap);
 
         return R.ok();
     }
@@ -118,26 +136,18 @@ public class MerController {
     @RequestMapping(value={"/order/selectOrderStatus"}, method = {RequestMethod.POST,RequestMethod.GET})
     public R selectOrderStatus(HttpServletRequest request,
                            @RequestParam(value="merId",required=true) Integer merId,
-                           @RequestParam(value="orderSn",required=true) String orderSn,
-                           @RequestParam(value="timeStamp",required=true) String timeStamp,
-                           @RequestParam(value="sign",required=true) String sign){
-        // logger.info("商户充值订单支付页面：merId：{},orderSn :{} orderId:{}",
-        //         merId,orderSn,orderId);
-
+                           @RequestParam(value="orderSn",required=true) String orderSn){
         //查询订单信息
         Wrapper<OrdersEntity> ordersEntityQuery = new QueryWrapper<>();
-        ((QueryWrapper<OrdersEntity>) ordersEntityQuery).eq("merId",merId);
+        ((QueryWrapper<OrdersEntity>) ordersEntityQuery).eq("send_user_id",merId);
         ((QueryWrapper<OrdersEntity>) ordersEntityQuery).eq("orderSn",orderSn);
         OrdersEntity ordersEntity = ordersService.getOne(ordersEntityQuery);
 
         Map ordersMap = new HashMap();
+        ordersMap.put("merId",ordersEntity.getSendUserId());//商户号
         ordersMap.put("orderSn",ordersEntity.getOrderSn());//商户订单orderSn
-        ordersMap.put("createTime",ordersEntity.getCreateTime());//创建时间
-        ordersMap.put("timeOut","");//订单超时时间秒数 TODO
         ordersMap.put("amount",ordersEntity.getAmount());//应支付金额
-        //原timeStamp+sign
-        ordersMap.put("timeStamp",timeStamp);//timeStamp
-        ordersMap.put("sign",sign);//sign
+        ordersMap.put("orderState",ordersEntity.getOrderState());//订单状态
 
         return R.ok();
     }

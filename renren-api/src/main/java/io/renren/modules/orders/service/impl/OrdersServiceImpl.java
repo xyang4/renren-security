@@ -50,7 +50,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     }
 
     /**
-     * 订单申请，创建:外围接口做必要的数据校验后调用本方法
+     * 订单申请，创建预订单
      */
     public Map applyOrder(Integer merId, String orderDate, int orderType,
                           String orderSn, String payType, String sendAmount, String notifyUrl) {
@@ -65,13 +65,12 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         orders.setPayType(payType);//付款类型
         orders.setSendAmount(new BigDecimal(sendAmount));//发送金额
         orders.setNotifyUrl(notifyUrl);//回调地址
+        orders.setTimeoutRecv(30);//抢单超时时间，秒 TODO
         boolean boo = this.save(orders);
-        // TODO orders.getOrderId() 验证
+        //验证
         if (boo == true && (orders.getOrderId() != null && orders.getOrderId() > 0)) {//检查订单是否创建成功
-            //发送到redis待抢单队列 商户id、订单编号、支付类型
-            //TODO
-
-            RedisMessageDomain messageDomain = new RedisMessageDomain(WebSocketActionTypeEnum.DISTRIBUTE_ORDER, System.currentTimeMillis(), orders);
+            //发送到redis待抢单队列 商户id、订单编号、支付类型 TODO
+            RedisMessageDomain messageDomain = new RedisMessageDomain(WebSocketActionTypeEnum.PUSH_ORDER_TO_SPECIAL_USER, System.currentTimeMillis(), orders);
             iRedisService.sendMessageToQueue(messageDomain);
 
             Integer orderId = orders.getOrderId();

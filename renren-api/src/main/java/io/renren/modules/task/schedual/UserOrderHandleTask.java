@@ -51,10 +51,12 @@ public class UserOrderHandleTask {
         if (CollectionUtils.isEmpty(onlineUserWithMobile) || CollectionUtils.isEmpty(userSetCanRushBuy)) {
             return;
         }
+        //1、给商户充值订单推送
         // todo 批处理优化
         onlineUserWithMobile.stream()
                 .filter(v -> userSetCanRushBuy.contains(v)).forEach(v -> {
             long orders = iRedisService.listSize(RedisCacheKeyConstant.ORDER_LIST_CAN_BUY_PREFIX + v);
+            log.info("可消费订单数量orders:{}",orders);
             orders = orders > renrenProperties.getBatchPushOrderNumMax() ? renrenProperties.getBatchPushOrderNumMax() : orders;
 
             // 2 push msg to special user by mobile
@@ -67,6 +69,7 @@ public class UserOrderHandleTask {
                 }
             }
         });
+        //2、给商户提现订单推送
     }
 
 }

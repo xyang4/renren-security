@@ -71,7 +71,8 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<TextWebS
     public void handlerAdded(ChannelHandlerContext ctx) {
         Channel channel = ctx.channel();
         log.info("用户[{}]（ChannelId） 已上线...", channel.id().asShortText());
-        ONLINE_USER_GROUP.add(channel);
+        boolean addboolean = ONLINE_USER_GROUP.add(channel);
+        log.info("用户[{}]（ChannelId） ONLINE_USER_GROUP 添加结果：{}", channel.id().asShortText(),addboolean);
     }
 
     /**
@@ -83,10 +84,12 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<TextWebS
     public void handlerRemoved(ChannelHandlerContext ctx) {
         Channel channel = ctx.channel();
         ChannelId channelId = channel.id();
+        String longtext = channelId.asLongText();
+        log.info("用户[ChannelId: {}]已下线!", longtext);
+        //TODO 这里失败了false
+        boolean removeboolean = ONLINE_USER_GROUP.remove(channel);
 
-        log.info("用户[ChannelId: {}]已下线!", channelId.asLongText());
-
-        ONLINE_USER_GROUP.remove(channel);
+        log.info("用户[ChannelId: {}]删除通道结果:{}!", longtext,removeboolean);
 
         IRedisService iRedisService = SpringContextUtils.getBean(IRedisService.class);
         // 当触发handlerRemoved，ChannelGroup会自动移除对应客户端的channel

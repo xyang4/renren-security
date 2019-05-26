@@ -41,14 +41,17 @@ public class AppUserController extends BaseController {
 
         // 2 未注册快速注册
         UserEntity userEntity = iUserService.queryByMobile(vo.getMobile());
-        Integer userId;
+        Integer userId = null;
         if (null == userEntity) {
-            // 快速注册
-            userId = iUserService.registeredQuickly(vo.getMobile());
+            // 快速注册 外部注册功能不开放，后台注册
+            //userId = iUserService.registeredQuickly(vo.getMobile());
+            return R.error(-1,"用户未注册");
         } else {
             userId = userEntity.getUserId();
         }
         TokenEntity token = iTokenService.createToken(userId, userEntity.getMobile());
+
+
         // 3 返回token
         return R.ok(token.getToken());
     }

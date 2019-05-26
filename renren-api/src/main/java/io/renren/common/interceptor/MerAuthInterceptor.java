@@ -26,12 +26,13 @@ public class MerAuthInterceptor extends HandlerInterceptorAdapter {
 
         // TODO mer 商户接口请求过滤 公共校验
         String timeStamp = request.getParameter(StaticConstant.TIMESTAMP_KEY);
-        Integer merId = Integer.parseInt(request.getParameter(StaticConstant.MER_KEY));
+        String merId = request.getParameter(StaticConstant.MER_KEY);
+        //Integer merId = Integer.parseInt(request.getParameter(StaticConstant.MER_KEY));
         String sign = request.getParameter(StaticConstant.SIGN_KEY);
         //校验时间戳，链接请求5分钟有效 TODO
         MerService merService = SpringContextUtils.getBean(MerService.class);
         //商户有效性,可从缓存中获取商户状态 TODO 改进
-        boolean checkMer = merService.checkMer(merId);
+        //boolean checkMer = merService.checkMer(merId);
         // TODO 临时不校验
 //        if (checkMer == false) {
 //            return false;

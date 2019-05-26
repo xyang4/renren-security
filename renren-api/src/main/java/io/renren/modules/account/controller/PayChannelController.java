@@ -67,7 +67,7 @@ public class PayChannelController extends BaseController {
     }
 
     /**
-     * 更新支付类型
+     * 更新支付类型状态
      * @param payChannelId
      * @param useStatus
      * @param bindStatus

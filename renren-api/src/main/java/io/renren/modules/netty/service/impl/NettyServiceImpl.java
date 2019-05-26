@@ -158,11 +158,12 @@ public class NettyServiceImpl implements INettyService {
         switch (webSocketAction) {
             case ACTIVE:// 保活 存储 key: online:mobile val：longTextId
 //                iRedisService.set(RedisCacheKeyConstant.ONLINE_PREFIX + channelId.asLongText(), tokenEntity.getMobile(), renrenProperties.getWebSocketExpire() * 60L, TimeUnit.SECONDS);
-                iRedisService.set(RedisCacheKeyConstant.ONLINE_PREFIX + tokenEntity.getMobile(), channelId.asLongText(), renrenProperties.getWebSocketExpire() * 60L, TimeUnit.SECONDS);
+                iRedisService.set(RedisCacheKeyConstant.ONLINE_PREFIX + channelId.asLongText(), tokenEntity.getMobile(), renrenProperties.getWebSocketExpire() * 60L, TimeUnit.SECONDS);
                 if (!WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.contains(tokenEntity.getMobile())) {
                     WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.add(tokenEntity.getMobile());
                     WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.put(tokenEntity.getMobile(), channel);
                 }
+                r = R.ok();
                 break;
             case BEGIN_RECEIPT:// 开始接单，将用户追加至可接单队列中
                 if (!checkWebSocketUserIsActive(tokenEntity.getMobile(), channel)) {
@@ -203,7 +204,7 @@ public class NettyServiceImpl implements INettyService {
     public boolean checkWebSocketUserIsActive(String mobile, Channel channel) {
         ChannelId channelId = channel.id();
         boolean r;
-        Long expire = iRedisService.getExpire(RedisCacheKeyConstant.ONLINE_PREFIX + mobile, TimeUnit.SECONDS);
+        Long expire = iRedisService.getExpire(RedisCacheKeyConstant.ONLINE_PREFIX + channelId.asLongText(), TimeUnit.SECONDS);
         if (null == expire) {
             r = false;
             if (!WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.contains(mobile)) {

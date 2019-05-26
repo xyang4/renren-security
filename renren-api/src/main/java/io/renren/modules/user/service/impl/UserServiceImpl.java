@@ -26,15 +26,15 @@ public class UserServiceImpl extends ServiceImpl<UserDao, UserEntity> implements
         return baseMapper.selectOne(new QueryWrapper<UserEntity>().eq("mobile", mobile));
     }
 
-    @Override
-    public Integer registeredQuickly(String mobile) {
-        UserEntity entity = new UserEntity();
-        // TODO 账户初始化
-        entity.setMobile(mobile);
-        entity.setPasswd(DigestUtils.sha256Hex(mobile.substring(mobile.length() - 7)));
-        save(entity);
-        return entity.getUserId();
-    }
+//    @Override
+//    public Integer registeredQuickly(String mobile) {
+//        UserEntity entity = new UserEntity();
+//        // TODO 账户初始化
+//        entity.setMobile(mobile);
+//        entity.setPasswd(DigestUtils.sha256Hex(mobile.substring(mobile.length() - 7)));
+//        save(entity);
+//        return entity.getUserId();
+//    }
 
     /**
      * 全面校验用户：所有用户状态校验

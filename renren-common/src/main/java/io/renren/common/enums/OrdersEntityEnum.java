@@ -57,10 +57,23 @@ public class OrdersEntityEnum {
         }
     }
 
-    // 0-初始 1-订单提交 通知抢单,待接单 2-已接单 3-用户取消 4-超时未接单系统取消 5-等待打款并确认 6-超时未打款取消 7-支付受限,重新派单 8-发单确认打款 9-收单确认已打款 ,订单完成 15-等待打款--更换付款方式 30-客服处理为取消 31-客服处理为完成
+    /**
+     * 订单状态 0初始1-订单提交 通知抢单,待接单2-已接单3-用户取消4-超时未接单系统取消
+     * 5-等待打款并确认6-超时未打款取消7-支付受限,重新派单8-发单确认打款9-收单确认已打款 ,订单完成
+     * 15-等待打款--更换付款方式30-客服处理为取消31-客服处理为完成
+     */
     @Getter
-    public enum OrderStatus {
-
+    public static enum OrderState{
+        INIT(0,"初始"),b(1,"订单提交 通知抢单,待接单"),
+        c(2,"已接单"),d(3,"用户取消");
+        private int value; private String name;
+        OrderState(int value,String name){this.value = value;this.name = name;}
+        public static boolean contains(int value) {
+            for (OrderState c : OrderState.values()) {
+                if (c.value==value) { return true;}
+            }
+            return false;
+        }
     }
 
     /**
