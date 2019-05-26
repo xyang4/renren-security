@@ -3,6 +3,7 @@ package io.renren.modules.orders.service.impl;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.renren.common.enums.OrdersEntityEnum;
+import io.renren.common.utils.DateUtils;
 import io.renren.modules.common.service.IRedisService;
 import io.renren.modules.netty.domain.RedisMessageDomain;
 import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +25,9 @@ import java.util.Map;
 public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> implements OrdersService {
     @Autowired
     IRedisService iRedisService;
+
+    @Autowired
+    private OrdersDao ordersDao;
 
     @Override
     public List<Map<String, Object>> receiveValidOrder(String mobile, OrderRule orderRule, int size) {
@@ -81,6 +86,18 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
             returnMap.put("code", -1);
             return returnMap;//添加失败
         }
+    }
+
+    @Override
+    public boolean addOrder(OrdersEntity ordersEntity) {
+        ordersEntity.setCreateTime(DateUtils.format(new Date(),DateUtils.DATE_TIME_PATTERN));
+        return this.save(ordersEntity);
+    }
+
+
+    @Override
+    public List<OrdersEntity> getOrders(Map<String, Object> param) {
+        return ordersDao.getOrders(param);
     }
 
     @Override

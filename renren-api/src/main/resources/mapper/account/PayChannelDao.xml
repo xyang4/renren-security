@@ -26,7 +26,7 @@
     <select id="getPayChannelListByUserId" parameterType="map" resultMap="payChannelMap">
         select PAY_CHANNEL_ID,USER_ID,PAY_TYPE,ACCOUNT_NO,ACCOUNT_NAME,ACCOUNT_UID,BANK_NAME,USE_STATUS,BIND_STATUS
         from pay_channel where USER_ID = #{userId}
-        <if test="${payType != null and payType != ''}">
+        <if test="payType != null and payType != ''">
             and PAY_TYPE = #{payType}
         </if>
     </select>

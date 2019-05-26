@@ -67,5 +67,9 @@ public interface OrdersService extends IService<OrdersEntity> {
      * @return
      */
     boolean checkValidity(Object orderInfo);
+
+    boolean addOrder(OrdersEntity ordersEntity);
+
+    List<OrdersEntity> getOrders(Map<String, Object> param);
 }
 

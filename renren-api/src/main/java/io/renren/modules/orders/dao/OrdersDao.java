@@ -4,6 +4,9 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import io.renren.modules.orders.entity.OrdersEntity;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * 
  * 
@@ -13,5 +16,6 @@ import org.apache.ibatis.annotations.Mapper;
  */
 @Mapper
 public interface OrdersDao extends BaseMapper<OrdersEntity> {
-	
+
+    List<OrdersEntity> getOrders(Map<String, Object> param);
 }

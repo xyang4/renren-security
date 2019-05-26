@@ -4,13 +4,16 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
-import java.io.Serializable;
 import java.math.BigDecimal;
+import java.io.Serializable;
+import java.util.Date;
 
 /**
+ *
+ *
  * @author Mark
  * @email 18610450436@163.com
- * @date 2019-05-08 17:36:57
+ * @date 2019-05-26 16:49:15
  */
 @Data
 @TableName("orders")
@@ -87,17 +90,21 @@ public class OrdersEntity implements Serializable {
      */
     private Integer serviceRemark;
     /**
-     * 账户编号（银行卡号）
+     * 发单用户账户编号（银行卡号）
      */
-    private String accountNo;
+    private String sendAccountNo;
     /**
-     * 账户名称（银行账户户名）
+     * 发单用户账户名称（银行账户户名）
      */
-    private String accountName;
+    private String sendAccountName;
     /**
-     * 账户UID（支付宝uid）
+     * 接单用户账户编号（银行卡号）
      */
-    private String accountUid;
+    private String recvAccountNo;
+    /**
+     * 接单用户账户名称（银行账户户名）
+     */
+    private String recvAccountName;
     /**
      * 支付银行名称
      */
@@ -122,7 +129,9 @@ public class OrdersEntity implements Serializable {
      * 创建时间
      */
     private String createTime;
-
+    /**
+     * 备注
+     */
     private String remark;
 
 }

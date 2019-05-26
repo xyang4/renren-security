@@ -93,15 +93,16 @@ public class PayChannelController extends BaseController {
 
     @ApiOperation("查询支付方式")
     @RequestMapping("/list")
-    public List<PayChannelEntity> payChannelFormList(String payType){
+    public R payChannelFormList(String payType){
         TokenEntity tokenEntity = getToken();
         if(tokenEntity == null){
-            return null;
+            return R.error(-1,"查询用户信息失败");
         }
         Integer userId = tokenEntity.getUserId();
         Map<String,Object> params =new HashMap<>();
         params.put("userId",userId);
         params.put("payType",payType);
-        return payChannelService.getPayChannelListByUserId(params);
+        List<PayChannelEntity> payChannelEntityList = payChannelService.getPayChannelListByUserId(params);
+        return R.ok(payChannelEntityList);
     }
 }

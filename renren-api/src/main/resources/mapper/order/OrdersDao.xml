@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.renren.modules.orders.dao.OrdersDao">
+
+	<!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="io.renren.modules.orders.entity.OrdersEntity" id="ordersMap">
+        <result property="orderId" column="ORDER_ID"/>
+        <result property="orderDate" column="ORDER_DATE"/>
+        <result property="sendUserId" column="SEND_USER_ID"/>
+        <result property="recvUserId" column="RECV_USER_ID"/>
+        <result property="orderType" column="ORDER_TYPE"/>
+        <result property="orderState" column="ORDER_STATE"/>
+        <result property="payType" column="PAY_TYPE"/>
+        <result property="sendAmount" column="SEND_AMOUNT"/>
+        <result property="amount" column="AMOUNT"/>
+        <result property="recvAmount" column="RECV_AMOUNT"/>
+        <result property="orderSn" column="ORDER_SN"/>
+        <result property="timeoutRecv" column="TIMEOUT_RECV"/>
+        <result property="timeoutPay" column="TIMEOUT_PAY"/>
+        <result property="timeoutDown" column="TIMEOUT_DOWN"/>
+        <result property="isApi" column="IS_API"/>
+        <result property="platDate" column="PLAT_DATE"/>
+        <result property="serviceRemark" column="SERVICE_REMARK"/>
+        <result property="sendAccountNo" column="SEND_ACCOUNT_NO"/>
+        <result property="sendAccountName" column="SEND_ACCOUNT_NAME"/>
+        <result property="recvAccountNo" column="RECV_ACCOUNT_NO"/>
+        <result property="recvAccountName" column="RECV_ACCOUNT_NAME"/>
+        <result property="bankName" column="BANK_NAME"/>
+        <result property="qrimgId" column="QRIMG_ID"/>
+        <result property="notifyUrl" column="NOTIFY_URL"/>
+        <result property="dataStatus" column="DATA_STATUS"/>
+        <result property="modifyTime" column="MODIFY_TIME"/>
+        <result property="createTime" column="CREATE_TIME"/>
+        <result property="remark" column="REMARK"/>
+    </resultMap>
+
+    <select id="getOrders" parameterType="map" resultMap="ordersMap">
+        select *
+        from orders
+        <where>
+            <if test="orderType != null">
+                and ORDER_TYPE = #{orderType}
+            </if>
+            <if test="sendUserId != null">
+                and SEND_USER_ID = #{sendUserId}
+            </if>
+            <if test="includeState != null">
+                and ORDER_STATE in
+                <foreach collection="includeState" item="orderState" open="(" separator="," close=")">
+                     #{orderState}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+</mapper>
