@@ -1,18 +1,24 @@
 package io.renren.modules.account.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.fasterxml.jackson.datatype.jsr310.deser.InstantDeserializer;
 import io.renren.modules.account.dao.AccountDao;
 import io.renren.modules.account.entity.AccountEntity;
 import io.renren.modules.account.service.AccountService;
 import io.renren.modules.user.entity.UserEntity;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
 
 @Service("accountService")
 public class AccountServiceImpl extends ServiceImpl<AccountDao, AccountEntity> implements AccountService {
+
+    @Autowired
+    private AccountDao accountDao;
 
     /**
      * 全面校验用户账户：所有账户状态校验
@@ -38,5 +44,12 @@ public class AccountServiceImpl extends ServiceImpl<AccountDao, AccountEntity> i
         return true;
     }
 
-
+    @Override
+    public int updateAmount(Integer userId, BigDecimal canuseAmount, BigDecimal frozenAmount) {
+        Map<String,Object> param =new HashMap<>();
+        param.put("userId",userId);
+        param.put("canuseAmount",canuseAmount);
+        param.put("frozenAmount",frozenAmount);
+        return accountDao.updateAmount(param);
+    }
 }

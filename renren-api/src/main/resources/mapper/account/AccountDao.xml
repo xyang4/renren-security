@@ -23,5 +23,12 @@
         <result property="sign" column="SIGN"/>
     </resultMap>
 
+    <update id="updateAmount" parameterType="map">
+        update account
+        set
+        CANUSE_AMOUNT = CANUSE_AMOUNT + #{canuseAmount}
+        and FROZEN_AMOUNT = FROZEN_AMOUNT + #{frozenAmount}
+        where userId = #{userId}
+    </update>
 
 </mapper>

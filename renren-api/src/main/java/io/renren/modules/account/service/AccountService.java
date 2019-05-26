@@ -3,6 +3,7 @@ package io.renren.modules.account.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import io.renren.modules.account.entity.AccountEntity;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 /**
@@ -19,5 +20,13 @@ public interface AccountService extends IService<AccountEntity> {
      */
     public boolean overallCheckUserAccount(AccountEntity accountEntity);
 
+    /**
+     * 更改账户金额
+     * @param userId
+     * @param canuseAmount
+     * @param forzenAmount
+     * @return
+     */
+    int updateAmount(Integer userId, BigDecimal canuseAmount, BigDecimal frozenAmount);
 }
 

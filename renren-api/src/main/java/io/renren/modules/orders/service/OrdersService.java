@@ -3,8 +3,10 @@ package io.renren.modules.orders.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import io.renren.common.enums.OrdersEntityEnum;
+import io.renren.common.utils.R;
 import io.renren.modules.orders.domain.OrderRule;
 import io.renren.modules.orders.entity.OrdersEntity;
+import io.renren.modules.user.entity.TokenEntity;
 
 import java.util.List;
 import java.util.Map;
@@ -71,5 +73,25 @@ public interface OrdersService extends IService<OrdersEntity> {
     boolean addOrder(OrdersEntity ordersEntity);
 
     List<OrdersEntity> getOrders(Map<String, Object> param);
+
+    /**
+     * 搬运工提现现
+     * @param userId
+     * @param amount
+     * @param accountName
+     * @param accountNo
+     * @return
+     */
+    R hamalWithdraw(Integer userId, String amount, String accountName, String accountNo);
+
+    /**
+     * 搬运工充值
+     * @param userId
+     * @param amount
+     * @param accountName
+     * @param accountNo
+     * @return
+     */
+    R hamalRecharge(Integer userId, String amount, String accountName, String accountNo);
 }
 

@@ -4,6 +4,9 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import io.renren.modules.account.entity.AccountEntity;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.math.BigDecimal;
+import java.util.Map;
+
 /**
  * 
  * 
@@ -13,5 +16,6 @@ import org.apache.ibatis.annotations.Mapper;
  */
 @Mapper
 public interface AccountDao extends BaseMapper<AccountEntity> {
-	
+
+    int updateAmount(Map<String, Object> param);
 }

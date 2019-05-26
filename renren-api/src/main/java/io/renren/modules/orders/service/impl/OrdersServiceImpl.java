@@ -3,7 +3,10 @@ package io.renren.modules.orders.service.impl;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.renren.common.enums.OrdersEntityEnum;
+import io.renren.common.exception.RRException;
 import io.renren.common.utils.DateUtils;
+import io.renren.common.utils.R;
+import io.renren.modules.account.service.AccountService;
 import io.renren.modules.common.service.IRedisService;
 import io.renren.modules.netty.domain.RedisMessageDomain;
 import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
@@ -13,12 +16,11 @@ import io.renren.modules.orders.entity.OrdersEntity;
 import io.renren.modules.orders.service.OrdersService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 @Service
@@ -28,6 +30,8 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
 
     @Autowired
     private OrdersDao ordersDao;
+    @Autowired
+    private AccountService accountService;
 
     @Override
     public List<Map<String, Object>> receiveValidOrder(String mobile, OrderRule orderRule, int size) {
@@ -86,6 +90,68 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
             returnMap.put("code", -1);
             return returnMap;//添加失败
         }
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRED,rollbackFor = Exception.class)
+    public R hamalWithdraw(Integer userId, String amount, String accountName, String accountNo) {
+        OrdersEntity ordersEntity = new OrdersEntity();
+        ordersEntity.setAmount(new BigDecimal(amount));
+        ordersEntity.setSendAmount(new BigDecimal(amount));
+        ordersEntity.setSendUserId(userId);
+        ordersEntity.setSendAccountName(accountName);
+        ordersEntity.setSendAccountNo(accountNo);
+        ordersEntity.setOrderType(OrdersEntityEnum.OrderType.PORTER_WITHDROW.getValue());
+        ordersEntity.setOrderState(OrdersEntityEnum.OrderState.INIT.getValue());
+        ordersEntity.setOrderDate(DateUtils.format(new Date(),DateUtils.DATE_PATTERN));
+        ordersEntity.setPayType(OrdersEntityEnum.PayType.BANK.getValue());
+        ordersEntity.setIsApi(0);
+        ordersEntity.setPlatDate(DateUtils.format(new Date(),DateUtils.DATE_PATTERN));
+        int r = ordersDao.insert(ordersEntity);
+        if(r > 0){
+            //更改账户可用余额和冻结金额
+            int r1 = accountService.updateAmount(userId,new BigDecimal(amount).negate(),new BigDecimal(amount));
+            if(r1 <= 0){
+                throw new RRException("更改账户金额异常");
+            }
+        }
+        return R.error();
+    }
+
+    @Override
+    public R hamalRecharge(Integer userId, String amount, String accountName, String accountNo) {
+        //查询用户是否有进行中的充值
+        Map<String,Object> param =new HashMap<>();
+        param.put("sendUserId",userId);
+        param.put("orderType",OrdersEntityEnum.OrderType.PORTER_RECHARGE.getValue());
+        List<Integer> orderStates = new ArrayList<>();
+        orderStates.add(OrdersEntityEnum.OrderState.b.getValue());
+        orderStates.add(OrdersEntityEnum.OrderState.c.getValue());
+        param.put("includeState",orderStates);
+        List<OrdersEntity> orders = ordersDao.getOrders(param);
+        if(orders != null && orders.size() > 0){
+            return R.error(-1,"有进行中的订单，稍后重试");
+        }
+        OrdersEntity ordersEntity = new OrdersEntity();
+        ordersEntity.setAmount(new BigDecimal(amount));
+        ordersEntity.setSendAmount(new BigDecimal(amount));
+        ordersEntity.setSendUserId(userId);
+        ordersEntity.setSendAccountName(accountName);
+        ordersEntity.setSendAccountNo(accountNo);
+        ordersEntity.setOrderType(OrdersEntityEnum.OrderType.PORTER_RECHARGE.getValue());
+        ordersEntity.setOrderState(OrdersEntityEnum.OrderState.b.getValue());
+        ordersEntity.setOrderDate(DateUtils.format(new Date(),DateUtils.DATE_PATTERN));
+        ordersEntity.setPayType(OrdersEntityEnum.PayType.BANK.getValue());
+        //todo 订单超时时间
+        ordersEntity.setTimeoutRecv(60);
+        ordersEntity.setTimeoutDown(120);
+        ordersEntity.setIsApi(0);
+        ordersEntity.setPlatDate(DateUtils.format(new Date(),DateUtils.DATE_PATTERN));
+        int r = ordersDao.insert(ordersEntity);
+        if(r > 0){
+            //todo websocket 推送
+        }
+        return R.ok();
     }
 
     @Override
