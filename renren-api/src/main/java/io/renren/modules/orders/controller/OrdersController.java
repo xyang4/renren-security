@@ -4,6 +4,7 @@ import io.renren.common.enums.OrdersEntityEnum;
 import io.renren.common.utils.R;
 import io.renren.modules.common.controller.BaseController;
 import io.renren.modules.orders.entity.OrdersEntity;
+import io.renren.modules.orders.form.HamalOrderForm;
 import io.renren.modules.orders.service.OrdersService;
 import io.renren.modules.system.service.ISmsService;
 import io.renren.modules.user.entity.TokenEntity;
@@ -31,51 +32,47 @@ public class OrdersController extends BaseController {
 
     @ApiOperation("搬运工充值申请")
     @RequestMapping("/hamalRecharge")
-    public R hamalRecharge(@RequestParam(required = true,value = "amount") String amount,
-                           @RequestParam(required = true,value = "smsCode") String smsCode,
-                           String accountName,String accountNo){
+    public R hamalRecharge(@RequestBody HamalOrderForm hamalOrderForm){
         TokenEntity tokenEntity = getToken();
         if(tokenEntity == null){
             return R.error(-1,"查询用户信息失败");
         }
         //短信验证码校验
-        boolean check = iSmsService.validCode(tokenEntity.getMobile(), smsCode);
+        boolean check = iSmsService.validCode(tokenEntity.getMobile(), hamalOrderForm.getSmsCode());
         if(!check){
             return R.error(-1,"验证码错误");
         }
-        return ordersService.hamalRecharge(tokenEntity.getUserId(),amount,accountName,accountNo);
+        return ordersService.hamalRecharge(tokenEntity.getUserId(),hamalOrderForm.getAmount(),hamalOrderForm.getAccountName(),hamalOrderForm.getAccountNo());
     }
 
     @ApiOperation("搬运工提现申请")
     @RequestMapping("/hamalWithdraw")
-    public R hamalWithdraw(@RequestParam(required = true,value = "amount") String amount,
-                           @RequestParam(required = true,value = "smsCode") String smsCode,
-                           String accountName,String accountNo){
+    public R hamalWithdraw(@RequestBody HamalOrderForm hamalOrderForm){
         TokenEntity tokenEntity = getToken();
         if(tokenEntity == null){
             return R.error(-1,"查询用户信息失败");
         }
         //短信验证码校验
-        boolean check = iSmsService.validCode(tokenEntity.getMobile(), smsCode);
+        boolean check = iSmsService.validCode(tokenEntity.getMobile(), hamalOrderForm.getSmsCode());
         if(!check){
             return R.error(-1,"验证码错误");
         }
-        return ordersService.hamalWithdraw(tokenEntity.getUserId(),amount,accountName,accountNo);
+        return ordersService.hamalWithdraw(tokenEntity.getUserId(),hamalOrderForm.getAmount(),hamalOrderForm.getAccountName(),hamalOrderForm.getAccountNo());
     }
 
     /**
      *
-     * @param orderType recharge:充值，withdraw:提现
+     * @param map(orderType) recharge:充值，withdraw:提现
      * @return
      */
     @ApiOperation("搬运工充值、提现进行中查询")
     @RequestMapping("/hamal/processingOrderList")
-    public R hamalprocessingOrderList(
-            @RequestParam(required = true,value = "orderType") String orderType){
+    public R hamalprocessingOrderList(@RequestBody Map map){
         TokenEntity tokenEntity = getToken();
         if(tokenEntity == null){
             return R.error(-1,"查询用户信息失败");
         }
+        String orderType = (String) map.get("orderType");
         if(StringUtils.isBlank(orderType)){
             return R.error(-1001,"请求参数错误");
         }

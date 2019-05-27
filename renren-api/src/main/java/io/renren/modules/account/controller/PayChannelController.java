@@ -6,6 +6,7 @@ import io.renren.common.utils.R;
 import io.renren.modules.account.entity.ImgEntity;
 import io.renren.modules.account.entity.PayChannelEntity;
 import io.renren.modules.account.form.PayChannelForm;
+import io.renren.modules.account.form.UpdatePayChannelFrom;
 import io.renren.modules.account.service.ImgService;
 import io.renren.modules.account.service.PayChannelService;
 import io.renren.modules.common.controller.BaseController;
@@ -69,26 +70,27 @@ public class PayChannelController extends BaseController {
 
     /**
      * 更新支付类型状态
-     * @param payChannelId
-     * @param useStatus
-     * @param bindStatus
+     * @param updatePayChannelFrom
      * @return
      */
     @AppLogin
     @ApiOperation("更新支付方式")
     @RequestMapping("/updatePayChannel")
-    public R updatePayChannel(@RequestParam(required = true,value = "payChannelId") String payChannelId,String useStatus,String bindStatus){
-        PayChannelEntity payChannelEntity = payChannelService.getById(payChannelId);
+    public R updatePayChannel(@RequestBody UpdatePayChannelFrom updatePayChannelFrom){
+        if(updatePayChannelFrom == null){
+            return R.error(-1,"请求参数错误");
+        }
+        PayChannelEntity payChannelEntity = payChannelService.getById(updatePayChannelFrom.getPayChannelId());
         if(payChannelEntity == null){
-            return R.error(-1,payChannelId+"支付渠道不存在");
+            return R.error(-1,updatePayChannelFrom.getPayChannelId()+"支付渠道不存在");
         }
         PayChannelEntity update = new PayChannelEntity();
-        update.setUserId(Integer.parseInt(payChannelId));
-        if(StringUtils.isNoneBlank(useStatus)){
-            update.setUseStatus(Integer.parseInt(useStatus));
+        update.setPayChannelId(Integer.parseInt(updatePayChannelFrom.getPayChannelId()));
+        if(StringUtils.isNoneBlank(updatePayChannelFrom.getUseStatus())){
+            update.setUseStatus(Integer.parseInt(updatePayChannelFrom.getUseStatus()));
         }
-        if(StringUtils.isNoneBlank(bindStatus)){
-            update.setBindStatus(Integer.parseInt(bindStatus));
+        if(StringUtils.isNoneBlank(updatePayChannelFrom.getBindStatus())){
+            update.setBindStatus(Integer.parseInt(updatePayChannelFrom.getBindStatus()));
         }
         payChannelService.updateById(update);
         return R.ok("操作成功");
