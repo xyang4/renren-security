@@ -18,4 +18,6 @@ import java.util.Map;
 public interface AccountDao extends BaseMapper<AccountEntity> {
 
     int updateAmount(Map<String, Object> param);
+
+    AccountEntity getByUserId(Integer userId);
 }

@@ -19,5 +19,7 @@ public interface PayChannelService extends IService<PayChannelEntity> {
     int addPayChannel(PayChannelEntity payChannelForm);
 
     List<PayChannelEntity> getPayChannelListByUserId(Map<String, Object> param);
+
+    List<Map<String, Object>> getPayChannelGroupData(Integer userId);
 }
 

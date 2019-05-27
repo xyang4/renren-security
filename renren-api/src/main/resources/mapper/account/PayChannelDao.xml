@@ -30,4 +30,8 @@
             and PAY_TYPE = #{payType}
         </if>
     </select>
+
+    <select id="getPayChannelGroupData" parameterType="integer" resultType="map">
+        select count(PAY_CHANNEL_ID) count,PAY_TYPE payType from pay_channel where USER_ID = #{userId} and USE_STATUS = 1 and BIND_STATUS = 1 group by PAY_TYPE
+    </select>
 </mapper>

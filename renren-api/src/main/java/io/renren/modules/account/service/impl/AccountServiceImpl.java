@@ -52,4 +52,9 @@ public class AccountServiceImpl extends ServiceImpl<AccountDao, AccountEntity> i
         param.put("frozenAmount",frozenAmount);
         return accountDao.updateAmount(param);
     }
+
+    @Override
+    public AccountEntity getByUserId(Integer userId) {
+        return accountDao.getByUserId(userId);
+    }
 }

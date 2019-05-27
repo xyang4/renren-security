@@ -24,9 +24,16 @@ public interface AccountService extends IService<AccountEntity> {
      * 更改账户金额
      * @param userId
      * @param canuseAmount
-     * @param forzenAmount
+     * @param frozenAmount
      * @return
      */
     int updateAmount(Integer userId, BigDecimal canuseAmount, BigDecimal frozenAmount);
+
+    /**
+     * 根据userId查询用户
+     * @param userId
+     * @return
+     */
+    AccountEntity getByUserId(Integer userId);
 }
 

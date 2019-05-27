@@ -18,4 +18,6 @@ import java.util.Map;
 public interface PayChannelDao extends BaseMapper<PayChannelEntity> {
 
     List<PayChannelEntity> getPayChannelListByUserId(Map<String, Object> param);
+
+    List<Map<String, Object>> getPayChannelGroupData(Integer userId);
 }

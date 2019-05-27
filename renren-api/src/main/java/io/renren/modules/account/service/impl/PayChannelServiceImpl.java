@@ -26,4 +26,9 @@ public class PayChannelServiceImpl extends ServiceImpl<PayChannelDao, PayChannel
     public List<PayChannelEntity> getPayChannelListByUserId(Map<String, Object> param) {
         return payChannelDao.getPayChannelListByUserId(param);
     }
+
+    @Override
+    public List<Map<String, Object>> getPayChannelGroupData(Integer userId) {
+        return payChannelDao.getPayChannelGroupData(userId);
+    }
 }

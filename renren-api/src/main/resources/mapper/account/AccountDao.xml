@@ -28,7 +28,10 @@
         set
         CANUSE_AMOUNT = CANUSE_AMOUNT + #{canuseAmount}
         and FROZEN_AMOUNT = FROZEN_AMOUNT + #{frozenAmount}
-        where userId = #{userId}
+        where userId = #{userId} and STATUS = 1
     </update>
 
+    <select id="getByUserId" parameterType="int" resultMap="accountMap">
+        select * from account where USER_ID = #{userId}
+    </select>
 </mapper>
