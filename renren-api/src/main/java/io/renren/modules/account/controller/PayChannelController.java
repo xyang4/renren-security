@@ -4,6 +4,7 @@ import io.renren.common.annotation.AppLogin;
 import io.renren.common.utils.DateUtils;
 import io.renren.common.utils.R;
 import io.renren.modules.account.entity.ImgEntity;
+import io.renren.modules.account.entity.PayChannelDetail;
 import io.renren.modules.account.entity.PayChannelEntity;
 import io.renren.modules.account.form.PayChannelForm;
 import io.renren.modules.account.form.UpdatePayChannelFrom;
@@ -17,7 +18,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.*;
@@ -74,26 +74,13 @@ public class PayChannelController extends BaseController {
      * @return
      */
     @AppLogin
-    @ApiOperation("更新支付方式")
+    @ApiOperation("更新支付内容")
     @RequestMapping("/updatePayChannel")
     public R updatePayChannel(@RequestBody UpdatePayChannelFrom updatePayChannelFrom){
-        if(updatePayChannelFrom == null){
+        if(updatePayChannelFrom == null || StringUtils.isBlank(updatePayChannelFrom.getPayChannelId())){
             return R.error(-1,"请求参数错误");
         }
-        PayChannelEntity payChannelEntity = payChannelService.getById(updatePayChannelFrom.getPayChannelId());
-        if(payChannelEntity == null){
-            return R.error(-1,updatePayChannelFrom.getPayChannelId()+"支付渠道不存在");
-        }
-        PayChannelEntity update = new PayChannelEntity();
-        update.setPayChannelId(Integer.parseInt(updatePayChannelFrom.getPayChannelId()));
-        if(StringUtils.isNoneBlank(updatePayChannelFrom.getUseStatus())){
-            update.setUseStatus(Integer.parseInt(updatePayChannelFrom.getUseStatus()));
-        }
-        if(StringUtils.isNoneBlank(updatePayChannelFrom.getBindStatus())){
-            update.setBindStatus(Integer.parseInt(updatePayChannelFrom.getBindStatus()));
-        }
-        payChannelService.updateById(update);
-        return R.ok("操作成功");
+        return payChannelService.updatePayChannel(updatePayChannelFrom);
     }
 
     @AppLogin
@@ -111,5 +98,21 @@ public class PayChannelController extends BaseController {
         params.put("payType",payTypeString);
         List<PayChannelEntity> payChannelEntityList = payChannelService.getPayChannelListByUserId(params);
         return R.ok(payChannelEntityList);
+    }
+
+    @AppLogin
+    @ApiOperation("支付方式详情")
+    @RequestMapping("/detail")
+    public R detail(@RequestBody Map map){
+        TokenEntity tokenEntity = getToken();
+        if(tokenEntity == null){
+            return R.error(-1,"查询用户信息失败");
+        }
+        Integer payChannelId = (Integer)map.get("payChannelId");
+        if(payChannelId == null){
+            return R.error(-1001,"请求参数错误");
+        }
+        PayChannelDetail payChannelDetail = payChannelService.getPayChannelDetailById(payChannelId);
+        return R.ok(payChannelDetail);
     }
 }

@@ -16,4 +16,10 @@ public class UpdatePayChannelFrom {
     @ApiModelProperty("payChannelId")
     @NotBlank(message = "payChannelId不能为空")
     private String payChannelId;
+    @ApiModelProperty("图片")
+    private String baseImg;
+    @ApiModelProperty(value = "账户编号（银行卡号）")
+    private String accountNo;
+    @ApiModelProperty(value = "账户名称")
+    private String accountName;
 }

@@ -22,10 +22,14 @@
         <result property="createTime" column="CREATE_TIME"/>
     </resultMap>
 
+    <resultMap id="payChannelDetail" type="io.renren.modules.account.entity.PayChannelDetail" extends="payChannelMap">
+        <result property="imgBase" column="BASE64"/>
+    </resultMap>
 
     <select id="getPayChannelListByUserId" parameterType="map" resultMap="payChannelMap">
         select PAY_CHANNEL_ID,USER_ID,PAY_TYPE,ACCOUNT_NO,ACCOUNT_NAME,ACCOUNT_UID,BANK_NAME,USE_STATUS,BIND_STATUS
-        from pay_channel where USER_ID = #{userId}
+        from pay_channel
+        where USER_ID = #{userId}
         <if test="payType != null and payType != ''">
             and PAY_TYPE = #{payType}
         </if>
@@ -33,5 +37,12 @@
 
     <select id="getPayChannelGroupData" parameterType="integer" resultType="map">
         select count(PAY_CHANNEL_ID) count,PAY_TYPE payType from pay_channel where USER_ID = #{userId} and USE_STATUS = 1 and BIND_STATUS = 1 group by PAY_TYPE
+    </select>
+
+    <select id="getPayChannelDetailById" parameterType="integer" resultMap="payChannelDetail">
+        select pc.*,img.BASE64
+        from pay_channel pc
+        left join img img on pc.QRIMG_ID = img.IMG_ID
+        where pc.PAY_CHANNEL_ID = #{payChannelId}
     </select>
 </mapper>

@@ -1,7 +1,10 @@
 package io.renren.modules.account.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import io.renren.common.utils.R;
+import io.renren.modules.account.entity.PayChannelDetail;
 import io.renren.modules.account.entity.PayChannelEntity;
+import io.renren.modules.account.form.UpdatePayChannelFrom;
 
 import java.util.List;
 import java.util.Map;
@@ -21,5 +24,10 @@ public interface PayChannelService extends IService<PayChannelEntity> {
     List<PayChannelEntity> getPayChannelListByUserId(Map<String, Object> param);
 
     List<Map<String, Object>> getPayChannelGroupData(Integer userId);
+
+    //更新支付内容
+    R updatePayChannel(UpdatePayChannelFrom updatePayChannelFrom);
+
+    PayChannelDetail getPayChannelDetailById(Integer payChannelId);
 }
 

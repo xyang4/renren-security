@@ -1,5 +1,6 @@
 package io.renren.modules.orders.controller;
 
+import io.renren.common.annotation.AppLogin;
 import io.renren.common.enums.OrdersEntityEnum;
 import io.renren.common.utils.R;
 import io.renren.modules.common.controller.BaseController;
@@ -29,7 +30,7 @@ public class OrdersController extends BaseController {
     @Autowired
     ISmsService iSmsService;
 
-
+    @AppLogin
     @ApiOperation("搬运工充值申请")
     @RequestMapping("/hamalRecharge")
     public R hamalRecharge(@RequestBody HamalOrderForm hamalOrderForm){
@@ -45,6 +46,7 @@ public class OrdersController extends BaseController {
         return ordersService.hamalRecharge(tokenEntity.getUserId(),hamalOrderForm.getAmount(),hamalOrderForm.getAccountName(),hamalOrderForm.getAccountNo());
     }
 
+    @AppLogin
     @ApiOperation("搬运工提现申请")
     @RequestMapping("/hamalWithdraw")
     public R hamalWithdraw(@RequestBody HamalOrderForm hamalOrderForm){
@@ -65,6 +67,7 @@ public class OrdersController extends BaseController {
      * @param map(orderType) recharge:充值，withdraw:提现
      * @return
      */
+    @AppLogin
     @ApiOperation("搬运工充值、提现进行中查询")
     @RequestMapping("/hamal/processingOrderList")
     public R hamalprocessingOrderList(@RequestBody Map map){
