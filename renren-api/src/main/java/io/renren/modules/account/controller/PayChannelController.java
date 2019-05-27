@@ -1,5 +1,6 @@
 package io.renren.modules.account.controller;
 
+import io.renren.common.annotation.AppLogin;
 import io.renren.common.utils.DateUtils;
 import io.renren.common.utils.R;
 import io.renren.modules.account.entity.ImgEntity;
@@ -21,8 +22,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.*;
 
 @RestController
-@RequestMapping("/payChannel")
+@RequestMapping("app/payChannel")
 @Api("支付渠道相关")
+@AppLogin
 public class PayChannelController extends BaseController {
 
     @Autowired
@@ -35,6 +37,7 @@ public class PayChannelController extends BaseController {
      * @param payChannelForm
      * @return
      */
+    @AppLogin
     @ApiOperation("添加支付方式")
     @RequestMapping("/addPayChannel")
     public R addPayChannel(@RequestBody PayChannelForm payChannelForm){
@@ -71,6 +74,7 @@ public class PayChannelController extends BaseController {
      * @param bindStatus
      * @return
      */
+    @AppLogin
     @ApiOperation("更新支付方式")
     @RequestMapping("/updatePayChannel")
     public R updatePayChannel(@RequestParam(required = true,value = "payChannelId") String payChannelId,String useStatus,String bindStatus){
@@ -90,10 +94,11 @@ public class PayChannelController extends BaseController {
         return R.ok("操作成功");
     }
 
-
+    @AppLogin
     @ApiOperation("查询支付方式")
     @RequestMapping("/list")
-    public R payChannelFormList(String payType){
+    public R payChannelFormList(@RequestBody Map payType){
+        String payTypeString = (String)payType.get("payType");
         TokenEntity tokenEntity = getToken();
         if(tokenEntity == null){
             return R.error(-1,"查询用户信息失败");
@@ -101,7 +106,7 @@ public class PayChannelController extends BaseController {
         Integer userId = tokenEntity.getUserId();
         Map<String,Object> params =new HashMap<>();
         params.put("userId",userId);
-        params.put("payType",payType);
+        params.put("payType",payTypeString);
         List<PayChannelEntity> payChannelEntityList = payChannelService.getPayChannelListByUserId(params);
         return R.ok(payChannelEntityList);
     }

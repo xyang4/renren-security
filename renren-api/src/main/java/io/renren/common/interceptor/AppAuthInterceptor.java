@@ -76,7 +76,9 @@ public class AppAuthInterceptor extends HandlerInterceptorAdapter {
             ITokenService tokenService = SpringContextUtils.getBean(ITokenService.class);
             // 查询token信息
             TokenEntity tokenEntity = tokenService.queryByToken(token);
-
+            if(token==null){
+                throw new RRException(StaticConstant.TOKEN_KEY + "已失效，请重新登录");
+            }
             long tokenExpire = tokenEntity.getExpireTime().getTime();
             long surplusExpire = 0;
             if (tokenEntity == null || (surplusExpire = tokenExpire - System.currentTimeMillis()) < 0) {
