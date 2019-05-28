@@ -58,12 +58,13 @@
     <select id="getSendOrRecvOrderList"  parameterType="map" resultMap="ordersMap">
         select *
         from orders
-        where (SEND_USER_ID = #{userId} or RECV_USER_ID = #{userId})
-        <if test="orderType != null">
-            and ORDER_TYPE = #{orderType}
+        where (SEND_USER_ID = #{params.userId} or RECV_USER_ID = #{params.userId})
+        <if test="params.orderType != null">
+            and ORDER_TYPE = #{params.orderType}
         </if>
-        <if test="orderState != null">
-            and ORDER_STATE = #{orderState}
+        <if test="params.orderState != null">
+            and ORDER_STATE = #{params.orderState}
         </if>
+        order by CREATE_TIME desc
     </select>
 </mapper>

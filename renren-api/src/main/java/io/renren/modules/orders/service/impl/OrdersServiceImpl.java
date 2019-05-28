@@ -177,7 +177,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         Integer pageIndex = orderPageForm.getPageIndex()==null?1:orderPageForm.getPageIndex();
         Integer pageSize = orderPageForm.getPageSize()==null?5:orderPageForm.getPageSize();
         Page<OrdersEntity> ordersPage = new Page<>(pageIndex,pageSize);
-        ordersPage.setRecords(ordersDao.getSendOrRecvOrderList(ordersPage,param));
+        ordersPage.setRecords(ordersDao.getSendOrRecvOrderList(param,ordersPage));
         return ordersPage.getRecords();
     }
 

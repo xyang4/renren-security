@@ -12,7 +12,6 @@ import io.renren.modules.system.service.ISmsService;
 import io.renren.modules.user.entity.TokenEntity;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -100,7 +99,7 @@ public class OrdersController extends BaseController {
 
     @AppLogin
     @ApiOperation("查询订单列表")
-    @RequestMapping("/orderPageList")
+    @RequestMapping("/pageList")
     public R getOrdersList(@RequestBody OrderPageForm orderPageForm){
         TokenEntity tokenEntity = getToken();
         if(tokenEntity == null){
