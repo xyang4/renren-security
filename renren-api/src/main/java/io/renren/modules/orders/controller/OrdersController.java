@@ -6,6 +6,7 @@ import io.renren.common.utils.R;
 import io.renren.modules.common.controller.BaseController;
 import io.renren.modules.orders.entity.OrdersEntity;
 import io.renren.modules.orders.form.HamalOrderForm;
+import io.renren.modules.orders.form.OrderPageForm;
 import io.renren.modules.orders.service.OrdersService;
 import io.renren.modules.system.service.ISmsService;
 import io.renren.modules.user.entity.TokenEntity;
@@ -64,35 +65,49 @@ public class OrdersController extends BaseController {
 
     /**
      *
-     * @param map(orderType) recharge:充值，withdraw:提现
+     * @param orderTypeMap(orderType) recharge:充值，withdraw:提现
      * @return
      */
     @AppLogin
     @ApiOperation("搬运工充值、提现进行中查询")
     @RequestMapping("/hamal/processingOrderList")
-    public R hamalprocessingOrderList(@RequestBody Map map){
+    public R hamalprocessingOrderList(@RequestBody Map orderTypeMap){
         TokenEntity tokenEntity = getToken();
         if(tokenEntity == null){
             return R.error(-1,"查询用户信息失败");
         }
-        String orderType = (String) map.get("orderType");
-        if(StringUtils.isBlank(orderType)){
+        Integer orderType = (Integer) orderTypeMap.get("orderType");
+        if(orderType == null){
             return R.error(-1001,"请求参数错误");
         }
         Map<String,Object> param =new HashMap<>();
         param.put("orderType",orderType);
         param.put("sendUserId",tokenEntity.getUserId());
         List<Integer> orderStates = new ArrayList<>();
-        if("recharge".equals(orderType)){
+        if(orderType == OrdersEntityEnum.OrderType.PORTER_RECHARGE.getValue()){
             orderStates.add(OrdersEntityEnum.OrderState.b.getValue());
             orderStates.add(OrdersEntityEnum.OrderState.c.getValue());
-        }else if("withdraw".equals(orderType)){
+        }else if(orderType == OrdersEntityEnum.OrderType.PORTER_WITHDROW.getValue()){
             orderStates.add(OrdersEntityEnum.OrderState.INIT.getValue());
         }else{
             return R.ok();
         }
         param.put("includeState",orderStates);
         List<OrdersEntity> orders = ordersService.getOrders(param);
+        return R.ok(orders);
+    }
+
+
+    @AppLogin
+    @ApiOperation("查询订单列表")
+    @RequestMapping("/orderPageList")
+    public R getOrdersList(@RequestBody OrderPageForm orderPageForm){
+        TokenEntity tokenEntity = getToken();
+        if(tokenEntity == null){
+            return R.error(-1,"查询用户信息失败");
+        }
+        orderPageForm.setUserId(tokenEntity.getUserId());
+        List<OrdersEntity> orders = ordersService.getSendOrRecvOrderList(orderPageForm);
         return R.ok(orders);
     }
 

@@ -13,6 +13,7 @@ import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 import io.renren.modules.orders.dao.OrdersDao;
 import io.renren.modules.orders.domain.OrderRule;
 import io.renren.modules.orders.entity.OrdersEntity;
+import io.renren.modules.orders.form.OrderPageForm;
 import io.renren.modules.orders.service.OrdersService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -164,6 +165,20 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     @Override
     public List<OrdersEntity> getOrders(Map<String, Object> param) {
         return ordersDao.getOrders(param);
+    }
+
+    @Override
+    public List<OrdersEntity> getSendOrRecvOrderList(OrderPageForm orderPageForm) {
+        Map<String,Object> param =new HashMap<>();
+        param.put("userId",orderPageForm.getUserId());
+        param.put("orderType",orderPageForm.getOrderType());
+        param.put("orderState",orderPageForm.getOrderState());
+        //默认第一页5条
+        Integer pageIndex = orderPageForm.getPageIndex()==null?1:orderPageForm.getPageIndex();
+        Integer pageSize = orderPageForm.getPageSize()==null?5:orderPageForm.getPageSize();
+        Page<OrdersEntity> ordersPage = new Page<>(pageIndex,pageSize);
+        ordersPage.setRecords(ordersDao.getSendOrRecvOrderList(ordersPage,param));
+        return ordersPage.getRecords();
     }
 
     @Override

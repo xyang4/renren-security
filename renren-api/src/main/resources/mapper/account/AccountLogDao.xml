@@ -22,5 +22,10 @@
         <result property="createTime" column="CREATE_TIME"/>
     </resultMap>
 
+    <select id="getAccountLogsByUserId" parameterType="integer" resultMap="accountLogMap">
+        select *
+        from account_log where USER_ID = #{userId} order by CREATE_TIME desc
+    </select>
+
 
 </mapper>

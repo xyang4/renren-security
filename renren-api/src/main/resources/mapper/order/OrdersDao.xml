@@ -54,4 +54,16 @@
         </where>
     </select>
 
+
+    <select id="getSendOrRecvOrderList"  parameterType="map" resultMap="ordersMap">
+        select *
+        from orders
+        where (SEND_USER_ID = #{userId} or RECV_USER_ID = #{userId})
+        <if test="orderType != null">
+            and ORDER_TYPE = #{orderType}
+        </if>
+        <if test="orderState != null">
+            and ORDER_STATE = #{orderState}
+        </if>
+    </select>
 </mapper>

@@ -6,7 +6,7 @@ import io.renren.common.enums.OrdersEntityEnum;
 import io.renren.common.utils.R;
 import io.renren.modules.orders.domain.OrderRule;
 import io.renren.modules.orders.entity.OrdersEntity;
-import io.renren.modules.user.entity.TokenEntity;
+import io.renren.modules.orders.form.OrderPageForm;
 
 import java.util.List;
 import java.util.Map;
@@ -93,5 +93,8 @@ public interface OrdersService extends IService<OrdersEntity> {
      * @return
      */
     R hamalRecharge(Integer userId, String amount, String accountName, String accountNo);
+
+    //查询用户接单或者发单列表
+    List<OrdersEntity> getSendOrRecvOrderList(OrderPageForm orderPageForm);
 }
 

@@ -1,5 +1,6 @@
 package io.renren.modules.account.controller;
 
+import io.renren.common.annotation.AppLogin;
 import io.renren.common.utils.R;
 import io.renren.modules.account.entity.AccountEntity;
 import io.renren.modules.account.service.AccountService;
@@ -25,7 +26,7 @@ import java.util.Map;
  * @date 2019-05-13 18:22:50
  */
 @RestController
-@RequestMapping("/account")
+@RequestMapping("app/account")
 @Api("账户相关")
 public class AccountController extends BaseController {
     @Autowired
@@ -40,6 +41,7 @@ public class AccountController extends BaseController {
      * 账户信息接口
      * @return
      */
+    @AppLogin
     @ApiOperation("账户信息接口")
     @RequestMapping("/userInfo")
     public R accountInfo(){
