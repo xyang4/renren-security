@@ -168,7 +168,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         if (r > 0) {
             //todo websocket 推送
         }
-        return R.ok();
+        return R.ok(ordersEntity);
     }
 
     @Override
