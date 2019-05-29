@@ -7,6 +7,7 @@ import io.renren.common.utils.R;
 import io.renren.modules.orders.domain.OrderRule;
 import io.renren.modules.orders.entity.OrdersEntity;
 import io.renren.modules.orders.form.OrderPageForm;
+import org.springframework.scheduling.annotation.Async;
 
 import java.util.List;
 import java.util.Map;
@@ -63,7 +64,7 @@ public interface OrdersService extends IService<OrdersEntity> {
     Map applyOrder(Integer merId, String orderDate, int orderType, String orderSn, String payType, String sendAmount, String notifyUrl);
 
     /**
-     * 有效性校验
+     * 订单有效性校验： {@link OrdersEntity } {@link io.renren.modules.orders.domain.RushOrderInfo}
      *
      * @param orderInfo
      * @return
@@ -76,6 +77,7 @@ public interface OrdersService extends IService<OrdersEntity> {
 
     /**
      * 搬运工提现现
+     *
      * @param userId
      * @param amount
      * @param accountName
@@ -86,6 +88,7 @@ public interface OrdersService extends IService<OrdersEntity> {
 
     /**
      * 搬运工充值
+     *
      * @param userId
      * @param amount
      * @param accountName
@@ -96,5 +99,22 @@ public interface OrdersService extends IService<OrdersEntity> {
 
     //查询用户接单或者发单列表
     List<OrdersEntity> getSendOrRecvOrderList(OrderPageForm orderPageForm);
+
+    /**
+     * 异步批量推送订单至指定用户
+     *
+     * @param mobile
+     * @param orderType
+     */
+    @Async
+    void asyncBatchPushOrderToUser(String mobile, int orderType);
+
+    /**
+     * 异步推送指定类型的订单
+     *
+     * @param merRecharge
+     */
+    @Async
+    void asyncPushSpecialOrder(OrdersEntityEnum.OrderType merRecharge);
 }
 

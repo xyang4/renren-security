@@ -39,8 +39,8 @@ public class AccountLogController extends BaseController {
             return R.error(-1,"查询用户信息失败");
         }
         //默认第一页5条
-        Integer pageIndex = (Integer) paramMap.get("pageIndex")==null?1:(Integer) paramMap.get("pageIndex");
-        Integer pageSize = (Integer) paramMap.get("pageSize")==null?5:(Integer) paramMap.get("pageSize");
+        Integer pageIndex = paramMap.get("pageIndex")==null ? 1 : (Integer) paramMap.get("pageIndex");
+        Integer pageSize =  paramMap.get("pageSize")==null ? 5 : (Integer) paramMap.get("pageSize");
         List<AccountLogEntity> accountLogEntityList = accountLogService.getAccountLogPageList(tokenEntity.getUserId(),pageIndex,pageSize);
         return R.ok(accountLogEntityList);
     }

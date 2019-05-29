@@ -12,6 +12,7 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.renren.common.config.RenrenProperties;
+import io.renren.common.enums.OrdersEntityEnum;
 import io.renren.common.enums.RRExceptionEnum;
 import io.renren.common.utils.R;
 import io.renren.modules.common.domain.RedisCacheKeyConstant;
@@ -111,6 +112,9 @@ public class NettyServiceImpl implements INettyService {
                 case PRINT_SERVER_TIME:
                     asyncSendMessage(redisMessageDomain.getContent(), "Now:" + LocalTime.now());
                     break;
+                case CANCLE_PUSHED_ORDER:
+                    // TODO 取消一下发的订单
+                    break;
                 default:
                     log.warn("不支持的事件类型[{}/{}].", actionTypeEnum.getCommand(), actionTypeEnum.getDescribe());
                     break;
@@ -143,8 +147,7 @@ public class NettyServiceImpl implements INettyService {
     OrdersService ordersService;
 
     @Override
-    public R handleWebSocketRequest(WebSocketActionTypeEnum webSocketAction, Channel channel, String token, String
-            content) {
+    public R handleWebSocketRequest(WebSocketActionTypeEnum webSocketAction, Channel channel, String token, String content) {
         R r;
         // 登录凭证校验
         TokenEntity tokenEntity = iTokenService.queryByToken(token);
@@ -158,7 +161,8 @@ public class NettyServiceImpl implements INettyService {
         switch (webSocketAction) {
             case ACTIVE:// 保活 存储 key: online:mobile val：longTextId
 //                iRedisService.set(RedisCacheKeyConstant.ONLINE_PREFIX + channelId.asLongText(), tokenEntity.getMobile(), renrenProperties.getWebSocketExpire() * 60L, TimeUnit.SECONDS);
-                iRedisService.set(RedisCacheKeyConstant.ONLINE_PREFIX + channelId.asLongText(), tokenEntity.getMobile(), renrenProperties.getWebSocketExpire() * 60L, TimeUnit.SECONDS);
+
+                iRedisService.set(RedisCacheKeyConstant.ONLINE_PREFIX + tokenEntity.getMobile(), channelId.asLongText(), renrenProperties.getWebSocketExpire() * 60L, TimeUnit.SECONDS);
                 if (!WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.contains(tokenEntity.getMobile())) {
                     WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.add(tokenEntity.getMobile());
                     WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.put(tokenEntity.getMobile(), channel);
@@ -169,15 +173,28 @@ public class NettyServiceImpl implements INettyService {
                 if (!checkWebSocketUserIsActive(tokenEntity.getMobile(), channel)) {
                     return R.error(RRExceptionEnum.USER_NOT_ONLINE, "请先进行 active 操作");
                 }
+                // 可抢单队列添加订单类型前缀
+                OrdersEntityEnum.OrderType beginReceiptOrderType;
+                if (StringUtils.isBlank(content) || null == (beginReceiptOrderType = OrdersEntityEnum.OrderType.getByVal(Integer.valueOf(content)))) {
+                    return R.error(RRExceptionEnum.BAD_REQUEST_PARAMS, "抢单类型错误");
+                }
 
                 // add user to redis set:  key=order_list_can_buy
-                if (!iRedisService.isSetMember(RedisCacheKeyConstant.USERS_CAN_RUSH_BUY, tokenEntity.getMobile())) {
-                    iRedisService.setAdd(RedisCacheKeyConstant.USERS_CAN_RUSH_BUY, tokenEntity.getMobile());
+                String redisKey = RedisCacheKeyConstant.USERS_CAN_RUSH_BUY_PREFIX + beginReceiptOrderType.getValue();
+                if (!iRedisService.isSetMember(redisKey, tokenEntity.getMobile())) {
+                    iRedisService.setAdd(redisKey, tokenEntity.getMobile());
                 }
                 return R.ok();
 
             case STOP_RECEIPT:// 停止接单,从集合中移除
-                Long no = iRedisService.removeSetMember(RedisCacheKeyConstant.USERS_CAN_RUSH_BUY, tokenEntity.getMobile());
+                // 05-28: redis + 前缀
+
+                OrdersEntityEnum.OrderType stopReceipeOrderType;
+                if (StringUtils.isBlank(content) || null == (stopReceipeOrderType = OrdersEntityEnum.OrderType.getByVal(Integer.valueOf(content)))) {
+                    return R.error(RRExceptionEnum.BAD_REQUEST_PARAMS, "取消抢单类型错误");
+                }
+
+                Long no = iRedisService.removeSetMember(RedisCacheKeyConstant.USERS_CAN_RUSH_BUY_PREFIX + stopReceipeOrderType.getValue(), tokenEntity.getMobile());
                 return R.ok("Ele No:" + no);
 
             case RUSH_ORDERS://抢单
@@ -204,7 +221,8 @@ public class NettyServiceImpl implements INettyService {
     public boolean checkWebSocketUserIsActive(String mobile, Channel channel) {
         ChannelId channelId = channel.id();
         boolean r;
-        Long expire = iRedisService.getExpire(RedisCacheKeyConstant.ONLINE_PREFIX + channelId.asLongText(), TimeUnit.SECONDS);
+//        Long expire = iRedisService.getExpire(RedisCacheKeyConstant.ONLINE_PREFIX + channelId.asLongText(), TimeUnit.SECONDS);
+        Long expire = iRedisService.getExpire(RedisCacheKeyConstant.ONLINE_PREFIX + mobile, TimeUnit.SECONDS);
         if (null == expire) {
             r = false;
             if (!WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.contains(mobile)) {
@@ -225,6 +243,18 @@ public class NettyServiceImpl implements INettyService {
         rMap.put("list", mobileList);
         rMap.put("size", WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.size());
         return rMap;
+    }
+
+    @Override
+    public void clearActiveUser() {
+        List<String> invalidUser = WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.stream().filter(v -> null != iRedisService.getVal(RedisCacheKeyConstant.ONLINE_PREFIX + v)).collect(Collectors.toList());
+        if (null != invalidUser) {
+            invalidUser.forEach(v -> {
+                WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.remove(v);
+                WebSocketServerHandler.ONLINE_USER_GROUP.remove(WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.get(v));
+                WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.remove(v);
+            });
+        }
     }
 
     public void send() {

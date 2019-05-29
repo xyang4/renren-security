@@ -112,7 +112,7 @@ public class RedisServiceImpl implements IRedisService {
 
     @Override
     public String pull(String key) {
-        return listOperations.leftPop(key);
+        return listOperations.rightPop(key);
     }
 
     @Override

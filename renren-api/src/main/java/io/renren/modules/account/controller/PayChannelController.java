@@ -69,7 +69,7 @@ public class PayChannelController extends BaseController {
     }
 
     /**
-     * 更新支付类型状态
+     * 更新支付通道
      * @param updatePayChannelFrom
      * @return
      */
@@ -108,7 +108,7 @@ public class PayChannelController extends BaseController {
         if(tokenEntity == null){
             return R.error(-1,"查询用户信息失败");
         }
-        Integer payChannelId = (Integer)map.get("payChannelId");
+        Integer payChannelId = Integer.parseInt((String)map.get("payChannelId"));
         if(payChannelId == null){
             return R.error(-1001,"请求参数错误");
         }
