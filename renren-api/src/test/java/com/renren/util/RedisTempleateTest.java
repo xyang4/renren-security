@@ -32,7 +32,7 @@ public class RedisTempleateTest {
 
         // 1 链接工厂配置
         RedisStandaloneConfiguration configuration = new RedisStandaloneConfiguration();
-        configuration.setDatabase(9);
+        configuration.setDatabase(4);
         configuration.setPassword("123456");
         JedisConnectionFactory connectionFactory = new JedisConnectionFactory(configuration);
         redisTemplate.setConnectionFactory(connectionFactory);
@@ -169,5 +169,14 @@ public class RedisTempleateTest {
 //            connection.closePipeline();
             return null;
         }, redisTemplate.getStringSerializer());
+    }
+
+    @Test
+    public void listTest() {
+        String key = "t_l";
+        listOperations.leftPushAll(key, "1", "2", "3", "4");
+        System.out.println(listOperations.rightPop(key));
+        System.out.println(listOperations.leftPop( key));
+        System.out.println(listOperations.leftPop("order_list_can_buy:18610450436:3"));
     }
 }

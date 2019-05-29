@@ -1,5 +1,6 @@
 package io.renren.common.enums;
 
+import com.google.common.collect.ImmutableMap;
 import lombok.Getter;
 
 /**
@@ -20,6 +21,21 @@ public class OrdersEntityEnum {
         OrderType(int value, String name) {
             this.value = value;
             this.name = name;
+        }
+
+        private static final ImmutableMap<Integer, OrderType> ID_MAP;
+
+
+        static {
+            final ImmutableMap.Builder<Integer, OrderType> builder = new ImmutableMap.Builder<>();
+            for (final OrderType item : OrderType.values()) {
+                builder.put(item.getValue(), item);
+            }
+            ID_MAP = builder.build();
+        }
+
+        public static OrderType getByVal(final Integer val) {
+            return ID_MAP.get(val);
         }
 
         public static boolean contains(int value) {
@@ -63,14 +79,22 @@ public class OrdersEntityEnum {
      * 15-等待打款--更换付款方式30-客服处理为取消31-客服处理为完成
      */
     @Getter
-    public static enum OrderState{
-        INIT(0,"初始"),b(1,"订单提交 通知抢单,待接单"),
-        c(2,"已接单"),d(3,"用户取消");
-        private int value; private String name;
-        OrderState(int value,String name){this.value = value;this.name = name;}
+    public static enum OrderState {
+        INIT(0, "初始"), b(1, "订单提交 通知抢单,待接单"),
+        c(2, "已接单"), d(3, "用户取消");
+        private int value;
+        private String name;
+
+        OrderState(int value, String name) {
+            this.value = value;
+            this.name = name;
+        }
+
         public static boolean contains(int value) {
             for (OrderState c : OrderState.values()) {
-                if (c.value==value) { return true;}
+                if (c.value == value) {
+                    return true;
+                }
             }
             return false;
         }
@@ -80,7 +104,19 @@ public class OrdersEntityEnum {
      * 订单来源
      */
     @Getter
-    public enum OrderSources{
-        RECHARGE,WITHDRAWAL;
+    public enum OrderSources {
+        RECHARGE, WITHDRAWAL;
+    }
+
+    @Getter
+    public enum OrderHandle {
+        /**
+         * 可抢
+         */
+        CAN_RUSH,
+        /**
+         * 待取消
+         */
+        NEED_CANCEL;
     }
 }

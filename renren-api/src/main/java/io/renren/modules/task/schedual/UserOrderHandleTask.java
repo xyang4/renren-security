@@ -1,9 +1,8 @@
 package io.renren.modules.task.schedual;
 
 import io.renren.common.config.RenrenProperties;
-import io.renren.modules.common.domain.RedisCacheKeyConstant;
+import io.renren.common.enums.OrdersEntityEnum;
 import io.renren.modules.common.service.IRedisService;
-import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 import io.renren.modules.netty.handle.WebSocketServerHandler;
 import io.renren.modules.netty.service.INettyService;
 import io.renren.modules.orders.service.OrdersService;
@@ -12,10 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
-
-import java.util.List;
-import java.util.Set;
 
 /**
  * 用户定点处理定时任务<br>
@@ -40,36 +35,21 @@ public class UserOrderHandleTask {
     @Autowired
     OrdersService ordersService;
 
-    @Scheduled(fixedRate = 5 * 1000)
+    /**
+     * 给指定在线用户推送可抢订单
+     */
+    @Scheduled(fixedDelay = 5 * 1000)
     public void pushOrder() {
-        // 1 query active user
-        List<String> onlineUserWithMobile = WebSocketServerHandler.ONLINE_USER_WITH_MOBILE;
-        Set<String> userSetCanRushBuy = iRedisService.setMembers(RedisCacheKeyConstant.USERS_CAN_RUSH_BUY);
-
-        log.info("Exec Task[{}]:users_Online[{}] users_canRushBuy[{}] ...", WebSocketActionTypeEnum.PULL_ORDER.getDescribe(), onlineUserWithMobile.size(), userSetCanRushBuy.size());
-        // 同 handleWebSocketRequest.handleWebSocketRequest: ACTIVE & BEGIN_RECEIPT 处理
-        if (CollectionUtils.isEmpty(onlineUserWithMobile) || CollectionUtils.isEmpty(userSetCanRushBuy)) {
-            return;
+        for (OrdersEntityEnum.OrderType item : OrdersEntityEnum.OrderType.values()) {
+            ordersService.asyncPushSpecialOrder(item);
         }
-        //1、给商户充值订单推送
-        // todo 批处理优化
-        onlineUserWithMobile.stream()
-                .filter(v -> userSetCanRushBuy.contains(v)).forEach(v -> {
-            long orders = iRedisService.listSize(RedisCacheKeyConstant.ORDER_LIST_CAN_BUY_PREFIX + v);
-            log.info("可消费订单数量orders:{}",orders);
-            orders = orders > renrenProperties.getBatchPushOrderNumMax() ? renrenProperties.getBatchPushOrderNumMax() : orders;
-
-            // 2 push msg to special user by mobile
-            if (orders > 0) {
-                for (int i = 0; i < orders; i++) {
-                    String orderInfo = iRedisService.pull(RedisCacheKeyConstant.ORDER_LIST_CAN_BUY_PREFIX + v);
-                    if (ordersService.checkValidity(orderInfo)) {
-                        iNettyService.asyncSendMessage(v, orderInfo);
-                    }
-                }
-            }
-        });
-        //2、给商户提现订单推送
     }
 
+    /**
+     * 清理存活用户，防止用户异常下线造成OOM
+     */
+    @Scheduled(cron = "0 */${renren.web-socket.expire} * * * ?")
+    public void clearActiveUser() {
+        iNettyService.clearActiveUser();
+    }
 }

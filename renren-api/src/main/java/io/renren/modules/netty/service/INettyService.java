@@ -26,7 +26,7 @@ public interface INettyService {
      * @return
      */
     R sendMessage(RedisMessageDomain messageDomain, boolean async);
-    
+
     @Async
     void asyncSendMessage(String mobile, Object content);
 
@@ -57,4 +57,8 @@ public interface INettyService {
      */
     Object listOnlineUser();
 
+    /**
+     * 清理异常在线用户
+     */
+    void clearActiveUser();
 }
