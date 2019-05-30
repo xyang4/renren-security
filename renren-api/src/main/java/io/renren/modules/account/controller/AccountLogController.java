@@ -23,6 +23,7 @@ import java.util.Map;
  * @email 18610450436@163.com
  * @date 2019-05-13 18:39:26
  */
+@AppLogin
 @RestController
 @RequestMapping("app/accountlog")
 public class AccountLogController extends BaseController {
@@ -53,7 +54,7 @@ public class AccountLogController extends BaseController {
 //    public R list(@RequestParam Map<String, Object> params){
 //        PageUtils page = accountLogService.queryPage(params);
 //
-//        return R.ok().put("page", page);
+//        return R.ok(page);
 //    }
 //
 //

@@ -79,13 +79,17 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         //创建新订单
         OrdersEntity orders = new OrdersEntity();
         orders.setSendUserId(merId);//发送用户
-        orders.setOrderDate(orderDate);
+        orders.setOrderDate(orderDate);//订单日期
         orders.setOrderType(orderType);
         orders.setOrderSn(orderSn);//商户原始订单
         orders.setPayType(payType);//付款类型
+        orders.setOrderState(OrdersEntityEnum.OrderState.b.getValue());//订单状态
         orders.setSendAmount(new BigDecimal(sendAmount));//发送金额
+        orders.setAmount(new BigDecimal(sendAmount));//金额
+        orders.setIsApi(1);
+        orders.setPlatDate(DateUtils.format(new Date(), DateUtils.DATE_PATTERN));
         orders.setNotifyUrl(notifyUrl);//回调地址
-        orders.setTimeoutRecv(30*60);//抢单超时时间，秒 TODO
+        orders.setTimeoutRecv(3*60);//抢单超时时间，秒 TODO
         orders.setCreateTime(DateUtils.format(new Date(),DateUtils.DATE_TIME_PATTERN));
         boolean boo = this.save(orders);
         //验证

@@ -25,6 +25,7 @@ import java.util.Map;
  * @email 18610450436@163.com
  * @date 2019-05-13 18:22:50
  */
+@AppLogin
 @RestController
 @RequestMapping("app/account")
 @Api("账户相关")
