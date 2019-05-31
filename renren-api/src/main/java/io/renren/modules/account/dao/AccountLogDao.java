@@ -18,5 +18,5 @@ import java.util.List;
 @Mapper
 public interface AccountLogDao extends BaseMapper<AccountLogEntity> {
 
-    List<AccountLogEntity> getAccountLogsByUserId(Page<AccountLogEntity> page, Integer userId);
+    List<AccountLogEntity> getAccountLogsByUserId(Page<AccountLogEntity> page, @Param("userId") Integer userId);
 }

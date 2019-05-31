@@ -110,4 +110,19 @@ public class OrdersController extends BaseController {
         return R.ok(orders);
     }
 
+    @AppLogin
+    @ApiOperation("订单详情")
+    @RequestMapping("/detail")
+    public R detail(@RequestBody Map map){
+        TokenEntity tokenEntity = getToken();
+        if(tokenEntity == null){
+            return R.error(-1,"查询用户信息失败");
+        }
+        Integer orderId = (Integer)map.get("orderId");
+        if(orderId == null){
+            return R.error(-1001,"请求参数错误");
+        }
+        OrdersEntity ordersEntity = ordersService.getById(orderId);
+        return R.ok(ordersEntity);
+    }
 }
