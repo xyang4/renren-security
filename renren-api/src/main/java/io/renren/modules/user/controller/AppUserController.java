@@ -13,6 +13,7 @@ import io.renren.modules.user.form.UserInfoForm;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Date;
+import java.util.Map;
 
 @Api("用户相关")
 @RestController
@@ -88,4 +90,56 @@ public class AppUserController extends BaseController {
 
         return R.ok();
     }
+
+    @PostMapping("updateNickName")
+    @ApiOperation("修改昵称")
+    @AppLogin
+    public R updateNickName(@RequestBody Map param){
+        TokenEntity tokenEntity = getToken();
+        if (null != (checkToken(tokenEntity))) {
+            return R.error();
+        }
+        String nickName = (String) param.get("nickName");
+        if(StringUtils.isBlank(nickName)){
+            return R.error(-10002,"请求参数错误");
+        }
+        UserEntity updateUser = new UserEntity();
+        updateUser.setUserId(tokenEntity.getUserId());
+        updateUser.setNickName(nickName);
+        iUserService.updateById(updateUser);
+        return R.ok();
+    }
+
+
+    @PostMapping("updatePwd")
+    @ApiOperation("修改密码")
+    @AppLogin
+    public R updatePwd(@RequestBody Map param){
+        TokenEntity tokenEntity = getToken();
+        if (null != (checkToken(tokenEntity))) {
+            return R.error();
+        }
+        UserEntity userEntity = iUserService.getById(tokenEntity.getUserId());
+        if(userEntity == null){
+            return R.error(-10001,"用户不存在");
+        }
+        String oldPwd = (String) param.get("oldPwd");
+        String newPwd = (String) param.get("newPwd");
+        String newConfirmPwd = (String) param.get("newConfirmPwd");
+        if(StringUtils.isBlank(oldPwd) || StringUtils.isBlank(newPwd) || StringUtils.isBlank(newConfirmPwd)){
+            return R.error(-10002,"请求参数错误");
+        }
+        if(!DigestUtils.sha256Hex(oldPwd).equals(userEntity.getPasswd())){
+            return R.error(-10003,"原密码错误");
+        }
+        if(!newPwd.equals(newConfirmPwd)){
+            return R.error(-10004,"确认密码不一致");
+        }
+        UserEntity updateUser = new UserEntity();
+        updateUser.setUserId(tokenEntity.getUserId());
+        updateUser.setPasswd(DigestUtils.sha256Hex(newPwd));
+        iUserService.updateById(updateUser);
+        return R.ok();
+    }
+
 }
