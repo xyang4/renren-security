@@ -3,6 +3,7 @@ package io.renren.modules.netty.service;
 import io.netty.channel.Channel;
 import io.renren.common.utils.R;
 import io.renren.modules.netty.domain.RedisMessageDomain;
+import io.renren.modules.netty.domain.WebSocketResponseDomain;
 import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 import org.springframework.scheduling.annotation.Async;
 
@@ -39,7 +40,7 @@ public interface INettyService {
      * @param content         请求参数
      * @return
      */
-    R handleWebSocketRequest(WebSocketActionTypeEnum webSocketAction, Channel channel, String token, String content);
+    WebSocketResponseDomain handleWebSocketRequest(WebSocketActionTypeEnum webSocketAction, Channel channel, String token, String content);
 
     /**
      * 检验用户是否活跃

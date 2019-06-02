@@ -101,4 +101,9 @@ renren-security
 6. 定时任务
     - 定时推送可抢订单
     - 定时清理 redis 数据
+    
+    
+    
+7. 订单操作：
+  - 已下发订单取消： CANCEL_PUSHED_ORDER
   

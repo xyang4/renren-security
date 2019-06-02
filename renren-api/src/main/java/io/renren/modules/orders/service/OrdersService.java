@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import io.renren.common.enums.OrdersEntityEnum;
 import io.renren.common.utils.R;
+import io.renren.modules.netty.domain.WebSocketResponseDomain;
 import io.renren.modules.orders.domain.OrderRule;
 import io.renren.modules.orders.entity.OrdersEntity;
 import io.renren.modules.orders.form.OrderPageForm;
@@ -33,11 +34,21 @@ public interface OrdersService extends IService<OrdersEntity> {
     /**
      * 抢购
      *
-     * @param mobile  用户手机号
-     * @param orderSn 订单编号
+     * @param mobile    用户手机号
+     * @param orderType 订单编号
+     * @param orderId   订单编号
      * @return map
      */
-    Map<String, Object> rushToBuy(String mobile, String orderSn);
+    WebSocketResponseDomain rushToBuy(String mobile, String orderType, String orderId);
+
+    /**
+     * 订单状态通知
+     *
+     * @param noticeType
+     * @param orderType
+     * @param orderId
+     */
+    void orderStatusNotice(int noticeType, String orderType, String orderId);
 
     /**
      * 列表查询
@@ -63,13 +74,14 @@ public interface OrdersService extends IService<OrdersEntity> {
      */
     Map applyOrder(Integer merId, String orderDate, int orderType, String orderSn, String payType, String sendAmount, String notifyUrl);
 
+
     /**
      * 订单有效性校验： {@link OrdersEntity } {@link io.renren.modules.orders.domain.RushOrderInfo}
      *
      * @param orderInfo
      * @return
      */
-    boolean checkValidity(Object orderInfo);
+    Object checkValidity(Object orderInfo);
 
     boolean addOrder(OrdersEntity ordersEntity);
 
@@ -101,13 +113,19 @@ public interface OrdersService extends IService<OrdersEntity> {
     List<OrdersEntity> getSendOrRecvOrderList(OrderPageForm orderPageForm);
 
     /**
-     * 异步批量推送订单至指定用户
+     * 订单推送
      *
-     * @param mobile
+     * @param async     是否同步
+     * @param orderType 订单类型
+     */
+    void pushSpecialOrder(boolean async, OrdersEntityEnum.OrderType orderType);
+
+    /**
+     * 订单推送
+     *
      * @param orderType
      */
-    @Async
-    void asyncBatchPushOrderToUser(String mobile, int orderType);
+    void pushSpecialOrder(OrdersEntityEnum.OrderType orderType);
 
     /**
      * 异步推送指定类型的订单
@@ -118,10 +136,20 @@ public interface OrdersService extends IService<OrdersEntity> {
     void asyncPushSpecialOrder(OrdersEntityEnum.OrderType merRecharge);
 
     /**
+     * 异步批量推送订单至指定用户
+     *
+     * @param mobile
+     * @param orderType
+     */
+    @Async
+    void asyncBatchPushOrderToUser(String mobile, int orderType);
+
+
+    /**
      * 抢单成功:更新订单为接单成功状态
      * recvMobile:接单人手机号
      */
-    Map reciveOrderSuccess(String orderId,String orderType,String recvMobile);
+    Map reciveOrderSuccess(String orderId, String orderType, String recvMobile);
 
 }
 

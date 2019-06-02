@@ -94,7 +94,7 @@ public class SmsServiceImpl extends ServiceImpl<UserSmsRecordDao, UserSmsRecord>
         JSONObject parseObject = JSONObject.parseObject(sysDict.getVal());
         int max_num_pre_day = parseObject.getInteger("max_num_pre_day");
         expireTime = parseObject.getLongValue("sms_expire_time_pre_code");
-        String cacheNumPerDay = iRedsiService.getHash(RedisCacheKeyConstant.SMS_CODE_COUNT_PREDIX + dateStr, mobile);
+        String cacheNumPerDay = iRedsiService.getHash(RedisCacheKeyConstant.SMS_CODE_COUNT_PREFIX + dateStr, mobile);
 
         if (StringUtils.isNotBlank(cacheNumPerDay) && Integer.valueOf(cacheNumPerDay).compareTo(max_num_pre_day) >= 0) {
             throw new RRException(RRExceptionEnum.SMS_CODE_BEYOND);
@@ -113,7 +113,7 @@ public class SmsServiceImpl extends ServiceImpl<UserSmsRecordDao, UserSmsRecord>
 
         int countNum = StringUtils.isBlank(cacheNumPerDay) ? 0 : Integer.valueOf(cacheNumPerDay);
 
-        iRedsiService.putHashKey(RedisCacheKeyConstant.SMS_CODE_COUNT_PREDIX + dateStr, mobile, ++countNum + "");
+        iRedsiService.putHashKey(RedisCacheKeyConstant.SMS_CODE_COUNT_PREFIX + dateStr, mobile, ++countNum + "");
 
     }
 

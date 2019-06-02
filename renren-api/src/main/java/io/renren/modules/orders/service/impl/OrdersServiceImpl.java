@@ -6,12 +6,15 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.renren.common.config.RenrenProperties;
 import io.renren.common.enums.OrdersEntityEnum;
 import io.renren.common.exception.RRException;
+import io.renren.common.util.StaticConstant;
 import io.renren.common.utils.DateUtils;
 import io.renren.common.utils.R;
+import io.renren.common.utils.SpringContextUtils;
 import io.renren.modules.account.service.AccountService;
 import io.renren.modules.common.domain.RedisCacheKeyConstant;
 import io.renren.modules.common.service.IRedisService;
 import io.renren.modules.netty.domain.RedisMessageDomain;
+import io.renren.modules.netty.domain.WebSocketResponseDomain;
 import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 import io.renren.modules.netty.handle.WebSocketServerHandler;
 import io.renren.modules.netty.service.INettyService;
@@ -22,6 +25,7 @@ import io.renren.modules.orders.entity.OrdersEntity;
 import io.renren.modules.orders.form.OrderPageForm;
 import io.renren.modules.orders.service.OrdersService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -31,6 +35,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 
 @Service
@@ -40,9 +45,11 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     IRedisService iRedisService;
 
     @Autowired
-    private OrdersDao ordersDao;
+    OrdersDao ordersDao;
     @Autowired
-    private AccountService accountService;
+    AccountService accountService;
+    @Autowired
+    RenrenProperties renrenProperties;
 
     @Override
     public List<Map<String, Object>> receiveValidOrder(String mobile, OrderRule orderRule, int size) {
@@ -51,10 +58,52 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     }
 
     @Override
-    public Map<String, Object> rushToBuy(String mobile, String orderSn) {
+    @Transactional
+    public WebSocketResponseDomain rushToBuy(String mobile, String orderType, String orderId) {
+        WebSocketResponseDomain r = new WebSocketResponseDomain(WebSocketActionTypeEnum.RUSH_ORDERS.getCommand(), null);
+        if (null != checkValidity(orderId)) {
+            r.setCode(WebSocketResponseDomain.ResponseCode.ERROR_INVALID_ORDER.getCode());
+            r.setMsg(WebSocketResponseDomain.ResponseCode.ERROR_INVALID_ORDER.getMsg());
+            return r;
+        }
+        String lockVal = iRedisService.getVal(RedisCacheKeyConstant.LOCK_ORDER_PREFIX + orderId);
+        if (StringUtils.isBlank(lockVal)) {
+            String lockKey = RedisCacheKeyConstant.LOCK_ORDER_PREFIX + orderId;
+            iRedisService.set(lockKey, mobile, renrenProperties.getOrderRushLockSecond(), TimeUnit.SECONDS);
 
-        //        TODO
-        return null;
+            Map rMap = reciveOrderSuccess(mobile, orderType, orderId);
+            if (null == rMap) {
+                r.setCode(WebSocketResponseDomain.ResponseCode.ERROR_HANDLE.getCode());
+                r.setCode(WebSocketResponseDomain.ResponseCode.ERROR_HANDLE.getCode());
+            } else {
+                // 操作成功，通知所有用户该单已被抢
+                orderStatusNotice(1, orderType, orderId);
+                r.setData(rMap);
+            }
+
+            iRedisService.delKey(lockKey);
+        } else {
+            r.setCode(WebSocketResponseDomain.ResponseCode.ERROR_RUSH_BEING_QUEUE.getCode());
+            r.setMsg(WebSocketResponseDomain.ResponseCode.ERROR_RUSH_BEING_QUEUE.getMsg());
+        }
+        return r;
+    }
+
+    @Override
+    public void orderStatusNotice(int noticeType, String orderType, String orderId) {
+        switch (noticeType) {
+            case 1: // 通知所有已下发抢单信息的用户，改单已被抢
+                // 已下发用户查询
+                String cacheKey = RedisCacheKeyConstant.USERS_PUSHED_RUSH_ORDER_PREFIX + orderType + StaticConstant.SPLIT_CHAR_COLON + orderId;
+                Set<String> pushedUsers = iRedisService.setMembers(cacheKey);
+                for (String item : pushedUsers) {
+                    WebSocketResponseDomain responseDomain = new WebSocketResponseDomain(WebSocketActionTypeEnum.CANCEL_PUSHED_ORDER.getCommand(), orderId);
+                    iRedisService.removeSetMember(cacheKey, item);
+                    iNettyService.asyncSendMessage(item, responseDomain);
+                }
+                break;
+            default:
+        }
     }
 
     @Override
@@ -89,13 +138,13 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         orders.setIsApi(1);
         orders.setPlatDate(DateUtils.format(new Date(), DateUtils.DATE_PATTERN));
         orders.setNotifyUrl(notifyUrl);//回调地址
-        orders.setTimeoutRecv(3*60);//抢单超时时间，秒 TODO
-        orders.setCreateTime(DateUtils.format(new Date(),DateUtils.DATE_TIME_PATTERN));
+        orders.setTimeoutRecv(3 * 60);//抢单超时时间，秒 TODO
+        orders.setCreateTime(DateUtils.format(new Date(), DateUtils.DATE_TIME_PATTERN));
         boolean boo = this.save(orders);
         //验证
         if (boo == true && (orders.getOrderId() != null && orders.getOrderId() > 0)) {//检查订单是否创建成功
             RushOrderInfo rushOrderInfo = new RushOrderInfo(
-                    OrdersEntityEnum.OrderHandle.CAN_RUSH.name(),
+                    orders.getOrderId(),
                     orders.getOrderSn(),
                     orders.getCreateTime(),
                     orders.getOrderType(),
@@ -203,30 +252,50 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
 
     @Autowired
     INettyService iNettyService;
-    @Autowired
-    RenrenProperties renrenProperties;
 
     @Async
     public void asyncBatchPushOrderToUser(String mobile, int orderType) {
         // 1 订单拉取
         String redisKey = RedisCacheKeyConstant.ORDER_LIST_CAN_BUY_PREFIX + mobile + ":" + orderType;
-        long orders = iRedisService.listSize(redisKey);
-        log.info("可消费订单数量[{}] MaxAllowNum[{}]", orders, renrenProperties.getBatchPushOrderNumMax());
-        if (orders < 1) {
+        long ordersNum = iRedisService.listSize(redisKey);
+        log.info("可消费订单数量[{}] MaxAllowNum[{}]", ordersNum, renrenProperties.getBatchPushOrderNumMax());
+        if (ordersNum < 1) {
             return;
         }
-        orders = orders > renrenProperties.getBatchPushOrderNumMax() ? renrenProperties.getBatchPushOrderNumMax() : orders;
+        ordersNum = ordersNum > renrenProperties.getBatchPushOrderNumMax() ? renrenProperties.getBatchPushOrderNumMax() : ordersNum;
+
         // 2 订单遍历推送下发
-         for (int i = 0; i < orders; i++) {
+        for (int i = 0; i < ordersNum; i++) {
             String orderInfo = iRedisService.pull(redisKey);
-            if (checkValidity(orderInfo)) {
-                iNettyService.asyncSendMessage(mobile, orderInfo);
+            WebSocketResponseDomain responseDomain;
+            if (null != (responseDomain = (WebSocketResponseDomain) checkValidity(orderInfo))) {
+                // 已下发的抢单用户信息
+                responseDomain.setA(WebSocketActionTypeEnum.RUSH_ORDERS.getCommand());
+                RushOrderInfo rushOrderInfo = (RushOrderInfo) responseDomain.getData();
+                iRedisService.setAdd(RedisCacheKeyConstant.USERS_PUSHED_RUSH_ORDER_PREFIX + orderType + StaticConstant.SPLIT_CHAR_COLON + rushOrderInfo.getOrderId(), mobile);
+                iNettyService.asyncSendMessage(mobile, responseDomain);
             }
         }
     }
 
     @Override
-    public void asyncPushSpecialOrder(OrdersEntityEnum.OrderType orderType) {
+    public void pushSpecialOrder(boolean async, OrdersEntityEnum.OrderType merRecharge) {
+        if (async) {
+            OrdersService ordersService = SpringContextUtils.getBean(OrdersService.class);
+            ordersService.asyncPushSpecialOrder(merRecharge);
+        } else {
+            pushSpecialOrder(merRecharge);
+        }
+    }
+
+    @Override
+    @Async
+    public void asyncPushSpecialOrder(OrdersEntityEnum.OrderType merRecharge) {
+        pushSpecialOrder(merRecharge);
+    }
+
+    @Override
+    public void pushSpecialOrder(OrdersEntityEnum.OrderType orderType) {
 
         // 1 查询并筛选有效的在线用户
         List<String> onlineUserWithMobile = WebSocketServerHandler.ONLINE_USER_WITH_MOBILE;
@@ -245,18 +314,24 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     }
 
     @Override
-    public boolean checkValidity(Object orderInfo) {
-        boolean r = false;
+    public Object checkValidity(Object orderInfo) {
+        Object r = null;
         if (orderInfo instanceof OrdersEntity) {
             OrdersEntity entity = (OrdersEntity) orderInfo;
-            // TODO 订单有效性校验
+            log.info("checkValidity:", entity);
+            // TODO 订单有效性校验：超时时间等
         } else if (orderInfo instanceof String) {
             // 同 RedisMessageReceiver.onMessage : PUSH_ORDER_TO_SPECIAL_USER 处理
-            RushOrderInfo rushOrderInfo = JSONObject.parseObject((String) orderInfo, RushOrderInfo.class);
-            Date expireDate = DateUtils.addDateSeconds(DateUtils.stringToDate(rushOrderInfo.getCreateTime(), DateUtils.DATE_TIME_PATTERN), rushOrderInfo.getTimeoutRecv());
-            if (new Date().compareTo(expireDate) <   0) {
-                r = true;
+            if (((String) orderInfo).contains("{")) {
+                RushOrderInfo rushOrderInfo = JSONObject.parseObject((String) orderInfo, RushOrderInfo.class);
+                Date expireDate = DateUtils.addDateSeconds(DateUtils.stringToDate(rushOrderInfo.getCreateTime(), DateUtils.DATE_TIME_PATTERN), rushOrderInfo.getTimeoutRecv());
+                if (new Date().compareTo(expireDate) < 0) {
+                    r = new WebSocketResponseDomain(null, rushOrderInfo);
+                }
+            } else {//仅对orderId校验
+                // TODO 订单有效性校验：超时时间等
             }
+
         }
         return r;
     }
@@ -341,11 +416,11 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     /**
      * 抢单成功:更新订单为接单成功状态
      */
-    public Map reciveOrderSuccess(String orderId,String orderType,String recvMobile){
+    public Map reciveOrderSuccess(String orderId, String orderType, String recvMobile) {
         //TODO
         Map returnMap = new HashMap();
-        returnMap.put("orderId",orderId);
-        returnMap.put("orderType",orderType);
+        returnMap.put("orderId", orderId);
+        returnMap.put("orderType", orderType);
 
         return returnMap;
     }

@@ -11,10 +11,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class RushOrderInfo {
-    private String a;
+    private Integer orderId;
     private String orderSn;
     private String createTime;
     private Integer orderType;
     private Integer timeoutRecv;
+
 
 }

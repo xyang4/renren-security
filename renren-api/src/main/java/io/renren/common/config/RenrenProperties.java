@@ -57,5 +57,6 @@ public class RenrenProperties {
     private String smsUrl;
     private String smsTemplate;
 
+    private long orderRushLockSecond = 3;
     private long batchPushOrderNumMax = 10;
 }

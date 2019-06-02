@@ -35,7 +35,8 @@ public enum WebSocketActionTypeEnum {
     DISTRIBUTE_ORDER("distribute_order", "派发订单"),
 
     PRINT_SERVER_TIME("print_server_time", "打印系统时间"),
-    CANCLE_PUSHED_ORDER("cancle_pushed_order", "取消已经下发的订单");
+
+    CANCEL_PUSHED_ORDER("cancel_pushed_order", "取消已经下发的订单");
 
     private String command;
     private String describe;

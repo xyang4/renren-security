@@ -3,7 +3,7 @@ spring:
     type: com.alibaba.druid.pool.DruidDataSource
     druid:
       driver-class-name: com.mysql.jdbc.Driver
-      url: jdbc:mysql://47.104.94.91:3306/renren_security?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8&useSSL=false
+      url: jdbc:mysql://192.168.43.195:3306/pay?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8&useSSL=false
       username: root
       password: 123456
       initial-size: 10
@@ -32,10 +32,22 @@ spring:
         wall:
           config:
             multi-statement-allow: true
-
-
-renren:
   redis:
-    open: false  # 是否开启redis缓存  true开启   false关闭
-  auth:
-    open: true
+    host: 127.0.0.1
+    port: 6379
+    database: 4
+#    password: 123456
+
+
+# 自定义属性配置
+renren:
+  open-redis-logger: false
+  auth-open: true
+  data-sign-key: "Hello World!"
+  sms-account: N6081253
+  sms-password: SdJmGUYWEq1291
+  sms-url: https://sms.253.com/msg/send
+  sms-template: 【xxx】验证码${verifyCode}，用于您注册成为用户，5分钟内有效，请勿泄露他人，如非本人操作请忽略。
+  sms-send-open: false
+  sms-code-default: #"123456"
+  sign-open: false

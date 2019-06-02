@@ -105,18 +105,6 @@ public class OrdersEntityEnum {
      */
     @Getter
     public enum OrderSources {
-        RECHARGE, WITHDRAWAL;
-    }
-
-    @Getter
-    public enum OrderHandle {
-        /**
-         * 可抢
-         */
-        CAN_RUSH,
-        /**
-         * 待取消
-         */
-        NEED_CANCEL;
+        RECHARGE, WITHDRAWAL
     }
 }

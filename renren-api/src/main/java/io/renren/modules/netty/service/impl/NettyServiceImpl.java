@@ -18,6 +18,7 @@ import io.renren.common.utils.R;
 import io.renren.modules.common.domain.RedisCacheKeyConstant;
 import io.renren.modules.common.service.IRedisService;
 import io.renren.modules.netty.domain.RedisMessageDomain;
+import io.renren.modules.netty.domain.WebSocketResponseDomain;
 import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 import io.renren.modules.netty.handle.WebSocketServerHandler;
 import io.renren.modules.netty.service.INettyService;
@@ -112,7 +113,7 @@ public class NettyServiceImpl implements INettyService {
                 case PRINT_SERVER_TIME:
                     asyncSendMessage(redisMessageDomain.getContent(), "Now:" + LocalTime.now());
                     break;
-                case CANCLE_PUSHED_ORDER:
+                case CANCEL_PUSHED_ORDER:
                     // TODO 取消一下发的订单
                     break;
                 default:
@@ -147,16 +148,22 @@ public class NettyServiceImpl implements INettyService {
     OrdersService ordersService;
 
     @Override
-    public R handleWebSocketRequest(WebSocketActionTypeEnum webSocketAction, Channel channel, String token, String content) {
+    public WebSocketResponseDomain handleWebSocketRequest(WebSocketActionTypeEnum webSocketAction, Channel channel, String token, String content) {
+
+        WebSocketResponseDomain responseDomain = new WebSocketResponseDomain(webSocketAction.getCommand(), null);
         R r;
         // 登录凭证校验
         TokenEntity tokenEntity = iTokenService.queryByToken(token);
 
         if (null != (r = iTokenService.checkToken(tokenEntity))) {
-            return r;
+            responseDomain.setCode(WebSocketResponseDomain.ResponseCode.NOT_ACTIVE.getCode());
+            responseDomain.setMsg(r.getMsg());
+            return responseDomain;
         }
 
         ChannelId channelId = channel.id();
+        // 订单校验返回值
+        String[] orderR;
         log.info("Begin handle WebSocketAction [{}] Token[{}] ChannelId[{}] .", webSocketAction.getDescribe(), token, channelId.asLongText());
         switch (webSocketAction) {
             case ACTIVE:// 保活 存储 key: online:mobile val：longTextId
@@ -167,38 +174,40 @@ public class NettyServiceImpl implements INettyService {
                     WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.add(tokenEntity.getMobile());
                     WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.put(tokenEntity.getMobile(), channel);
                 }
-                r = R.ok();
                 break;
             case BEGIN_RECEIPT:// 开始接单，将用户追加至可接单队列中
                 if (!checkWebSocketUserIsActive(tokenEntity.getMobile(), channel)) {
-                    return R.error(RRExceptionEnum.USER_NOT_ONLINE, "请先进行 active 操作");
+                    responseDomain.setCode(WebSocketResponseDomain.ResponseCode.NOT_ACTIVE.getCode());
+                    responseDomain.setMsg(WebSocketResponseDomain.ResponseCode.NOT_ACTIVE.getMsg());
+                    return responseDomain;
                 }
                 // 可抢单队列添加订单类型前缀
-                OrdersEntityEnum.OrderType beginReceiptOrderType;
-                if (StringUtils.isBlank(content) || null == (beginReceiptOrderType = OrdersEntityEnum.OrderType.getByVal(Integer.valueOf(content)))) {
-                    return R.error(RRExceptionEnum.BAD_REQUEST_PARAMS, "抢单类型错误");
-                }
 
+                orderR = checkOrderType(content);
+                if (null == orderR) {
+                    responseDomain.setCode(WebSocketResponseDomain.ResponseCode.REQUEST_ACTION_ERROR.getCode());
+                    responseDomain.setMsg(WebSocketResponseDomain.ResponseCode.REQUEST_ACTION_ERROR.getMsg());
+                    return responseDomain;
+                }
                 // add user to redis set:  key=order_list_can_buy
-                String redisKey = RedisCacheKeyConstant.USERS_CAN_RUSH_BUY_PREFIX + beginReceiptOrderType.getValue();
+                String redisKey = RedisCacheKeyConstant.USERS_CAN_RUSH_BUY_PREFIX + orderR[0];
                 if (!iRedisService.isSetMember(redisKey, tokenEntity.getMobile())) {
                     iRedisService.setAdd(redisKey, tokenEntity.getMobile());
                 }
-                return R.ok();
-
+                break;
             case STOP_RECEIPT:// 停止接单,从集合中移除
-                // 05-28: redis + 前缀
-
-                OrdersEntityEnum.OrderType stopReceipeOrderType;
-                if (StringUtils.isBlank(content) || null == (stopReceipeOrderType = OrdersEntityEnum.OrderType.getByVal(Integer.valueOf(content)))) {
-                    return R.error(RRExceptionEnum.BAD_REQUEST_PARAMS, "取消抢单类型错误");
+                // 05-28: redis + 前缀            orderR = checkOrderType(content);
+                orderR = checkOrderType(content);
+                if (null == orderR) {
+                    responseDomain.setCode(WebSocketResponseDomain.ResponseCode.REQUEST_ACTION_ERROR.getCode());
+                    responseDomain.setMsg(WebSocketResponseDomain.ResponseCode.REQUEST_ACTION_ERROR.getMsg());
+                    return responseDomain;
                 }
 
-                Long no = iRedisService.removeSetMember(RedisCacheKeyConstant.USERS_CAN_RUSH_BUY_PREFIX + stopReceipeOrderType.getValue(), tokenEntity.getMobile());
-                return R.ok("Ele No:" + no);
-
+                iRedisService.removeSetMember(RedisCacheKeyConstant.USERS_CAN_RUSH_BUY_PREFIX + orderR[0], tokenEntity.getMobile());
+                log.info("用户[{}] 停止接单 操作成功!", tokenEntity.getMobile());
+                break;
             case RUSH_ORDERS://抢单
-                // TODO 抢单处理
                 //ridis事物开始 ?
                 //查询已抢中订单数据集
                 //如果已存在该订单，直接返回，订单已被抢
@@ -207,14 +216,60 @@ public class NettyServiceImpl implements INettyService {
                 //更新订单状态及信息
                 //ridis事物提交
                 //下发订单被抢消息
+                orderR = checkOrderType(content);
+                if (null == orderR) {
+                    responseDomain.setCode(WebSocketResponseDomain.ResponseCode.REQUEST_ACTION_ERROR.getCode());
+                    responseDomain.setMsg(WebSocketResponseDomain.ResponseCode.REQUEST_ACTION_ERROR.getMsg());
+                    return responseDomain;
+                }
+                responseDomain = ordersService.rushToBuy(tokenEntity.getMobile(), orderR[0], orderR[1]);
+                break;
+            case PUSH_ORDER_TO_SPECIAL_USER:
+                break;
+            case PULL_ORDER:
+                break;
+            case DISTRIBUTE_ORDER:
                 break;
             case PRINT_SERVER_TIME:
-                r = R.ok(LocalDateTime.now(ZoneId.of("Asia/Shanghai")));
+                responseDomain.setData(R.ok(LocalDateTime.now(ZoneId.of("Asia/Shanghai"))));
+                break;
+            case CANCEL_PUSHED_ORDER:
                 break;
             default:
-                r = R.error(RRExceptionEnum.BAD_REQUEST_PARAMS, "command[ " + (null == webSocketAction ? "null" : webSocketAction.getCommand()) + " ]");
+                responseDomain.setCode(WebSocketResponseDomain.ResponseCode.REQUEST_ACTION_ERROR.getCode());
+                responseDomain.setMsg(WebSocketResponseDomain.ResponseCode.REQUEST_ACTION_ERROR.getMsg());
+        }
+        return responseDomain;
+    }
+
+    /**
+     * 订单类型校验
+     * orderType=1&orderId=1
+     *
+     * @param content
+     * @return
+     */
+    private String[] checkOrderType(String content) {
+        String[] r = new String[2];
+        if (StringUtils.isBlank(content)) return null;
+        if (content.contains("&")) {
+            String[] tmpStr = content.split("&");
+            for (String item : tmpStr) {
+                String[] tt = item.split("=");
+                if (tt[0].equals("orderType")) {
+                    r[0] = tt[1];
+                } else if (tt[0].equals("orderId")) {
+                    r[1] = tt[1];
+                }
+            }
+
+        } else {
+            if (null != OrdersEntityEnum.OrderType.getByVal(Integer.valueOf(content))) {
+                r[0] = content;
+            }
         }
         return r;
+
     }
 
     @Override
@@ -251,7 +306,7 @@ public class NettyServiceImpl implements INettyService {
         if (null != invalidUser) {
             invalidUser.forEach(v -> {
                 WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.remove(v);
-                WebSocketServerHandler.ONLINE_USER_GROUP.remove(WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.get(v));
+                //WebSocketServerHandler.ONLINE_USER_GROUP.remove(WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.get(v));
                 WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.remove(v);
             });
         }

@@ -10,11 +10,11 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.util.concurrent.GlobalEventExecutor;
-import io.renren.common.utils.R;
 import io.renren.common.utils.SpringContextUtils;
 import io.renren.modules.common.domain.RedisCacheKeyConstant;
 import io.renren.modules.common.service.IRedisService;
 import io.renren.modules.netty.domain.WebSocketRequestDomain;
+import io.renren.modules.netty.domain.WebSocketResponseDomain;
 import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 import io.renren.modules.netty.service.INettyService;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +37,8 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<TextWebS
     /**
      * 在线用户
      */
-    public static ChannelGroup ONLINE_USER_GROUP = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+    public static final ChannelGroup ONLINE_USER_GROUP = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+
     /**
      * mobile:channel
      */
@@ -57,9 +58,10 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<TextWebS
         } else {
             WebSocketRequestDomain requestDomain = JSONObject.parseObject(msgContent, WebSocketRequestDomain.class);
             WebSocketActionTypeEnum webSocketAction = requestDomain.getWebSocketAction();
+
             INettyService iNettyService = SpringContextUtils.getBean(INettyService.class);
-            R handleR = iNettyService.handleWebSocketRequest(webSocketAction, channel, requestDomain.getToken(), requestDomain.getContent());
-            socketFrame = new TextWebSocketFrame(JSON.toJSONString(handleR));
+            WebSocketResponseDomain responseDomain = iNettyService.handleWebSocketRequest(webSocketAction, channel, requestDomain.getToken(), requestDomain.getContent());
+            socketFrame = new TextWebSocketFrame(JSON.toJSONString(responseDomain));
         }
         channel.writeAndFlush(socketFrame);
     }
@@ -71,8 +73,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<TextWebS
     public void handlerAdded(ChannelHandlerContext ctx) {
         Channel channel = ctx.channel();
         log.info("用户[{}]（ChannelId） 已上线...", channel.id().asShortText());
-        boolean addboolean = ONLINE_USER_GROUP.add(channel);
-        log.info("用户[{}]（ChannelId） ONLINE_USER_GROUP 添加结果：{}", channel.id().asShortText(),addboolean);
+        ONLINE_USER_GROUP.add(channel);
     }
 
     /**
@@ -86,11 +87,8 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<TextWebS
         ChannelId channelId = channel.id();
         String longtext = channelId.asLongText();
         log.info("用户[ChannelId: {}]已下线!", longtext);
-        //TODO 这里失败了false
-        boolean removeboolean = ONLINE_USER_GROUP.remove(channel);
-
-        log.info("用户[ChannelId: {}]删除通道结果:{}!", longtext,removeboolean);
-
+        // boolean removeboolean = ONLINE_USER_GROUP.remove(channel);
+        // 下线后 无需 主动 remove ONLINE_USER_GROUP 里的 channel,listen 里有实现
         IRedisService iRedisService = SpringContextUtils.getBean(IRedisService.class);
         // 当触发handlerRemoved，ChannelGroup会自动移除对应客户端的channel
         String mobile = iRedisService.getVal(RedisCacheKeyConstant.ONLINE_PREFIX + channelId.asLongText());
