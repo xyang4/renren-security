@@ -338,6 +338,17 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         return returnMap;
     }
 
+    /**
+     * 抢单成功:更新订单为接单成功状态
+     */
+    public Map reciveOrderSuccess(String orderId,String orderType,String recvMobile){
+        //TODO
+        Map returnMap = new HashMap();
+        returnMap.put("orderId",orderId);
+        returnMap.put("orderType",orderType);
+
+        return returnMap;
+    }
 
     //下发余额
 

@@ -116,5 +116,12 @@ public interface OrdersService extends IService<OrdersEntity> {
      */
     @Async
     void asyncPushSpecialOrder(OrdersEntityEnum.OrderType merRecharge);
+
+    /**
+     * 抢单成功:更新订单为接单成功状态
+     * recvMobile:接单人手机号
+     */
+    Map reciveOrderSuccess(String orderId,String orderType,String recvMobile);
+
 }
 
