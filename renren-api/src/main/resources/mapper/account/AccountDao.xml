@@ -25,9 +25,17 @@
 
     <update id="updateAmount" parameterType="map">
         update account
-        set
-        CANUSE_AMOUNT = CANUSE_AMOUNT + #{canuseAmount}
-        and FROZEN_AMOUNT = FROZEN_AMOUNT + #{frozenAmount}
+        <set>
+            <if test="canuseAmount != null">
+                CANUSE_AMOUNT = CANUSE_AMOUNT + #{canuseAmount},
+            </if>
+            <if test="frozenAmount != null">
+                FROZEN_AMOUNT = FROZEN_AMOUNT + #{frozenAmount},
+            </if>
+            <if test="balance != null">
+                BALANCE = BALANCE + #{balance},
+            </if>
+        </set>
         where userId = #{userId} and STATUS = 1
     </update>
 

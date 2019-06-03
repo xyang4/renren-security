@@ -25,9 +25,10 @@ public interface AccountService extends IService<AccountEntity> {
      * @param userId
      * @param canuseAmount
      * @param frozenAmount
+     * @param balance
      * @return
      */
-    int updateAmount(Integer userId, BigDecimal canuseAmount, BigDecimal frozenAmount);
+    int updateAmount(Integer userId, BigDecimal canuseAmount, BigDecimal frozenAmount,BigDecimal balance);
 
     /**
      * 根据userId查询用户

@@ -29,5 +29,7 @@ public interface PayChannelService extends IService<PayChannelEntity> {
     R updatePayChannel(UpdatePayChannelFrom updatePayChannelFrom);
 
     PayChannelDetail getPayChannelDetailById(Integer payChannelId);
+
+    List<PayChannelDetail> getPayChannels(Map<String, Object> params);
 }
 

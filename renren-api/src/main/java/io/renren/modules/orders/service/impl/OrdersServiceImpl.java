@@ -3,6 +3,7 @@ package io.renren.modules.orders.service.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.sun.org.apache.regexp.internal.RE;
 import io.renren.common.config.RenrenProperties;
 import io.renren.common.enums.OrdersEntityEnum;
 import io.renren.common.exception.RRException;
@@ -10,7 +11,10 @@ import io.renren.common.util.StaticConstant;
 import io.renren.common.utils.DateUtils;
 import io.renren.common.utils.R;
 import io.renren.common.utils.SpringContextUtils;
+import io.renren.modules.account.entity.PayChannelDetail;
+import io.renren.modules.account.service.AccountLogService;
 import io.renren.modules.account.service.AccountService;
+import io.renren.modules.account.service.PayChannelService;
 import io.renren.modules.common.domain.RedisCacheKeyConstant;
 import io.renren.modules.common.service.IRedisService;
 import io.renren.modules.netty.domain.RedisMessageDomain;
@@ -22,8 +26,11 @@ import io.renren.modules.orders.dao.OrdersDao;
 import io.renren.modules.orders.domain.OrderRule;
 import io.renren.modules.orders.domain.RushOrderInfo;
 import io.renren.modules.orders.entity.OrdersEntity;
+import io.renren.modules.orders.entity.OrdersLogEntity;
 import io.renren.modules.orders.form.OrderPageForm;
+import io.renren.modules.orders.service.OrdersLogService;
 import io.renren.modules.orders.service.OrdersService;
+import io.renren.modules.user.service.IUserService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,13 +50,18 @@ import java.util.concurrent.TimeUnit;
 public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> implements OrdersService {
     @Autowired
     IRedisService iRedisService;
-
+    @Autowired
+    private IUserService userService;
     @Autowired
     OrdersDao ordersDao;
     @Autowired
     AccountService accountService;
     @Autowired
     RenrenProperties renrenProperties;
+    @Autowired
+    private PayChannelService payChannelService;
+    @Autowired
+    private OrdersLogService ordersLogService;
 
     @Override
     public List<Map<String, Object>> receiveValidOrder(String mobile, OrderRule orderRule, int size) {
@@ -181,7 +193,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         int r = ordersDao.insert(ordersEntity);
         if (r > 0) {
             //更改账户可用余额和冻结金额
-            int r1 = accountService.updateAmount(userId, new BigDecimal(amount).negate(), new BigDecimal(amount));
+            int r1 = accountService.updateAmount(userId, new BigDecimal(amount).negate(), new BigDecimal(amount),null);
             if (r1 <= 0) {
                 throw new RRException("更改账户金额异常");
             }
@@ -417,21 +429,60 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     /**
      * 抢单成功:更新订单为接单成功状态 需要事务处理
      */
+
     public Map reciveOrderSuccess(Integer recvUserId, String orderType,String orderId) {
-        //TODO
-        Map returnMap = new HashMap();
-
-        //首先查询订单，判断状态是否是待接单
-
-
-        //根据orderType判断三种类型的订单，走不同的私有方法处理
-
-        //如果是商户充值类型 走reciveMerRechargeOrder()方法
-
-        //如果是商户提现类型 走...方法
-
-        //如果是搬运工充值类型 走...方法
-
+        Map returnMap =null;
+        //首先查询订单，
+        OrdersEntity order = this.getById(orderId);
+        if(order == null){
+            return returnMap;
+        }
+        //接单用户不存在
+        if(userService.getById(recvUserId) == null){
+            return returnMap;
+        }
+        if(order.getOrderType() != Integer.parseInt(orderType)){
+            return returnMap;
+        }
+        //判断订单类型
+        if(OrdersEntityEnum.OrderType.PORTER_RECHARGE.getValue()!=Integer.parseInt(orderType)
+                || OrdersEntityEnum.OrderType.MER_WITHDROW.getValue()!=Integer.parseInt(orderType)
+                || OrdersEntityEnum.OrderType.MER_RECHARGE.getValue()!=Integer.parseInt(orderType)){
+            return returnMap;
+        }
+        //判断状态是否是待接单
+        if(OrdersEntityEnum.OrderState.b.getValue() != order.getOrderState()){
+            return returnMap;
+        }
+        //查询接单用户支付方式是否包含订单支付类型
+        Map<String,Object> params =new HashMap<>();
+        params.put("userId",recvUserId);
+        params.put("payType",order.getPayType());
+        params.put("useStatus",1);
+        params.put("bindStatus",1);
+        List<PayChannelDetail> payChannelList = payChannelService.getPayChannels(params);
+        if(payChannelList == null || payChannelList.size() < 1){
+            return returnMap;
+        }
+        //随机选择一个
+        Random random = new Random();
+        int n = random.nextInt(payChannelList.size());
+        PayChannelDetail choosePayChannel = payChannelList.get(n);
+        //抢单成功，更新订单和账户信息
+        OrdersEntity updateOrder =SpringContextUtils.getBean(OrdersServiceImpl.class).reciveOrderSuccessTransactional(recvUserId,choosePayChannel,order);
+        if(updateOrder != null){
+            //添加orders_log
+            OrdersLogEntity ordersLogEntity = new OrdersLogEntity();
+            ordersLogEntity.setOrderId(order.getOrderId());
+            ordersLogEntity.setOrderState(OrdersEntityEnum.OrderState.c.getValue());
+            ordersLogEntity.setPayType(order.getPayType());
+            ordersLogEntity.setAmount(order.getAmount());
+            ordersLogEntity.setRecvAmount(order.getRecvAmount());
+            ordersLogEntity.setCreateTime(DateUtils.format(new Date(),DateUtils.DATE_TIME_PATTERN));
+            ordersLogService.save(ordersLogEntity);
+        }
+        returnMap = new HashMap();
+        returnMap.put("order",updateOrder);
         return returnMap;
     }
 
@@ -453,6 +504,32 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         return returnMap;
     }
 
+    @Transactional(propagation = Propagation.REQUIRED,rollbackFor = Exception.class)
+    public OrdersEntity reciveOrderSuccessTransactional(Integer recvUserId, PayChannelDetail payChannel,OrdersEntity order){
+        //OrdersEntity updateOrder = new OrdersEntity();
+        //updateOrder.setOrderId(order.getOrderId());
+        order.setOrderState(OrdersEntityEnum.OrderState.c.getValue());
+        order.setRecvUserId(recvUserId);
+        if(OrdersEntityEnum.PayType.BANK.getValue().equals(order.getPayType())){
+            //银行卡转账
+            order.setRecvAccountName(payChannel.getAccountName());
+            order.setRecvAccountNo(payChannel.getAccountNo());
+            order.setRecvBankName(payChannel.getBankName());
+        }else{
+            order.setQrimgId(payChannel.getQrimgId());
+        }
+        //更新订单信息
+        int u1 = ordersDao.reciveOrderSuccess(order);
+        if(u1 <= 0){
+            return null;
+        }
+        //更新账户金额
+        int u2 = accountService.updateAmount(recvUserId,order.getSendAmount().negate(),order.getSendAmount(),new BigDecimal(0));
+        if(u2 <= 0){
+            throw new RRException("抢单失败");
+        }
+        return order;
+    }
 
 
     //下发余额 TODO
