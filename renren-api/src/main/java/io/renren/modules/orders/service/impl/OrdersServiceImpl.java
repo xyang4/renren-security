@@ -60,7 +60,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     @Override
     @Transactional
     public WebSocketResponseDomain rushToBuy(Integer recvUserId, String mobile,String orderType, String orderId) {
-        WebSocketResponseDomain r = new WebSocketResponseDomain(WebSocketActionTypeEnum.RUSH_ORDERS.getCommand(), null);
+        WebSocketResponseDomain r = new WebSocketResponseDomain(WebSocketActionTypeEnum.RUSH_ORDERS_RESULT.getCommand(), null);
         if (null != checkValidity(orderId)) {
             r.setCode(WebSocketResponseDomain.ResponseCode.ERROR_INVALID_ORDER.getCode());
             r.setMsg(WebSocketResponseDomain.ResponseCode.ERROR_INVALID_ORDER.getMsg());
@@ -148,7 +148,8 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
                     orders.getOrderSn(),
                     orders.getCreateTime(),
                     orders.getOrderType(),
-                    orders.getTimeoutRecv());
+                    orders.getTimeoutRecv(),
+                    orders.getPayType());
             RedisMessageDomain messageDomain = new RedisMessageDomain(WebSocketActionTypeEnum.DISTRIBUTE_ORDER, System.currentTimeMillis(), rushOrderInfo);
             iRedisService.sendMessageToQueue(messageDomain);
 

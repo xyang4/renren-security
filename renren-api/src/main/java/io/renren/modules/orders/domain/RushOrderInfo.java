@@ -16,6 +16,6 @@ public class RushOrderInfo {
     private String createTime;
     private Integer orderType;
     private Integer timeoutRecv;
-
+    private String payType;
 
 }

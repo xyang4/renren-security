@@ -29,6 +29,10 @@ public enum WebSocketActionTypeEnum {
      * 抢单
      */
     RUSH_ORDERS("rush_orders", "抢单"),
+    /**
+     * 抢单结果
+     */
+    RUSH_ORDERS_RESULT("rush_orders_result", "抢单结果"),
 
     PUSH_ORDER_TO_SPECIAL_USER("canRushOrdersQueue", "下发订单至指定用户队列"),
     PULL_ORDER("pull_order", "拉取可抢订单"),
