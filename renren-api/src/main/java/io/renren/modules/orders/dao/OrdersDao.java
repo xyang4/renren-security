@@ -22,4 +22,6 @@ public interface OrdersDao extends BaseMapper<OrdersEntity> {
     List<OrdersEntity> getOrders(Map<String, Object> param);
 
     List<OrdersEntity> getSendOrRecvOrderList(@Param("params") Map<String, Object> param,Page<OrdersEntity> page);
+
+    int reciveOrderSuccess(OrdersEntity updateOrder);
 }

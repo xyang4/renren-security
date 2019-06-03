@@ -86,4 +86,8 @@ public class PayChannelServiceImpl extends ServiceImpl<PayChannelDao, PayChannel
     public PayChannelDetail getPayChannelDetailById(Integer payChannelId) {
         return payChannelDao.getPayChannelDetailById(payChannelId);
     }
+
+    @Override
+    public List<PayChannelDetail> getPayChannels(Map<String, Object> params) {
+        return payChannelDao.getPayChannels(params);}
 }

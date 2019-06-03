@@ -45,11 +45,12 @@ public class AccountServiceImpl extends ServiceImpl<AccountDao, AccountEntity> i
     }
 
     @Override
-    public int updateAmount(Integer userId, BigDecimal canuseAmount, BigDecimal frozenAmount) {
+    public int updateAmount(Integer userId, BigDecimal canuseAmount, BigDecimal frozenAmount, BigDecimal balance) {
         Map<String,Object> param =new HashMap<>();
         param.put("userId",userId);
         param.put("canuseAmount",canuseAmount);
         param.put("frozenAmount",frozenAmount);
+        param.put("balance",balance);
         return accountDao.updateAmount(param);
     }
 

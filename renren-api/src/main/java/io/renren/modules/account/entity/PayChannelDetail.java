@@ -5,4 +5,5 @@ import lombok.Data;
 @Data
 public class PayChannelDetail extends PayChannelEntity {
     private String imgBase;
+    private String imgId;
 }

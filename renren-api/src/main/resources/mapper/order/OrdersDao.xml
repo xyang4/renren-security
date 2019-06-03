@@ -69,4 +69,29 @@
         </if>
         order by CREATE_TIME desc
     </select>
+
+    <update id="reciveOrderSuccess" parameterType="io.renren.modules.orders.entity.OrdersEntity">
+        update orders
+        <set>
+            <if test="orderState != null">
+                ORDER_STATE = #{orderState},
+            </if>
+            <if test="recvUserId != null">
+                RECV_USER_ID = #{recvUserId},
+            </if>
+            <if test="qrimgId != null">
+                QRIMG_ID = #{qrimgId},
+            </if>
+            <if test="recvAccountName != null">
+                RECV_ACCOUNT_NO = #{recvAccountName},
+            </if>
+            <if test="recvAccountName != null">
+                RECV_ACCOUNT_NAME = #{recvAccountName},
+            </if>
+            <if test="recvBankName != null">
+                RECV_BANK_NAME = #{recvBankName},
+            </if>
+        </set>
+        where ORDER_ID = #{orderId} and ORDER_STATE = 1
+    </update>
 </mapper>

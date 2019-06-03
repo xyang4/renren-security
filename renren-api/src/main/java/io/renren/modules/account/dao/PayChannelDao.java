@@ -23,4 +23,6 @@ public interface PayChannelDao extends BaseMapper<PayChannelEntity> {
     List<Map<String, Object>> getPayChannelGroupData(Integer userId);
 
     PayChannelDetail getPayChannelDetailById(Integer payChannelId);
+
+    List<PayChannelDetail> getPayChannels(Map<String, Object> params);
 }
