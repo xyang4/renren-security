@@ -34,12 +34,13 @@ public interface OrdersService extends IService<OrdersEntity> {
     /**
      * 抢购
      *
-     * @param mobile    用户手机号
-     * @param orderType 订单编号
+     * @param recvUserId    接单用户编号
+     * @param mobile    接单用户手机号
+     * @param orderType 订单类型
      * @param orderId   订单编号
      * @return map
      */
-    WebSocketResponseDomain rushToBuy(String mobile, String orderType, String orderId);
+    WebSocketResponseDomain rushToBuy(Integer recvUserId, String mobile,String orderType, String orderId);
 
     /**
      * 订单状态通知
@@ -147,9 +148,9 @@ public interface OrdersService extends IService<OrdersEntity> {
 
     /**
      * 抢单成功:更新订单为接单成功状态
-     * recvMobile:接单人手机号
+     * recvUserId:接单人用户id
      */
-    Map reciveOrderSuccess(String orderId, String orderType, String recvMobile);
+    Map reciveOrderSuccess(Integer recvUserId, String orderType,String orderId);
 
 }
 

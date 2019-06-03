@@ -59,7 +59,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
 
     @Override
     @Transactional
-    public WebSocketResponseDomain rushToBuy(String mobile, String orderType, String orderId) {
+    public WebSocketResponseDomain rushToBuy(Integer recvUserId, String mobile,String orderType, String orderId) {
         WebSocketResponseDomain r = new WebSocketResponseDomain(WebSocketActionTypeEnum.RUSH_ORDERS.getCommand(), null);
         if (null != checkValidity(orderId)) {
             r.setCode(WebSocketResponseDomain.ResponseCode.ERROR_INVALID_ORDER.getCode());
@@ -71,7 +71,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
             String lockKey = RedisCacheKeyConstant.LOCK_ORDER_PREFIX + orderId;
             iRedisService.set(lockKey, mobile, renrenProperties.getOrderRushLockSecond(), TimeUnit.SECONDS);
 
-            Map rMap = reciveOrderSuccess(mobile, orderType, orderId);
+            Map rMap = reciveOrderSuccess(recvUserId, orderType, orderId);
             if (null == rMap) {
                 r.setCode(WebSocketResponseDomain.ResponseCode.ERROR_HANDLE.getCode());
                 r.setCode(WebSocketResponseDomain.ResponseCode.ERROR_HANDLE.getCode());
@@ -414,18 +414,47 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     }
 
     /**
-     * 抢单成功:更新订单为接单成功状态
+     * 抢单成功:更新订单为接单成功状态 需要事务处理
      */
-    public Map reciveOrderSuccess(String orderId, String orderType, String recvMobile) {
+    public Map reciveOrderSuccess(Integer recvUserId, String orderType,String orderId) {
         //TODO
         Map returnMap = new HashMap();
-        returnMap.put("orderId", orderId);
-        returnMap.put("orderType", orderType);
+
+        //首先查询订单，判断状态是否是待接单
+
+
+        //根据orderType判断三种类型的订单，走不同的私有方法处理
+
+        //如果是商户充值类型 走reciveMerRechargeOrder()方法
+
+        //如果是商户提现类型 走...方法
+
+        //如果是搬运工充值类型 走...方法
 
         return returnMap;
     }
 
-    //下发余额
+    /**
+     * 接单成功，商户充值类型处理
+     */
+    private Map reciveMerRechargeOrder(Integer recvUserId,OrdersEntity ordersEntity) {
+        Map returnMap = null;
+
+        //查询接单人付款通道信息列表：根据recvUserId、ordersEntity.getPayType()，启用、绑定、可用
+
+        //随机使用一个通道
+
+        //更新订单信息为，状态已接单、接单用户编号、通道信息等
+
+        //返回订单信息为map
+
+        //处理失败返回null
+        return returnMap;
+    }
+
+
+
+    //下发余额 TODO
 
 
 }

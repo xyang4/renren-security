@@ -197,14 +197,16 @@ public class NettyServiceImpl implements INettyService {
                 break;
             case STOP_RECEIPT:// 停止接单,从集合中移除
                 // 05-28: redis + 前缀            orderR = checkOrderType(content);
-                orderR = checkOrderType(content);
-                if (null == orderR) {
-                    responseDomain.setCode(WebSocketResponseDomain.ResponseCode.REQUEST_ACTION_ERROR.getCode());
-                    responseDomain.setMsg(WebSocketResponseDomain.ResponseCode.REQUEST_ACTION_ERROR.getMsg());
-                    return responseDomain;
-                }
-
-                iRedisService.removeSetMember(RedisCacheKeyConstant.USERS_CAN_RUSH_BUY_PREFIX + orderR[0], tokenEntity.getMobile());
+//                orderR = checkOrderType(content);
+//                if (null == orderR) {
+//                    responseDomain.setCode(WebSocketResponseDomain.ResponseCode.REQUEST_ACTION_ERROR.getCode());
+//                    responseDomain.setMsg(WebSocketResponseDomain.ResponseCode.REQUEST_ACTION_ERROR.getMsg());
+//                    return responseDomain;
+//                }
+                //停止接单，删除全部？
+                iRedisService.removeSetMember(RedisCacheKeyConstant.USERS_CAN_RUSH_BUY_PREFIX + 1, tokenEntity.getMobile());
+                iRedisService.removeSetMember(RedisCacheKeyConstant.USERS_CAN_RUSH_BUY_PREFIX + 3, tokenEntity.getMobile());
+                iRedisService.removeSetMember(RedisCacheKeyConstant.USERS_CAN_RUSH_BUY_PREFIX + 4, tokenEntity.getMobile());
                 log.info("用户[{}] 停止接单 操作成功!", tokenEntity.getMobile());
                 break;
             case RUSH_ORDERS://抢单
@@ -222,7 +224,7 @@ public class NettyServiceImpl implements INettyService {
                     responseDomain.setMsg(WebSocketResponseDomain.ResponseCode.REQUEST_ACTION_ERROR.getMsg());
                     return responseDomain;
                 }
-                responseDomain = ordersService.rushToBuy(tokenEntity.getMobile(), orderR[0], orderR[1]);
+                responseDomain = ordersService.rushToBuy(tokenEntity.getUserId(), tokenEntity.getMobile(),orderR[0], orderR[1]);
                 break;
             case PUSH_ORDER_TO_SPECIAL_USER:
                 break;
