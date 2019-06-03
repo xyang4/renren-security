@@ -33,6 +33,8 @@
         <result property="modifyTime" column="MODIFY_TIME"/>
         <result property="createTime" column="CREATE_TIME"/>
         <result property="remark" column="REMARK"/>
+        <result property="sendBankName" column="SEND_BANK_NAME"/>
+        <result property="recvBankName" column="RECV_BANK_NAME"/>
     </resultMap>
 
     <select id="getOrders" parameterType="map" resultMap="ordersMap">

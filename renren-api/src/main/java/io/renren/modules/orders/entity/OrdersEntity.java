@@ -133,5 +133,12 @@ public class OrdersEntity implements Serializable {
      * 备注
      */
     private String remark;
-
+    /**
+     * 发单用户银行名称
+     */
+    private String sendBankName;
+    /**
+     * 接单用户银行名称
+     */
+    private String recvBankName;
 }
