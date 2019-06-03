@@ -172,8 +172,8 @@ public class NettyServiceImpl implements INettyService {
                 iRedisService.set(RedisCacheKeyConstant.ONLINE_PREFIX + tokenEntity.getMobile(), channelId.asLongText(), renrenProperties.getWebSocketExpire() * 60L, TimeUnit.SECONDS);
                 if (!WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.contains(tokenEntity.getMobile())) {
                     WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.add(tokenEntity.getMobile());
-                    WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.put(tokenEntity.getMobile(), channel);
                 }
+                WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.put(tokenEntity.getMobile(), channel);
                 break;
             case BEGIN_RECEIPT:// 开始接单，将用户追加至可接单队列中
                 if (!checkWebSocketUserIsActive(tokenEntity.getMobile(), channel)) {
