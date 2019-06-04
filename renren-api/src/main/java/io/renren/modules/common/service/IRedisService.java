@@ -52,4 +52,5 @@ public interface IRedisService {
      */
     Set<String> setMembers(String key);
 
+    String getMerSignKey(String merId);
 }

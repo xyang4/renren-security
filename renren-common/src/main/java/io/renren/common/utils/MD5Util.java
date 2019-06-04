@@ -1,7 +1,9 @@
 package io.renren.common.utils;
 
 import lombok.experimental.UtilityClass;
+import org.apache.commons.codec.digest.DigestUtils;
 
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -37,6 +39,20 @@ public class MD5Util {
             buffer.append(Long.toString((int) bytes[i] & 0xff, 16));
         }
         return buffer.toString();
+    }
+
+
+    public static String sign( String key, String content, String charset)  {
+        String signData = key +  content ;
+
+        try {
+            String sign = DigestUtils.md5Hex(signData.getBytes(charset));
+            return sign;
+        } catch (UnsupportedEncodingException e) {
+
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public static void main(String[] args) {

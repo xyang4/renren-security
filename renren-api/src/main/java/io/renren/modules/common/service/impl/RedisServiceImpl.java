@@ -4,7 +4,10 @@ import com.alibaba.fastjson.JSONObject;
 import io.renren.common.enums.RRExceptionEnum;
 import io.renren.modules.common.service.IRedisService;
 import io.renren.modules.netty.domain.RedisMessageDomain;
+import io.renren.modules.user.entity.UserEntity;
+import io.renren.modules.user.service.IUserService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Service;
@@ -15,6 +18,8 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Service
 public class RedisServiceImpl implements IRedisService {
+    @Autowired
+    private IUserService userService;
 
     @Autowired
     RedisTemplate redisTemplate;
@@ -151,5 +156,16 @@ public class RedisServiceImpl implements IRedisService {
         return setOperations.members(key);
     }
 
-
+    @Override
+    public String getMerSignKey(String merId) {
+        String signKey = (String) stringRedisTemplate.opsForHash().get("MerSignKey",merId);
+        if(StringUtils.isBlank(signKey)){
+            UserEntity userEntity = userService.getById(merId);
+            if(userEntity!=null && StringUtils.isNoneBlank(userEntity.getSingKey())){
+                stringRedisTemplate.opsForHash().put("MerSignKey",merId,userEntity.getSingKey());
+                signKey = userEntity.getSingKey();
+            }
+        }
+        return signKey;
+    }
 }
