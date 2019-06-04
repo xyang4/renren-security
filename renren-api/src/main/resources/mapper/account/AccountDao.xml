@@ -36,8 +36,8 @@
                 BALANCE = BALANCE + #{balance},
             </if>
         </set>
-        where user_Id = #{userId} and STATUS = 1
-    </update>
+        where user_Id = #{userId} and (CANUSE_AMOUNT + #{canuseAmount}) <![CDATA[>=]]> 0 and STATUS = 1
+     </update>
 
     <select id="getByUserId" parameterType="int" resultMap="accountMap">
         select * from account where USER_ID = #{userId}

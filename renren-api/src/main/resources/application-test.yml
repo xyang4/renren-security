@@ -36,7 +36,7 @@ spring:
     host: 127.0.0.1
     port: 6379
     database: 4
-#    password: 123456
+    password: 123456
 
 
 # 自定义属性配置
