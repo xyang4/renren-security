@@ -8,9 +8,11 @@ import io.renren.common.config.RenrenProperties;
 import io.renren.common.enums.OrdersEntityEnum;
 import io.renren.common.exception.RRException;
 import io.renren.common.util.StaticConstant;
+import io.renren.common.utils.Constant;
 import io.renren.common.utils.DateUtils;
 import io.renren.common.utils.R;
 import io.renren.common.utils.SpringContextUtils;
+import io.renren.modules.account.entity.AccountEntity;
 import io.renren.modules.account.entity.PayChannelDetail;
 import io.renren.modules.account.service.AccountLogService;
 import io.renren.modules.account.service.AccountService;
@@ -30,6 +32,7 @@ import io.renren.modules.orders.entity.OrdersLogEntity;
 import io.renren.modules.orders.form.OrderPageForm;
 import io.renren.modules.orders.service.OrdersLogService;
 import io.renren.modules.orders.service.OrdersService;
+import io.renren.modules.user.entity.UserEntity;
 import io.renren.modules.user.service.IUserService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -437,8 +440,22 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         if(order == null){
             return returnMap;
         }
-        //接单用户不存在
-        if(userService.getById(recvUserId) == null){
+        //接单用户校验
+        UserEntity user = userService.getById(recvUserId);
+        if( user == null || user.getStatus() != 1){
+            return returnMap;
+        }
+        //校验账户
+        AccountEntity accountEntity = accountService.getByUserId(recvUserId);
+        if(accountEntity == null){
+            return returnMap;
+        }
+        //账户状态
+        if(accountEntity.getStatus()!=1 || accountEntity.getActiveStatus()!=1 || accountEntity.getRecvStatus() != 1){
+            return returnMap;
+        }
+        //账户金额
+        if(accountEntity.getCanuseAmount().compareTo(order.getSendAmount()) < 0){
             return returnMap;
         }
         if(order.getOrderType() != Integer.parseInt(orderType)){
