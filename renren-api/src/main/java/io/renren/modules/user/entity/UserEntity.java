@@ -96,6 +96,6 @@ public class UserEntity implements Serializable {
 	private String createTime;
 
 	//商户签名key
-	private String singKey;
+	private String signKey;
 
 }

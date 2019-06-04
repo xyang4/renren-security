@@ -62,9 +62,9 @@ public class GetSignUtil {
 	/***
 	 * 验签方法
 	 */
-	public static boolean checkSign(String signString,Map<String, Object> params,String singKey) {
+	public static boolean checkSign(String signString,Map<String, Object> params,String signKey) {
 		logger.info("验签参数params："+params);
-		if (signString.equalsIgnoreCase(getSign(params,singKey))) {
+		if (signString.equalsIgnoreCase(getSign(params,signKey))) {
 			return true;
 		}else{
 			logger.error("验签失败:signString=>>>>>>"+signString+":::params=>>>>>>"+params);

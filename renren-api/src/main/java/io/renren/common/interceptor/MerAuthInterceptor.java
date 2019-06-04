@@ -49,15 +49,15 @@ public class MerAuthInterceptor extends HandlerInterceptorAdapter {
 //            return false;
 //        }
         //校验签名sign 从缓存中获取签名key? TODO
-        String singKey = iRedisService.getMerSignKey(merId);
-        if(StringUtils.isBlank(singKey)){
+        String signKey = SpringContextUtils.getBean(IRedisService.class).getMerSignKey(merId);
+        if(StringUtils.isBlank(signKey)){
             return false;
         }
-        return checkSign(request,singKey);
+        return checkSign(request,signKey);
     }
 
 
-    private boolean checkSign(HttpServletRequest request,String singKey){
+    private boolean checkSign(HttpServletRequest request,String signKey){
         Map<String, String[]> parameterMap = request.getParameterMap();
         Set<String> keySet = parameterMap.keySet();
         Map<String, Object> keyMap = new HashMap<String, Object>();
@@ -76,7 +76,7 @@ public class MerAuthInterceptor extends HandlerInterceptorAdapter {
                 keyMap.put(key, value.substring(0, value.length() - 1));
             }
         }
-        return GetSignUtil.checkSign(sign, keyMap,singKey);
+        return GetSignUtil.checkSign(sign, keyMap,signKey);
     }
 
 }
