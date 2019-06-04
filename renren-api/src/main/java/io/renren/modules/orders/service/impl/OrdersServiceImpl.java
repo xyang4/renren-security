@@ -151,6 +151,8 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         orders.setPlatDate(DateUtils.format(new Date(), DateUtils.DATE_PATTERN));
         orders.setNotifyUrl(notifyUrl);//回调地址
         orders.setTimeoutRecv(3 * 60);//抢单超时时间，秒 TODO
+        orders.setTimeoutPay(10 * 60);//支付超时
+        orders.setTimeoutDown(60 * 60);//订单总超时
         orders.setCreateTime(DateUtils.format(new Date(), DateUtils.DATE_TIME_PATTERN));
         boolean boo = this.save(orders);
         //验证
@@ -432,7 +434,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
 
     public Map reciveOrderSuccess(Integer recvUserId, String orderType,String orderId) {
         Map returnMap =null;
-        //首先查询订单，
+        //首先查询订单
         OrdersEntity order = this.getById(orderId);
         if(order == null){
             return returnMap;
@@ -446,8 +448,8 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         }
         //判断订单类型
         if(OrdersEntityEnum.OrderType.PORTER_RECHARGE.getValue()!=Integer.parseInt(orderType)
-                || OrdersEntityEnum.OrderType.MER_WITHDROW.getValue()!=Integer.parseInt(orderType)
-                || OrdersEntityEnum.OrderType.MER_RECHARGE.getValue()!=Integer.parseInt(orderType)){
+                && OrdersEntityEnum.OrderType.MER_WITHDROW.getValue()!=Integer.parseInt(orderType)
+                && OrdersEntityEnum.OrderType.MER_RECHARGE.getValue()!=Integer.parseInt(orderType)){
             return returnMap;
         }
         //判断状态是否是待接单
