@@ -10,6 +10,7 @@ import io.renren.modules.orders.entity.OrdersEntity;
 import io.renren.modules.orders.form.OrderPageForm;
 import org.springframework.scheduling.annotation.Async;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -151,6 +152,11 @@ public interface OrdersService extends IService<OrdersEntity> {
      * recvUserId:接单人用户id
      */
     Map reciveOrderSuccess(Integer recvUserId, String orderType,String orderId);
+
+    /**
+     * 确认收款
+     */
+    R sureRecvOrder(Integer orderId, BigDecimal confirmAmount);
 
 }
 

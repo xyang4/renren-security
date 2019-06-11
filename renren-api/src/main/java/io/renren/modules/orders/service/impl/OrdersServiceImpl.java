@@ -237,7 +237,16 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         ordersEntity.setPlatDate(DateUtils.format(new Date(), DateUtils.DATE_PATTERN));
         int r = ordersDao.insert(ordersEntity);
         if (r > 0) {
-            //todo websocket 推送
+            // websocket 推送
+            RushOrderInfo rushOrderInfo = new RushOrderInfo(
+                    ordersEntity.getOrderId(),
+                    ordersEntity.getOrderSn(),
+                    ordersEntity.getCreateTime(),
+                    ordersEntity.getOrderType(),
+                    ordersEntity.getTimeoutRecv(),
+                    ordersEntity.getPayType());
+            RedisMessageDomain messageDomain = new RedisMessageDomain(WebSocketActionTypeEnum.DISTRIBUTE_ORDER, System.currentTimeMillis(), rushOrderInfo);
+            iRedisService.sendMessageToQueue(messageDomain);
         }
         return R.ok(ordersEntity);
     }
@@ -488,7 +497,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         int n = random.nextInt(payChannelList.size());
         PayChannelDetail choosePayChannel = payChannelList.get(n);
         //抢单成功，更新订单和账户信息
-        OrdersEntity updateOrder =SpringContextUtils.getBean(OrdersServiceImpl.class).reciveOrderSuccessTransactional(recvUserId,choosePayChannel,order);
+        OrdersEntity updateOrder = SpringContextUtils.getBean(OrdersServiceImpl.class).reciveOrderSuccessTransactional(recvUserId,choosePayChannel,order);
         if(updateOrder != null){
             //添加orders_log
             OrdersLogEntity ordersLogEntity = new OrdersLogEntity();
@@ -503,24 +512,6 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         returnMap = new HashMap();
         returnMap.put("order",updateOrder);
         returnMap.put("payChannel",choosePayChannel);
-        return returnMap;
-    }
-
-    /**
-     * 接单成功，商户充值类型处理
-     */
-    private Map reciveMerRechargeOrder(Integer recvUserId,OrdersEntity ordersEntity) {
-        Map returnMap = null;
-
-        //查询接单人付款通道信息列表：根据recvUserId、ordersEntity.getPayType()，启用、绑定、可用
-
-        //随机使用一个通道
-
-        //更新订单信息为，状态已接单、接单用户编号、通道信息等
-
-        //返回订单信息为map
-
-        //处理失败返回null
         return returnMap;
     }
 
@@ -548,7 +539,49 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         if(u2 <= 0){
             throw new RRException("抢单失败");
         }
+        //更新接单用户账户日志信息 TODO
+
         return order;
+    }
+
+    /**
+     * 确认收款
+     */
+    @Transactional(propagation = Propagation.REQUIRED,rollbackFor = Exception.class)
+    public R sureRecvOrder(Integer orderId, BigDecimal confirmAmount){
+        //查询订单状态
+        OrdersEntity retOrdersEntity = SpringContextUtils.getBean(OrdersServiceImpl.class).getById(orderId);
+        if(retOrdersEntity.getOrderState()==9){
+            return R.ok();
+        }
+        if(retOrdersEntity.getOrderState()!=2 && retOrdersEntity.getOrderState()!=5){
+            return R.error(-1,"订单状态错误，提交失败");
+        }
+        if(retOrdersEntity.getAmount().compareTo(confirmAmount)!=0){
+            return R.error(-1,"请确认收款金额是否一致");
+        }
+        OrdersEntity ordersEntity = new OrdersEntity();
+        ordersEntity.setOrderId(orderId);
+        ordersEntity.setOrderState(9);
+        ordersEntity.setRecvAmount(confirmAmount);
+        ordersEntity.setOrderId(orderId);
+        boolean boo = SpringContextUtils.getBean(OrdersServiceImpl.class).updateById(ordersEntity);
+        if(boo){
+            //1、1更新发单者账户信息,给账户 （扣除手续费后） 增加金额，及可用金额 TODO
+            //手续费利率，从字典表里查询
+
+            //1、2更新发单者账户日志表，记录一笔（扣除手续费后） 充值金额 TODO
+
+
+            //2、1更新接单者账户信息，扣减账户金额，及可用余额，增加获得的手续费 TODO
+
+
+            //2、2更新接单者账户日志表，记录两笔 ，扣减一笔，奖励手续费一笔  TODO
+
+            return R.ok();
+        }else {
+            return R.error();
+        }
     }
 
 

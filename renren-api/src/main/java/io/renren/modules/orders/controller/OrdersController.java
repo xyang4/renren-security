@@ -134,8 +134,8 @@ public class OrdersController extends BaseController {
 
     @AppLogin
     @ApiOperation("订单收款确认")
-    @RequestMapping("/sureOrder")
-    public R sureOrder(@RequestBody Map map){
+    @RequestMapping("/sureRecvOrder")
+    public R sureRecvOrder(@RequestBody Map map){
         TokenEntity tokenEntity = getToken();
         if(tokenEntity == null){
             return R.error(-1,"查询用户信息失败");
@@ -145,26 +145,8 @@ public class OrdersController extends BaseController {
         if(orderId == null){
             return R.error(-1001,"请求参数错误");
         }
-        //TODO 查询订单状态
-
-
-        OrdersEntity ordersEntity = new OrdersEntity();
-        ordersEntity.setOrderId(orderId);
-        ordersEntity.setOrderState(9);
-        ordersEntity.setRecvAmount(confirmAmount);
-        ordersEntity.setOrderId(orderId);
-        boolean boo = ordersService.updateById(ordersEntity);
-        if(boo){
-            //更新账户信息 TODO
-
-
-            //更新账户日志表 TODO
-
-
-            return R.ok();
-        }else {
-            return R.error();
-        }
+        //确认收款
+        return ordersService.sureRecvOrder(orderId,confirmAmount);
     }
 
 
