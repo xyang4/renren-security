@@ -48,7 +48,7 @@
     </select>
 
     <select id="getPayChannels" parameterType="map" resultMap="payChannelDetail">
-        select pc.*,img.IMG_ID
+        select pc.*,img.IMG_ID,img.BASE64
         from pay_channel pc
                  left join img img on pc.QRIMG_ID = img.IMG_ID
         where pc.USER_ID = #{userId}

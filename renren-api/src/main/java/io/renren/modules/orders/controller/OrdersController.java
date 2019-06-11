@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 
@@ -130,4 +131,41 @@ public class OrdersController extends BaseController {
         OrdersEntity ordersEntity = ordersService.getById(orderId);
         return R.ok(ordersEntity);
     }
+
+    @AppLogin
+    @ApiOperation("订单收款确认")
+    @RequestMapping("/sureOrder")
+    public R sureOrder(@RequestBody Map map){
+        TokenEntity tokenEntity = getToken();
+        if(tokenEntity == null){
+            return R.error(-1,"查询用户信息失败");
+        }
+        Integer orderId = (Integer)map.get("orderId");
+        BigDecimal confirmAmount = BigDecimal.valueOf(Double.parseDouble((String)map.get("confirmAmount")));
+        if(orderId == null){
+            return R.error(-1001,"请求参数错误");
+        }
+        //TODO 查询订单状态
+
+
+        OrdersEntity ordersEntity = new OrdersEntity();
+        ordersEntity.setOrderId(orderId);
+        ordersEntity.setOrderState(9);
+        ordersEntity.setRecvAmount(confirmAmount);
+        ordersEntity.setOrderId(orderId);
+        boolean boo = ordersService.updateById(ordersEntity);
+        if(boo){
+            //更新账户信息 TODO
+
+
+            //更新账户日志表 TODO
+
+
+            return R.ok();
+        }else {
+            return R.error();
+        }
+    }
+
+
 }

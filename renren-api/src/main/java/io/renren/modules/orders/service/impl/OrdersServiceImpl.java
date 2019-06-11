@@ -89,7 +89,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
             Map rMap = reciveOrderSuccess(recvUserId, orderType, orderId);
             if (null == rMap) {
                 r.setCode(WebSocketResponseDomain.ResponseCode.ERROR_HANDLE.getCode());
-                r.setCode(WebSocketResponseDomain.ResponseCode.ERROR_HANDLE.getCode());
+                r.setMsg(WebSocketResponseDomain.ResponseCode.ERROR_HANDLE.getMsg());
             } else {
                 // 操作成功，通知所有用户该单已被抢
                 orderStatusNotice(1, orderType, orderId);
@@ -502,6 +502,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         }
         returnMap = new HashMap();
         returnMap.put("order",updateOrder);
+        returnMap.put("payChannel",choosePayChannel);
         return returnMap;
     }
 
