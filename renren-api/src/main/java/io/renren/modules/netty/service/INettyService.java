@@ -62,4 +62,11 @@ public interface INettyService {
      * 清理异常在线用户
      */
     void clearActiveUser();
+
+    /**
+     * 通道优化如:若通道已下线则至用户未下线状态
+     *
+     * @param channel
+     */
+    void optimizeChannel(Channel channel);
 }
