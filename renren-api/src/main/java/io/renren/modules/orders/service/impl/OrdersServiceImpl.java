@@ -182,13 +182,14 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
-    public R hamalWithdraw(Integer userId, String amount, String accountName, String accountNo) {
+    public R hamalWithdraw(Integer userId, String amount, String accountName, String accountNo,String bankName) {
         OrdersEntity ordersEntity = new OrdersEntity();
         ordersEntity.setAmount(new BigDecimal(amount));
         ordersEntity.setSendAmount(new BigDecimal(amount));
         ordersEntity.setSendUserId(userId);
         ordersEntity.setSendAccountName(accountName);
         ordersEntity.setSendAccountNo(accountNo);
+        ordersEntity.setSendBankName(bankName);
         ordersEntity.setOrderType(OrdersEntityEnum.OrderType.PORTER_WITHDROW.getValue());
         ordersEntity.setOrderState(OrdersEntityEnum.OrderState.INIT.getValue());
         ordersEntity.setOrderDate(DateUtils.format(new Date(), DateUtils.DATE_PATTERN));
@@ -203,7 +204,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
                 throw new RRException("更改账户金额异常");
             }
         }
-        return R.error();
+        return R.ok(ordersEntity);
     }
 
     @Override

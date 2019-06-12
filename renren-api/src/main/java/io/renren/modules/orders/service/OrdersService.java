@@ -90,7 +90,7 @@ public interface OrdersService extends IService<OrdersEntity> {
     List<OrdersEntity> getOrders(Map<String, Object> param);
 
     /**
-     * 搬运工提现现
+     * 搬运工提现
      *
      * @param userId
      * @param amount
@@ -98,7 +98,7 @@ public interface OrdersService extends IService<OrdersEntity> {
      * @param accountNo
      * @return
      */
-    R hamalWithdraw(Integer userId, String amount, String accountName, String accountNo);
+    R hamalWithdraw(Integer userId, String amount, String accountName, String accountNo,String bankName);
 
     /**
      * 搬运工充值

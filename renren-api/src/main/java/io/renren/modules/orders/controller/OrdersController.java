@@ -60,7 +60,7 @@ public class OrdersController extends BaseController {
         if(!check){
             return R.error(-1,"验证码错误");
         }
-        return ordersService.hamalWithdraw(tokenEntity.getUserId(),hamalOrderForm.getAmount(),hamalOrderForm.getAccountName(),hamalOrderForm.getAccountNo());
+        return ordersService.hamalWithdraw(tokenEntity.getUserId(),hamalOrderForm.getAmount(),hamalOrderForm.getAccountName(),hamalOrderForm.getAccountNo(),hamalOrderForm.getBankName());
     }
 
     /**
@@ -98,7 +98,7 @@ public class OrdersController extends BaseController {
         if(orders.size()>0){
             ordersEntity = orders.get(0);
         }
-        return R.ok(ordersEntity);
+        return R.ok(orders);
     }
 
 

@@ -20,4 +20,6 @@ public class HamalOrderForm {
     private String accountName;
     @ApiModelProperty("账号")
     private String accountNo;
+    @ApiModelProperty("银行名称")
+    private String bankName;
 }
