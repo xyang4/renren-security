@@ -39,7 +39,7 @@ public class TokenServiceImpl extends ServiceImpl<TokenDao, TokenEntity> impleme
     public TokenEntity createToken(Integer userId, String mobile) {
         //当前时间
         Date now = new Date();
-        Date expireTime = new Date(now.getTime() + renrenProperties.getJwtExpire() * 60 * 1000);
+        Date expireTime = new Date(now.getTime() + renrenProperties.getJwtExpire() * 60 * 1000 * 60);
 
         //生成token
         String token = generateToken();

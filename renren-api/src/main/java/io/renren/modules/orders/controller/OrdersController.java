@@ -94,12 +94,11 @@ public class OrdersController extends BaseController {
         }
         param.put("includeState",orderStates);
         List<OrdersEntity> orders = ordersService.getOrders(param);
+        OrdersEntity ordersEntity = new OrdersEntity();
         if(orders.size()>0){
-            return R.ok(orders.get(0));
-        }else {
-            return R.error();
+            ordersEntity = orders.get(0);
         }
-
+        return R.ok(ordersEntity);
     }
 
 
