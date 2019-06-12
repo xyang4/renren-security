@@ -4,7 +4,6 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelId;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -72,7 +71,9 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<TextWebS
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) {
         Channel channel = ctx.channel();
-        log.info("用户[{}]（ChannelId） 已上线...", channel.id().asShortText());
+        String longText = channel.id().asLongText();
+        log.info("Channel[{}]已上线!", longText);
+        SpringContextUtils.getBean(IRedisService.class).putHashKey(RedisCacheKeyConstant.ONLINE_CHANNEL, longText, "");
         ONLINE_USER_GROUP.add(channel);
     }
 
@@ -84,18 +85,8 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<TextWebS
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) {
         Channel channel = ctx.channel();
-        ChannelId channelId = channel.id();
-        String longtext = channelId.asLongText();
-        log.info("用户[ChannelId: {}]已下线!", longtext);
-        // boolean removeboolean = ONLINE_USER_GROUP.remove(channel);
-        // 下线后 无需 主动 remove ONLINE_USER_GROUP 里的 channel,listen 里有实现
-        IRedisService iRedisService = SpringContextUtils.getBean(IRedisService.class);
-        // 当触发handlerRemoved，ChannelGroup会自动移除对应客户端的channel
-        String mobile = iRedisService.getVal(RedisCacheKeyConstant.ONLINE_PREFIX + channelId.asLongText());
-        if (StringUtils.isNotBlank(mobile)) {
-            ONLINE_USER_CHANNEL_MAP.remove(mobile);
-            ONLINE_USER_WITH_MOBILE.remove(mobile);
-        }
+        log.info("Channel[{}]已下线!", channel.id().asLongText());
+        SpringContextUtils.getBean(INettyService.class).optimizeChannel(channel);
     }
 
     /**
@@ -106,8 +97,8 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<TextWebS
      */
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        //TODO  清除在线的该用户?
         log.error("Web Socket 异常...", cause);
-        cause.printStackTrace();
         ctx.channel().close();
     }
 }

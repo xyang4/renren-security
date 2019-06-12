@@ -167,9 +167,10 @@ public class NettyServiceImpl implements INettyService {
         log.info("Begin handle WebSocketAction [{}] Token[{}] ChannelId[{}] .", webSocketAction.getDescribe(), token, channelId.asLongText());
         switch (webSocketAction) {
             case ACTIVE:// 保活 存储 key: online:mobile val：longTextId
-//                iRedisService.set(RedisCacheKeyConstant.ONLINE_PREFIX + channelId.asLongText(), tokenEntity.getMobile(), renrenProperties.getWebSocketExpire() * 60L, TimeUnit.SECONDS);
-
-                iRedisService.set(RedisCacheKeyConstant.ONLINE_PREFIX + tokenEntity.getMobile(), channelId.asLongText(), renrenProperties.getWebSocketExpire() * 60L, TimeUnit.SECONDS);
+//                iRedisService.set(RedisCacheKeyConstant.ONLINE_USER_PREFIX + channelId.asLongText(), tokenEntity.getMobile(), renrenProperties.getWebSocketExpire() * 60L, TimeUnit.SECONDS);
+                iRedisService.set(RedisCacheKeyConstant.ONLINE_USER_PREFIX + tokenEntity.getMobile(), channelId.asLongText(), renrenProperties.getWebSocketExpire() * 60L, TimeUnit.SECONDS);
+                //
+                iRedisService.putHashKey(RedisCacheKeyConstant.ONLINE_CHANNEL, channelId.asLongText(), tokenEntity.getMobile());
                 if (!WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.contains(tokenEntity.getMobile())) {
                     WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.add(tokenEntity.getMobile());
                 }
@@ -224,7 +225,7 @@ public class NettyServiceImpl implements INettyService {
                     responseDomain.setMsg(WebSocketResponseDomain.ResponseCode.REQUEST_ACTION_ERROR.getMsg());
                     return responseDomain;
                 }
-                responseDomain = ordersService.rushToBuy(tokenEntity.getUserId(), tokenEntity.getMobile(),orderR[0], orderR[1]);
+                responseDomain = ordersService.rushToBuy(tokenEntity.getUserId(), tokenEntity.getMobile(), orderR[0], orderR[1]);
                 break;
             case PUSH_ORDER_TO_SPECIAL_USER:
                 break;
@@ -278,8 +279,8 @@ public class NettyServiceImpl implements INettyService {
     public boolean checkWebSocketUserIsActive(String mobile, Channel channel) {
         ChannelId channelId = channel.id();
         boolean r;
-//        Long expire = iRedisService.getExpire(RedisCacheKeyConstant.ONLINE_PREFIX + channelId.asLongText(), TimeUnit.SECONDS);
-        Long expire = iRedisService.getExpire(RedisCacheKeyConstant.ONLINE_PREFIX + mobile, TimeUnit.SECONDS);
+//        Long expire = iRedisService.getExpire(RedisCacheKeyConstant.ONLINE_USER_PREFIX + channelId.asLongText(), TimeUnit.SECONDS);
+        Long expire = iRedisService.getExpire(RedisCacheKeyConstant.ONLINE_USER_PREFIX + mobile, TimeUnit.SECONDS);
         if (null == expire) {
             r = false;
             if (!WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.contains(mobile)) {
@@ -304,13 +305,34 @@ public class NettyServiceImpl implements INettyService {
 
     @Override
     public void clearActiveUser() {
-        List<String> invalidUser = WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.stream().filter(v -> null != iRedisService.getVal(RedisCacheKeyConstant.ONLINE_PREFIX + v)).collect(Collectors.toList());
+        List<String> invalidUser = WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.stream().filter(v -> null != iRedisService.getVal(RedisCacheKeyConstant.ONLINE_USER_PREFIX + v)).collect(Collectors.toList());
         if (null != invalidUser) {
             invalidUser.forEach(v -> {
                 WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.remove(v);
-                //WebSocketServerHandler.ONLINE_USER_GROUP.remove(WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.get(v));
                 WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.remove(v);
+                // 清除已激活但断开socket的用户避免无效的推送
+                String longText = iRedisService.getHashStrVal(RedisCacheKeyConstant.ONLINE_CHANNEL, v);
+                if (StringUtils.isBlank(longText)) {
+                    iRedisService.delete(RedisCacheKeyConstant.ONLINE_CHANNEL, v);
+
+                }
             });
+        }
+    }
+
+    @Override
+    public void optimizeChannel(Channel channel) {
+        if (null == channel) return;
+        ChannelId channelId = channel.id();
+        String longtext = channelId.asLongText();
+        log.info("Channel[{}] 优化处理...", longtext);
+        String mobile = iRedisService.getHash(RedisCacheKeyConstant.ONLINE_CHANNEL, longtext);
+        iRedisService.delete(RedisCacheKeyConstant.ONLINE_CHANNEL, longtext);
+        if (StringUtils.isNotBlank(mobile)) {
+            iRedisService.delKey(RedisCacheKeyConstant.ONLINE_USER_PREFIX + mobile);
+            // 手动下线改channel对应的用户
+            WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.remove(mobile);
+            WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.remove(mobile);
         }
     }
 

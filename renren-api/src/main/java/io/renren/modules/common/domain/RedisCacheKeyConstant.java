@@ -2,6 +2,9 @@ package io.renren.modules.common.domain;
 
 import lombok.experimental.UtilityClass;
 
+/**
+ * Redis 存储 Key
+ */
 @UtilityClass
 public class RedisCacheKeyConstant {
     /**
@@ -11,7 +14,11 @@ public class RedisCacheKeyConstant {
     /**
      * 在线用户前缀:心跳监测
      */
-    public static final String ONLINE_PREFIX = "online:";
+    public static final String ONLINE_USER_PREFIX = "online:user:";
+    /**
+     * 在线Channel
+     */
+    public static final String ONLINE_CHANNEL = "online:channel";
     /**
      * 可抢购用户
      */
@@ -29,4 +36,5 @@ public class RedisCacheKeyConstant {
      * 已下发清单信息的用户
      */
     public static final String USERS_PUSHED_RUSH_ORDER_PREFIX = "users_pushed_rush_order_prefix:";
+
 }
