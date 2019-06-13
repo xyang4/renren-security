@@ -273,11 +273,11 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         String sendRate = configService.selectConfigByKey("send_porter_chargeRate");
         String recvRate = configService.selectConfigByKey("recv_porter_chargeRate");
         ordersEntity.setSendRate(sendRate == null?new BigDecimal(0):new BigDecimal(sendRate));
-        ordersEntity.setRrecvRate(recvRate == null?new BigDecimal(0):new BigDecimal(recvRate));
+        ordersEntity.setRecvRate(recvRate == null?new BigDecimal(0):new BigDecimal(recvRate));
         BigDecimal sa = ordersEntity.getSendAmount().multiply(ordersEntity.getSendRate()).setScale(2,BigDecimal.ROUND_DOWN);
         ordersEntity.setSendRateAmount(sa);
-        BigDecimal ra = ordersEntity.getSendAmount().multiply(ordersEntity.getRrecvRate()).setScale(2,BigDecimal.ROUND_DOWN);
-        ordersEntity.setRrecvRateAmount(ra);
+        BigDecimal ra = ordersEntity.getSendAmount().multiply(ordersEntity.getRecvRate()).setScale(2,BigDecimal.ROUND_DOWN);
+        ordersEntity.setRecvRateAmount(ra);
         ordersEntity.setPlatDate(DateUtils.format(new Date(), DateUtils.DATE_PATTERN));
         int r = ordersDao.insert(ordersEntity);
         if (r > 0) {
