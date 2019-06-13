@@ -195,7 +195,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
             return R.error(-1,"提现金额不能小于"+minAmount);
         }
         String maxAmountStr = configService.selectConfigByKey("send_porter_withMax");
-        BigDecimal maxAmount =  maxAmountStr==null?new BigDecimal(100):new BigDecimal(maxAmountStr);
+        BigDecimal maxAmount =  maxAmountStr==null?new BigDecimal(49999):new BigDecimal(maxAmountStr);
         if(new BigDecimal(amount).compareTo(maxAmount) > 0){
             return R.error(-1,"提现金额不能大于"+maxAmount);
         }
@@ -244,12 +244,12 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         }
         //查询搬运工充值相关配置
         String minAmountStr = configService.selectConfigByKey("send_porter_chargeMin");
-        BigDecimal minAmount =  minAmountStr==null?new BigDecimal(100):new BigDecimal(minAmountStr);
+        BigDecimal minAmount =  minAmountStr==null?new BigDecimal(3000):new BigDecimal(minAmountStr);
         if(new BigDecimal(amount).compareTo(minAmount) < 0){
             return R.error(-1,"充值金额不能小于"+minAmount);
         }
         String maxAmountStr = configService.selectConfigByKey("send_porter_chargeMax");
-        BigDecimal maxAmount =  maxAmountStr==null?new BigDecimal(100):new BigDecimal(maxAmountStr);
+        BigDecimal maxAmount =  maxAmountStr==null?new BigDecimal(49999):new BigDecimal(maxAmountStr);
         if(new BigDecimal(amount).compareTo(maxAmount) > 0){
             return R.error(-1,"充值金额不能大于"+maxAmount);
         }
