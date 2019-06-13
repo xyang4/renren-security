@@ -574,7 +574,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
             SpringContextUtils.getBean(AccountLogService.class).addAccountLog(retOrdersEntity.getRecvUserId(),retOrdersEntity.getOrderId(),
                     3,"out",retOrdersEntity.getAmount());
             SpringContextUtils.getBean(AccountLogService.class).addAccountLog(retOrdersEntity.getRecvUserId(),retOrdersEntity.getOrderId(),
-                    12,"in",retOrdersEntity.getRrecvRateAmount());
+                    12,"in",retOrdersEntity.getRecvRateAmount());
             return R.ok();
         }else {
             return R.error();
@@ -599,8 +599,8 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
             throw new RRException("确认收款-更新发单者账户信息失败");
         }
         //更新接单者账户信息，扣减账户金额，及可用余额，增加获得的手续费
-        BigDecimal recevUserChangeAmount = ordersEntity.getAmount().subtract(ordersEntity.getRrecvRateAmount());
-        int ru = accountService.updateAmount(ordersEntity.getRecvUserId(),ordersEntity.getRrecvRateAmount(),ordersEntity.getAmount().negate(),recevUserChangeAmount.negate());
+        BigDecimal recevUserChangeAmount = ordersEntity.getAmount().subtract(ordersEntity.getRecvRateAmount());
+        int ru = accountService.updateAmount(ordersEntity.getRecvUserId(),ordersEntity.getRecvRateAmount(),ordersEntity.getAmount().negate(),recevUserChangeAmount.negate());
         if(ru < 1){
             throw new RRException("确认收款-更新接单者账户信息失败");
         }

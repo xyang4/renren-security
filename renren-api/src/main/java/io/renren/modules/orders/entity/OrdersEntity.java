@@ -149,7 +149,7 @@ public class OrdersEntity implements Serializable {
     /**
      * 接单奖励费率
      */
-    private BigDecimal rrecvRate;
+    private BigDecimal recvRate;
     /**
      * 发单扣除费率金额
      */
@@ -157,6 +157,6 @@ public class OrdersEntity implements Serializable {
     /**
      * 接单奖励费率金额
      */
-    private BigDecimal rrecvRateAmount;
+    private BigDecimal recvRateAmount;
 
 }
