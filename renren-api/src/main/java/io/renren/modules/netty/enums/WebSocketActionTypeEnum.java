@@ -37,6 +37,8 @@ public enum WebSocketActionTypeEnum {
     PUSH_ORDER_TO_SPECIAL_USER("canRushOrdersQueue", "下发订单至指定用户队列"),
     PULL_ORDER("pull_order", "拉取可抢订单"),
     DISTRIBUTE_ORDER("distribute_order", "派发订单"),
+    ORDER_TIMEOUT_PAY("order_timeout_pay", "订单支付超时"),
+    ORDER_TIMEOUT_RECV("order_timeout_recv", "接单超时"),
 
     PRINT_SERVER_TIME("print_server_time", "打印系统时间"),
 

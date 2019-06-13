@@ -125,6 +125,12 @@ public class NettyServiceImpl implements INettyService {
         return r;
     }
 
+    /**
+     * 异步发送消息至指定在线用户，暂不支持空消息发送
+     *
+     * @param mobile
+     * @param content
+     */
     @Async
     @Override
     public void asyncSendMessage(String mobile, Object content) {

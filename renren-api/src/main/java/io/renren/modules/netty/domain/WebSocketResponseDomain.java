@@ -18,6 +18,9 @@ public class WebSocketResponseDomain {
     private String msg = "请求成功";
     private Object data;
 
+    public WebSocketResponseDomain(String a) {
+        this.a = a;
+    }
     public WebSocketResponseDomain(String a, Object data) {
         this.a = a;
         this.data = data;

@@ -7,6 +7,9 @@ import io.renren.modules.netty.domain.WebSocketResponseDomain;
 import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 import org.springframework.scheduling.annotation.Async;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * netty 服务相关
  */
@@ -64,7 +67,8 @@ public interface INettyService {
     void clearActiveUser();
 
     /**
-     * 通道优化如:若通道已下线则至用户未下线状态
+     * 通道优化:
+     * e.g: 若通道已下线则手动修改用户为下线状态
      *
      * @param channel
      */
