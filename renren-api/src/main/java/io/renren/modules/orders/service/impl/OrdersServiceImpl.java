@@ -33,6 +33,7 @@ import io.renren.modules.orders.entity.OrdersLogEntity;
 import io.renren.modules.orders.form.OrderPageForm;
 import io.renren.modules.orders.service.OrdersLogService;
 import io.renren.modules.orders.service.OrdersService;
+import io.renren.modules.system.service.IConfigService;
 import io.renren.modules.user.entity.UserEntity;
 import io.renren.modules.user.service.IUserService;
 import lombok.extern.slf4j.Slf4j;
@@ -67,6 +68,8 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     private PayChannelService payChannelService;
     @Autowired
     private OrdersLogService ordersLogService;
+    @Autowired
+    private IConfigService configService;
 
     @Override
     public List<Map<String, Object>> receiveValidOrder(String mobile, OrderRule orderRule, int size) {
@@ -185,6 +188,17 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public R hamalWithdraw(Integer userId, String amount, String accountName, String accountNo,String bankName) {
+        //查询搬运工提现相关配置
+        String minAmountStr = configService.selectConfigByKey("send_porter_withMin");
+        BigDecimal minAmount =  minAmountStr==null?new BigDecimal(100):new BigDecimal(minAmountStr);
+        if(new BigDecimal(amount).compareTo(minAmount) < 0){
+            return R.error(-1,"提现金额不能小于"+minAmount);
+        }
+        String maxAmountStr = configService.selectConfigByKey("send_porter_withMax");
+        BigDecimal maxAmount =  maxAmountStr==null?new BigDecimal(49999):new BigDecimal(maxAmountStr);
+        if(new BigDecimal(amount).compareTo(maxAmount) > 0){
+            return R.error(-1,"提现金额不能大于"+maxAmount);
+        }
         OrdersEntity ordersEntity = new OrdersEntity();
         ordersEntity.setAmount(new BigDecimal(amount));
         ordersEntity.setSendAmount(new BigDecimal(amount));
@@ -197,6 +211,11 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         ordersEntity.setOrderDate(DateUtils.format(new Date(), DateUtils.DATE_PATTERN));
         ordersEntity.setPayType(OrdersEntityEnum.PayType.BANK.getValue());
         ordersEntity.setIsApi(0);
+        //搬运工提现费率
+        String sendRate = configService.selectConfigByKey("send_porter_withRate");
+        ordersEntity.setSendRate(sendRate == null?new BigDecimal(0):new BigDecimal(sendRate));
+        BigDecimal sa = ordersEntity.getSendAmount().multiply(ordersEntity.getSendRate()).setScale(2,BigDecimal.ROUND_DOWN);
+        ordersEntity.setSendRateAmount(sa);
         ordersEntity.setPlatDate(DateUtils.format(new Date(), DateUtils.DATE_PATTERN));
         int r = ordersDao.insert(ordersEntity);
         if (r > 0) {
@@ -223,6 +242,17 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         if (orders != null && orders.size() > 0) {
             return R.error(-1, "有进行中的订单，稍后重试");
         }
+        //查询搬运工充值相关配置
+        String minAmountStr = configService.selectConfigByKey("send_porter_chargeMin");
+        BigDecimal minAmount =  minAmountStr==null?new BigDecimal(3000):new BigDecimal(minAmountStr);
+        if(new BigDecimal(amount).compareTo(minAmount) < 0){
+            return R.error(-1,"充值金额不能小于"+minAmount);
+        }
+        String maxAmountStr = configService.selectConfigByKey("send_porter_chargeMax");
+        BigDecimal maxAmount =  maxAmountStr==null?new BigDecimal(49999):new BigDecimal(maxAmountStr);
+        if(new BigDecimal(amount).compareTo(maxAmount) > 0){
+            return R.error(-1,"充值金额不能大于"+maxAmount);
+        }
         OrdersEntity ordersEntity = new OrdersEntity();
         ordersEntity.setAmount(new BigDecimal(amount));
         ordersEntity.setSendAmount(new BigDecimal(amount));
@@ -233,10 +263,21 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         ordersEntity.setOrderState(OrdersEntityEnum.OrderState.b.getValue());
         ordersEntity.setOrderDate(DateUtils.format(new Date(), DateUtils.DATE_PATTERN));
         ordersEntity.setPayType(OrdersEntityEnum.PayType.BANK.getValue());
-        //todo 订单超时时间
-        ordersEntity.setTimeoutRecv(60);
-        ordersEntity.setTimeoutDown(120);
+        //订单超时时间
+        String timeOutRecv = configService.selectConfigByKey("porter_charge_timeout_recv");
+        String timeOutPay = configService.selectConfigByKey("porter_charge_timeout_pay");
+        ordersEntity.setTimeoutRecv(timeOutRecv == null?30:Integer.parseInt(timeOutRecv));
+        ordersEntity.setTimeoutPay(timeOutPay == null?600:Integer.parseInt(timeOutPay));
         ordersEntity.setIsApi(0);
+        //搬运工充值发单费率、搬运工充值接单费率
+        String sendRate = configService.selectConfigByKey("send_porter_chargeRate");
+        String recvRate = configService.selectConfigByKey("recv_porter_chargeRate");
+        ordersEntity.setSendRate(sendRate == null?new BigDecimal(0):new BigDecimal(sendRate));
+        ordersEntity.setRrecvRate(recvRate == null?new BigDecimal(0):new BigDecimal(recvRate));
+        BigDecimal sa = ordersEntity.getSendAmount().multiply(ordersEntity.getSendRate()).setScale(2,BigDecimal.ROUND_DOWN);
+        ordersEntity.setSendRateAmount(sa);
+        BigDecimal ra = ordersEntity.getSendAmount().multiply(ordersEntity.getRrecvRate()).setScale(2,BigDecimal.ROUND_DOWN);
+        ordersEntity.setRrecvRateAmount(ra);
         ordersEntity.setPlatDate(DateUtils.format(new Date(), DateUtils.DATE_PATTERN));
         int r = ordersDao.insert(ordersEntity);
         if (r > 0) {
