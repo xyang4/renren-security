@@ -542,8 +542,9 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         if(u2 <= 0){
             throw new RRException("抢单失败");
         }
-        //更新接单用户账户日志信息 TODO
-
+        //更新接单用户账户日志信息
+        SpringContextUtils.getBean(AccountLogService.class).addAccountLog(recvUserId,order.getOrderId(),
+                2,"out",order.getSendAmount());
         return order;
     }
 
