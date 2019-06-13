@@ -3,15 +3,18 @@ package io.renren.modules.orders.service.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.sun.org.apache.regexp.internal.RE;
 import io.renren.common.config.RenrenProperties;
 import io.renren.common.enums.OrdersEntityEnum;
 import io.renren.common.exception.RRException;
 import io.renren.common.util.StaticConstant;
+import io.renren.common.utils.Constant;
 import io.renren.common.utils.DateUtils;
 import io.renren.common.utils.R;
 import io.renren.common.utils.SpringContextUtils;
 import io.renren.modules.account.entity.AccountEntity;
 import io.renren.modules.account.entity.PayChannelDetail;
+import io.renren.modules.account.service.AccountLogService;
 import io.renren.modules.account.service.AccountService;
 import io.renren.modules.account.service.PayChannelService;
 import io.renren.modules.common.domain.RedisCacheKeyConstant;
@@ -22,7 +25,6 @@ import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 import io.renren.modules.netty.handle.WebSocketServerHandler;
 import io.renren.modules.netty.service.INettyService;
 import io.renren.modules.orders.dao.OrdersDao;
-import io.renren.modules.orders.domain.BaseOrderInfo;
 import io.renren.modules.orders.domain.OrderRule;
 import io.renren.modules.orders.domain.RushOrderInfo;
 import io.renren.modules.orders.entity.OrdersEntity;
@@ -44,7 +46,6 @@ import org.springframework.util.CollectionUtils;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 
 @Service
@@ -73,7 +74,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
 
     @Override
     @Transactional
-    public WebSocketResponseDomain rushToBuy(Integer recvUserId, String mobile, String orderType, String orderId) {
+    public WebSocketResponseDomain rushToBuy(Integer recvUserId, String mobile,String orderType, String orderId) {
         WebSocketResponseDomain r = new WebSocketResponseDomain(WebSocketActionTypeEnum.RUSH_ORDERS_RESULT.getCommand(), null);
         if (null != checkValidity(orderId)) {
             r.setCode(WebSocketResponseDomain.ResponseCode.ERROR_INVALID_ORDER.getCode());
@@ -181,7 +182,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
-    public R hamalWithdraw(Integer userId, String amount, String accountName, String accountNo, String bankName) {
+    public R hamalWithdraw(Integer userId, String amount, String accountName, String accountNo,String bankName) {
         OrdersEntity ordersEntity = new OrdersEntity();
         ordersEntity.setAmount(new BigDecimal(amount));
         ordersEntity.setSendAmount(new BigDecimal(amount));
@@ -198,7 +199,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         int r = ordersDao.insert(ordersEntity);
         if (r > 0) {
             //更改账户可用余额和冻结金额
-            int r1 = accountService.updateAmount(userId, new BigDecimal(amount).negate(), new BigDecimal(amount), null);
+            int r1 = accountService.updateAmount(userId, new BigDecimal(amount).negate(), new BigDecimal(amount),null);
             if (r1 <= 0) {
                 throw new RRException("更改账户金额异常");
             }
@@ -444,52 +445,52 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
      * 抢单成功:更新订单为接单成功状态 需要事务处理
      */
 
-    public Map reciveOrderSuccess(Integer recvUserId, String orderType, String orderId) {
-        Map returnMap = null;
+    public Map reciveOrderSuccess(Integer recvUserId, String orderType,String orderId) {
+        Map returnMap =null;
         //首先查询订单
         OrdersEntity order = this.getById(orderId);
-        if (order == null) {
+        if(order == null){
             return returnMap;
         }
         //接单用户校验
         UserEntity user = userService.getById(recvUserId);
-        if (user == null || user.getStatus() != 1) {
+        if( user == null || user.getStatus() != 1){
             return returnMap;
         }
         //校验账户
         AccountEntity accountEntity = accountService.getByUserId(recvUserId);
-        if (accountEntity == null) {
+        if(accountEntity == null){
             return returnMap;
         }
         //账户状态
-        if (accountEntity.getStatus() != 1 || accountEntity.getActiveStatus() != 1 || accountEntity.getRecvStatus() != 1) {
+        if(accountEntity.getStatus()!=1 || accountEntity.getActiveStatus()!=1 || accountEntity.getRecvStatus() != 1){
             return returnMap;
         }
         //账户金额
-        if (accountEntity.getCanuseAmount().compareTo(order.getSendAmount()) < 0) {
+        if(accountEntity.getCanuseAmount().compareTo(order.getSendAmount()) < 0){
             return returnMap;
         }
-        if (order.getOrderType() != Integer.parseInt(orderType)) {
+        if(order.getOrderType() != Integer.parseInt(orderType)){
             return returnMap;
         }
         //判断订单类型
-        if (OrdersEntityEnum.OrderType.PORTER_RECHARGE.getValue() != Integer.parseInt(orderType)
-                && OrdersEntityEnum.OrderType.MER_WITHDROW.getValue() != Integer.parseInt(orderType)
-                && OrdersEntityEnum.OrderType.MER_RECHARGE.getValue() != Integer.parseInt(orderType)) {
+        if(OrdersEntityEnum.OrderType.PORTER_RECHARGE.getValue()!=Integer.parseInt(orderType)
+                && OrdersEntityEnum.OrderType.MER_WITHDROW.getValue()!=Integer.parseInt(orderType)
+                && OrdersEntityEnum.OrderType.MER_RECHARGE.getValue()!=Integer.parseInt(orderType)){
             return returnMap;
         }
         //判断状态是否是待接单
-        if (OrdersEntityEnum.OrderState.b.getValue() != order.getOrderState()) {
+        if(OrdersEntityEnum.OrderState.b.getValue() != order.getOrderState()){
             return returnMap;
         }
         //查询接单用户支付方式是否包含订单支付类型
-        Map<String, Object> params = new HashMap<>();
-        params.put("userId", recvUserId);
-        params.put("payType", order.getPayType());
-        params.put("useStatus", 1);
-        params.put("bindStatus", 1);
+        Map<String,Object> params =new HashMap<>();
+        params.put("userId",recvUserId);
+        params.put("payType",order.getPayType());
+        params.put("useStatus",1);
+        params.put("bindStatus",1);
         List<PayChannelDetail> payChannelList = payChannelService.getPayChannels(params);
-        if (payChannelList == null || payChannelList.size() < 1) {
+        if(payChannelList == null || payChannelList.size() < 1){
             return returnMap;
         }
         //随机选择一个
@@ -497,8 +498,8 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         int n = random.nextInt(payChannelList.size());
         PayChannelDetail choosePayChannel = payChannelList.get(n);
         //抢单成功，更新订单和账户信息
-        OrdersEntity updateOrder = SpringContextUtils.getBean(OrdersServiceImpl.class).reciveOrderSuccessTransactional(recvUserId, choosePayChannel, order);
-        if (updateOrder != null) {
+        OrdersEntity updateOrder = SpringContextUtils.getBean(OrdersServiceImpl.class).reciveOrderSuccessTransactional(recvUserId,choosePayChannel,order);
+        if(updateOrder != null){
             //添加orders_log
             OrdersLogEntity ordersLogEntity = new OrdersLogEntity();
             ordersLogEntity.setOrderId(order.getOrderId());
@@ -506,37 +507,37 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
             ordersLogEntity.setPayType(order.getPayType());
             ordersLogEntity.setAmount(order.getAmount());
             ordersLogEntity.setRecvAmount(order.getRecvAmount());
-            ordersLogEntity.setCreateTime(DateUtils.format(new Date(), DateUtils.DATE_TIME_PATTERN));
+            ordersLogEntity.setCreateTime(DateUtils.format(new Date(),DateUtils.DATE_TIME_PATTERN));
             ordersLogService.save(ordersLogEntity);
         }
         returnMap = new HashMap();
-        returnMap.put("order", updateOrder);
-        returnMap.put("payChannel", choosePayChannel);
+        returnMap.put("order",updateOrder);
+        returnMap.put("payChannel",choosePayChannel);
         return returnMap;
     }
 
-    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
-    public OrdersEntity reciveOrderSuccessTransactional(Integer recvUserId, PayChannelDetail payChannel, OrdersEntity order) {
+    @Transactional(propagation = Propagation.REQUIRED,rollbackFor = Exception.class)
+    public OrdersEntity reciveOrderSuccessTransactional(Integer recvUserId, PayChannelDetail payChannel,OrdersEntity order){
         //OrdersEntity updateOrder = new OrdersEntity();
         //updateOrder.setOrderId(order.getOrderId());
         order.setOrderState(OrdersEntityEnum.OrderState.c.getValue());
         order.setRecvUserId(recvUserId);
-        if (OrdersEntityEnum.PayType.BANK.getValue().equals(order.getPayType())) {
+        if(OrdersEntityEnum.PayType.BANK.getValue().equals(order.getPayType())){
             //银行卡转账
             order.setRecvAccountName(payChannel.getAccountName());
             order.setRecvAccountNo(payChannel.getAccountNo());
             order.setRecvBankName(payChannel.getBankName());
-        } else {
+        }else{
             order.setQrimgId(payChannel.getQrimgId());
         }
         //更新订单信息
         int u1 = ordersDao.reciveOrderSuccess(order);
-        if (u1 <= 0) {
+        if(u1 <= 0){
             return null;
         }
         //更新账户金额
-        int u2 = accountService.updateAmount(recvUserId, order.getSendAmount().negate(), order.getSendAmount(), new BigDecimal(0));
-        if (u2 <= 0) {
+        int u2 = accountService.updateAmount(recvUserId,order.getSendAmount().negate(),order.getSendAmount(),new BigDecimal(0));
+        if(u2 <= 0){
             throw new RRException("抢单失败");
         }
         //更新接单用户账户日志信息 TODO
@@ -547,105 +548,62 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     /**
      * 确认收款
      */
-    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
-    public R sureRecvOrder(Integer orderId, BigDecimal confirmAmount) {
+    @Override
+    public R sureRecvOrder(Integer orderId, BigDecimal confirmAmount){
         //查询订单状态
         OrdersEntity retOrdersEntity = SpringContextUtils.getBean(OrdersServiceImpl.class).getById(orderId);
-        if (retOrdersEntity.getOrderState() == 9) {
+        if(retOrdersEntity.getOrderState()==9){
             return R.ok();
         }
-        if (retOrdersEntity.getOrderState() != 2 && retOrdersEntity.getOrderState() != 5) {
-            return R.error(-1, "订单状态错误，提交失败");
+        if(retOrdersEntity.getOrderState()!=2 && retOrdersEntity.getOrderState()!=5){
+            return R.error(-1,"订单状态错误，提交失败");
         }
-        if (retOrdersEntity.getAmount().compareTo(confirmAmount) != 0) {
-            return R.error(-1, "请确认收款金额是否一致");
+        if(retOrdersEntity.getAmount().compareTo(confirmAmount)!=0){
+            return R.error(-1,"请确认收款金额是否一致");
         }
-        OrdersEntity ordersEntity = new OrdersEntity();
-        ordersEntity.setOrderId(orderId);
-        ordersEntity.setOrderState(9);
-        ordersEntity.setRecvAmount(confirmAmount);
-        ordersEntity.setOrderId(orderId);
-        boolean boo = SpringContextUtils.getBean(OrdersServiceImpl.class).updateById(ordersEntity);
-        if (boo) {
-            //1、1更新发单者账户信息,给账户 （扣除手续费后） 增加金额，及可用金额 TODO
-            //手续费利率，从字典表里查询
-
-            //1、2更新发单者账户日志表，记录一笔（扣除手续费后） 充值金额 TODO
-
-
-            //2、1更新接单者账户信息，扣减账户金额，及可用余额，增加获得的手续费 TODO
-
-
-            //2、2更新接单者账户日志表，记录两笔 ，扣减一笔，奖励手续费一笔  TODO
-
+        //业务事务处理
+        boolean result = SpringContextUtils.getBean(OrdersServiceImpl.class).sureRecvOrderTransactional(retOrdersEntity);
+        if(result){
+            //更新发单者账户日志表，记录一笔（扣除手续费后） 充值金额
+            SpringContextUtils.getBean(AccountLogService.class).addAccountLog(retOrdersEntity.getSendUserId(),retOrdersEntity.getOrderId(),
+                    4,"in",retOrdersEntity.getAmount().subtract(retOrdersEntity.getSendRateAmount()));
+            //更新接单者账户日志表，记录两笔 ，扣减一笔，奖励手续费一笔  TODO
+            SpringContextUtils.getBean(AccountLogService.class).addAccountLog(retOrdersEntity.getRecvUserId(),retOrdersEntity.getOrderId(),
+                    3,"out",retOrdersEntity.getAmount());
+            SpringContextUtils.getBean(AccountLogService.class).addAccountLog(retOrdersEntity.getRecvUserId(),retOrdersEntity.getOrderId(),
+                    12,"in",retOrdersEntity.getRrecvRateAmount());
             return R.ok();
-        } else {
+        }else {
             return R.error();
         }
     }
 
-    @Override
-    public List<Map<String, Object>> listValidOrders(List<Integer> typeList, List<Integer> stateList, List<Integer> excludeStatusList, int limit) {
-        List<Map<String, Object>> rList = ordersDao.listValidOrders(typeList, stateList, excludeStatusList, limit);
-        if (!CollectionUtils.isEmpty(rList)) {
-            // TODO  订单处理
+    @Transactional(propagation = Propagation.REQUIRED)
+    public boolean sureRecvOrderTransactional(OrdersEntity ordersEntity){
+        //更新订单信息
+        OrdersEntity updateOrder = new OrdersEntity();
+        updateOrder.setOrderId(ordersEntity.getOrderId());
+        updateOrder.setOrderState(9);
+        updateOrder.setRecvAmount(ordersEntity.getAmount());
+        boolean boo = SpringContextUtils.getBean(OrdersServiceImpl.class).updateById(ordersEntity);
+        if(!boo){
+            return false;
         }
-        return rList;
+        //更新发单者账户信息,给账户 （扣除手续费后） 增加金额，及可用金额
+        BigDecimal sendUserChangeAmount = ordersEntity.getAmount().subtract(ordersEntity.getSendRateAmount());
+        int su = accountService.updateAmount(ordersEntity.getSendUserId(),sendUserChangeAmount,null,sendUserChangeAmount);
+        if(su < 1){
+            throw new RRException("确认收款-更新发单者账户信息失败");
+        }
+        //更新接单者账户信息，扣减账户金额，及可用余额，增加获得的手续费
+        BigDecimal recevUserChangeAmount = ordersEntity.getAmount().subtract(ordersEntity.getRrecvRateAmount());
+        int ru = accountService.updateAmount(ordersEntity.getRecvUserId(),ordersEntity.getRrecvRateAmount(),ordersEntity.getAmount().negate(),recevUserChangeAmount.negate());
+        if(ru < 1){
+            throw new RRException("确认收款-更新接单者账户信息失败");
+        }
+        return true;
     }
 
-    // 1 查询已超时的订单包括 下单超时，支付超时，接单超时
-
-
-    /**
-     * 订单超时处理 ，目前处理的订单类型[ORDER_TYPE]：1 搬运工充值3 商户充值 4 商户提现
-     * //        按照：TIMEOUT_RECV接单超时、TIMEOUT_PAY支付超时、和当前ORDER_STATE状态进行清理
-     * //        0、如果订单类型不是4、6、9、30、31，则执行以下：
-     * //        1、 如果当前时间超过“接单超时”时间,且订单状态是0、或1，则认为订单失败，更新订单为4。
-     * //        3、清理掉队列中的相关订单。
-     */
-
-    @Override
-    public void execOrderTimeOutHandle(int handleType) {
-        List<Map<String, Object>> validOrderList;
-        int rNum = 0;
-        final int[] handleNum = {0};
-        switch (handleType) {
-            case 1: // 下单超时处理
-                // todo 下单超时处理
-                break;
-            case 2: // 接单超时处理
-                validOrderList = listValidOrders(Arrays.asList(1, 3, 4), Arrays.asList(0, 1), null, 10);
-                if (!CollectionUtils.isEmpty(validOrderList)) {
-                    rNum = validOrderList.size();
-                    handleNum[0] = ordersDao.batchUpdateState(validOrderList.stream().map(v -> (Integer) v.get("orderId"))/*.mapToInt(x -> x)*/.collect(Collectors.toList()), 4, Arrays.asList(0, 1));
-                }
-                log.info("接单超时处理completely[{}]: [{}/{}]条。", handleNum[0] == rNum, handleNum[0], rNum);
-                break;
-            case 3: // 支付超时处理
-                validOrderList = listValidOrders(Arrays.asList(1, 3, 4), Arrays.asList(2, 5), null, 10);
-
-                if (!CollectionUtils.isEmpty(validOrderList)) {
-                    rNum = validOrderList.size();
-                    // 不用批处理，便于控制订单下发
-                    validOrderList.forEach(v -> {
-                        Integer orderId = (Integer) v.get("orderId");
-                        String orderSn = (String) v.get("orderSn");
-                        int fNum = ordersDao.batchUpdateState(Arrays.asList(orderId), 6, Arrays.asList(2, 5));
-                        if (fNum == 1) {
-                            // 下发通知至client
-                            String mobile = (String) v.get("recvUserMobile");
-                            log.info("下发超时订单[id-{},orderSn-{}]至用户[{}].", orderId, orderSn, mobile);
-                            WebSocketResponseDomain webSocketResponseDomain = new WebSocketResponseDomain(WebSocketActionTypeEnum.ORDER_TIMEOUT_PAY.getCommand());
-                            webSocketResponseDomain.setData(new BaseOrderInfo(orderId, orderSn, (String) v.get("createTime"), 6));
-                            iNettyService.asyncSendMessage(mobile, webSocketResponseDomain);
-                            handleNum[0]++;
-                        }
-                    });
-                    log.info("支付超时处理completely[{}]: [{}/{}]条。", handleNum[0] == rNum, handleNum[0], rNum);
-                }
-                break;
-        }
-    }
     //下发余额 TODO
 
 
