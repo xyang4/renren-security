@@ -141,4 +141,22 @@ public class OrdersEntity implements Serializable {
      * 接单用户银行名称
      */
     private String recvBankName;
+
+    /**
+     * 发单扣除费率
+     */
+    private String sendRate;
+    /**
+     * 接单奖励费率
+     */
+    private String rrecvRate;
+    /**
+     * 发单扣除费率金额
+     */
+    private String sendRateAmount;
+    /**
+     * 接单奖励费率金额
+     */
+    private String rrecvRateAmount;
+
 }

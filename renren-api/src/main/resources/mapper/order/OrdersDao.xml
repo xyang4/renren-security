@@ -35,6 +35,10 @@
         <result property="remark" column="REMARK"/>
         <result property="sendBankName" column="SEND_BANK_NAME"/>
         <result property="recvBankName" column="RECV_BANK_NAME"/>
+        <result property="sendRate" column="SEND_RATE"/>
+        <result property="recvRate" column="RECV_RATE"/>
+        <result property="sendRateAmount" column="SEND_RATE_AMOUNT"/>
+        <result property="recvRateAmount" column="RECV_RATE_AMOUNT"/>
     </resultMap>
 
     <select id="getOrders" parameterType="map" resultMap="ordersMap">
