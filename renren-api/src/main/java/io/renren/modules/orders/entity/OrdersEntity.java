@@ -145,18 +145,18 @@ public class OrdersEntity implements Serializable {
     /**
      * 发单扣除费率
      */
-    private String sendRate;
+    private BigDecimal sendRate;
     /**
      * 接单奖励费率
      */
-    private String rrecvRate;
+    private BigDecimal rrecvRate;
     /**
      * 发单扣除费率金额
      */
-    private String sendRateAmount;
+    private BigDecimal sendRateAmount;
     /**
      * 接单奖励费率金额
      */
-    private String rrecvRateAmount;
+    private BigDecimal rrecvRateAmount;
 
 }
