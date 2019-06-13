@@ -25,6 +25,7 @@ import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 import io.renren.modules.netty.handle.WebSocketServerHandler;
 import io.renren.modules.netty.service.INettyService;
 import io.renren.modules.orders.dao.OrdersDao;
+import io.renren.modules.orders.domain.BaseOrderInfo;
 import io.renren.modules.orders.domain.OrderRule;
 import io.renren.modules.orders.domain.RushOrderInfo;
 import io.renren.modules.orders.entity.OrdersEntity;
@@ -46,6 +47,7 @@ import org.springframework.util.CollectionUtils;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -602,6 +604,70 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
             throw new RRException("确认收款-更新接单者账户信息失败");
         }
         return true;
+    }
+
+
+    @Override
+    public List<Map<String, Object>> listValidOrders(List<Integer> typeList, List<Integer> stateList, List<Integer> excludeStatusList, int limit) {
+        List<Map<String, Object>> rList = ordersDao.listValidOrders(typeList, stateList, excludeStatusList, limit);
+        if (!CollectionUtils.isEmpty(rList)) {
+            // TODO  订单处理
+        }
+        return rList;
+    }
+
+    // 1 查询已超时的订单包括 下单超时，支付超时，接单超时
+
+
+    /**
+     * 订单超时处理 ，目前处理的订单类型[ORDER_TYPE]：1 搬运工充值3 商户充值 4 商户提现
+     * //        按照：TIMEOUT_RECV接单超时、TIMEOUT_PAY支付超时、和当前ORDER_STATE状态进行清理
+     * //        0、如果订单类型不是4、6、9、30、31，则执行以下：
+     * //        1、 如果当前时间超过“接单超时”时间,且订单状态是0、或1，则认为订单失败，更新订单为4。
+     * //        3、清理掉队列中的相关订单。
+     */
+
+    @Override
+    public void execOrderTimeOutHandle(int handleType) {
+        List<Map<String, Object>> validOrderList;
+        int rNum = 0;
+        final int[] handleNum = {0};
+        switch (handleType) {
+            case 1: // 下单超时处理
+                // todo 下单超时处理
+                break;
+            case 2: // 接单超时处理
+                validOrderList = listValidOrders(Arrays.asList(1, 3, 4), Arrays.asList(0, 1), null, 10);
+                if (!CollectionUtils.isEmpty(validOrderList)) {
+                    rNum = validOrderList.size();
+                    handleNum[0] = ordersDao.batchUpdateState(validOrderList.stream().map(v -> (Integer) v.get("orderId"))/*.mapToInt(x -> x)*/.collect(Collectors.toList()), 4, Arrays.asList(0, 1));
+                }
+                log.info("接单超时处理completely[{}]: [{}/{}]条。", handleNum[0] == rNum, handleNum[0], rNum);
+                break;
+            case 3: // 支付超时处理
+                validOrderList = listValidOrders(Arrays.asList(1, 3, 4), Arrays.asList(2, 5), null, 10);
+
+                if (!CollectionUtils.isEmpty(validOrderList)) {
+                    rNum = validOrderList.size();
+                    // 不用批处理，便于控制订单下发
+                    validOrderList.forEach(v -> {
+                        Integer orderId = (Integer) v.get("orderId");
+                        String orderSn = (String) v.get("orderSn");
+                        int fNum = ordersDao.batchUpdateState(Arrays.asList(orderId), 6, Arrays.asList(2, 5));
+                        if (fNum == 1) {
+                            // 下发通知至client
+                            String mobile = (String) v.get("recvUserMobile");
+                            log.info("下发超时订单[id-{},orderSn-{}]至用户[{}].", orderId, orderSn, mobile);
+                            WebSocketResponseDomain webSocketResponseDomain = new WebSocketResponseDomain(WebSocketActionTypeEnum.ORDER_TIMEOUT_PAY.getCommand());
+                            webSocketResponseDomain.setData(new BaseOrderInfo(orderId, orderSn, (String) v.get("createTime"), 6));
+                            iNettyService.asyncSendMessage(mobile, webSocketResponseDomain);
+                            handleNum[0]++;
+                        }
+                    });
+                    log.info("支付超时处理completely[{}]: [{}/{}]条。", handleNum[0] == rNum, handleNum[0], rNum);
+                }
+                break;
+        }
     }
 
     //下发余额 TODO
