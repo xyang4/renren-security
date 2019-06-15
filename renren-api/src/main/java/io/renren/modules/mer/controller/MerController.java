@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import io.renren.common.enums.OrdersEntityEnum;
 import io.renren.common.utils.R;
+import io.renren.modules.account.entity.ImgEntity;
+import io.renren.modules.account.service.ImgService;
 import io.renren.modules.mer.service.MerService;
 import io.renren.modules.orders.entity.OrdersEntity;
 import io.renren.modules.orders.service.OrdersService;
@@ -12,8 +14,9 @@ import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +29,8 @@ public class MerController {
 
     @Autowired
     private OrdersService ordersService;
+    @Autowired
+    private ImgService imgService;
     @Autowired
     MerService merService;
     /**
@@ -70,7 +75,7 @@ public class MerController {
             // TODO
             //返回支付充值页面
             merMap.put("payUrl","http://localhost:8180"+"/api/mer/order/payIndex?orderId="
-                    +ordersEntity.getOrderId()+"timeStamp="+"&sign=");
+                    +ordersEntity.getOrderId()+"&merId="+merId+"&timeStamp="+"&sign=");
             return R.ok(merMap);
         }else {//返回失败
             return R.error();
@@ -97,9 +102,11 @@ public class MerController {
 //        }
 
         Map ordersMap = new HashMap();
+        ordersMap.put("merId",ordersEntity.getSendUserId()+"");//merId
+        ordersMap.put("orderId",ordersEntity.getOrderId());//orderId
         ordersMap.put("orderSn",ordersEntity.getOrderSn());//商户订单orderSn
         ordersMap.put("createTime",ordersEntity.getCreateTime());//创建时间
-        ordersMap.put("timeOut","");//订单超时时间秒数 TODO
+        ordersMap.put("timeOut",ordersEntity.getTimeoutPay());//支付超时时间秒数
         //原timeStamp+sign
         ordersMap.put("timeStamp",timeStamp);//timeStamp
         ordersMap.put("sign",sign);//sign
@@ -111,36 +118,45 @@ public class MerController {
      * 商户充值订单抢单结果查询（查询被分配的支付付款通道）：页面ajax查询使用
      */
     @RequestMapping(value={"/order/selectRechargePayChannel"}, method = {RequestMethod.POST,RequestMethod.GET})
-    public R selectRechargePayChannel(HttpServletRequest request,Model model,
+    public @ResponseBody R selectRechargePayChannel(HttpServletRequest request,Model model,
                                       @RequestParam(value="orderId",required=true) String orderId,
-                                      @RequestParam(value="timeStamp",required=true) String timeStamp){
-        //查询订单信息
+                                      @RequestParam(value="timeStamp",required=false) String timeStamp){
+        //查询订单信息 TODO 优化,放入临时缓存中
         OrdersEntity ordersEntity = ordersService.getById(orderId);
         Map ordersMap = new HashMap();
         ordersMap.put("orderSn",ordersEntity.getOrderSn());//商户订单orderSn
         ordersMap.put("createTime",ordersEntity.getCreateTime());//创建时间
-        ordersMap.put("timeOut","");//订单超时时间秒数 TODO
+        ordersMap.put("timeoutPay",ordersEntity.getTimeoutPay());//订单超时时间秒数
         ordersMap.put("amount",ordersEntity.getAmount());//应支付金额
         //原timeStamp+sign
         ordersMap.put("timeStamp",timeStamp);//timeStamp
+        ordersMap.put("payType",ordersEntity.getPayType());
+        ordersMap.put("orderState",ordersEntity.getOrderState());
 
-        model.addAttribute("pageMap",ordersMap);
+        //符合条件的查询二维码
+        if(!(ordersEntity.getOrderState()==9 || ordersEntity.getOrderState()==4 || ordersEntity.getOrderState()==6)
+            && (ordersEntity.getPayType().equals(OrdersEntityEnum.PayType.WXQR.getValue())
+                ||ordersEntity.getOrderType().equals(OrdersEntityEnum.PayType.ALIQR.getValue())) ){
+            ImgEntity imgEntity = imgService.getById(ordersEntity.getQrimgId());
+            ordersMap.put("base64",imgEntity.getBase64());
+        }
+        ImgEntity imgEntity = imgService.getById(ordersEntity.getQrimgId());
+        ordersMap.put("base64",imgEntity.getBase64());
 
-        return R.ok();
+        return R.ok(ordersMap);
     }
-
 
     /**
      * 商户查询订单状态：充值，提现
      */
     @RequestMapping(value={"/order/selectOrderStatus"}, method = {RequestMethod.POST,RequestMethod.GET})
-    public R selectOrderStatus(HttpServletRequest request,
+    public @ResponseBody R selectOrderStatus(HttpServletRequest request,
                            @RequestParam(value="merId",required=true) Integer merId,
                            @RequestParam(value="orderSn",required=true) String orderSn){
         //查询订单信息
         Wrapper<OrdersEntity> ordersEntityQuery = new QueryWrapper<>();
         ((QueryWrapper<OrdersEntity>) ordersEntityQuery).eq("send_user_id",merId);
-        ((QueryWrapper<OrdersEntity>) ordersEntityQuery).eq("orderSn",orderSn);
+        ((QueryWrapper<OrdersEntity>) ordersEntityQuery).eq("order_Sn",orderSn);
         OrdersEntity ordersEntity = ordersService.getOne(ordersEntityQuery);
 
         Map ordersMap = new HashMap();
@@ -148,8 +164,7 @@ public class MerController {
         ordersMap.put("orderSn",ordersEntity.getOrderSn());//商户订单orderSn
         ordersMap.put("amount",ordersEntity.getAmount());//应支付金额
         ordersMap.put("orderState",ordersEntity.getOrderState());//订单状态
-
-        return R.ok();
+        return R.ok(ordersMap);
     }
 
 
