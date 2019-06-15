@@ -1,8 +1,6 @@
 package io.renren.common.listener;
 
 import com.alibaba.fastjson.JSONObject;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import io.renren.common.enums.OrdersEntityEnum;
 import io.renren.common.enums.RRExceptionEnum;
 import io.renren.common.utils.R;
 import io.renren.modules.account.service.AccountService;
@@ -12,17 +10,19 @@ import io.renren.modules.netty.domain.RedisMessageDomain;
 import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 import io.renren.modules.netty.service.INettyService;
 import io.renren.modules.orders.domain.RushOrderInfo;
-import io.renren.modules.orders.entity.OrdersEntity;
-import io.renren.modules.user.entity.UserEntity;
+import io.renren.modules.orders.service.OrdersService;
 import io.renren.modules.user.service.IUserService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -98,14 +98,17 @@ public class RedisMessageReceiver implements MessageListener {
             return R.ok("可抢购用户队列为空，无需派发订单!");
         }
         int validUserCount = 0;
-        //TODO 2 用户校验
         List<String> validUsers = users.stream().map(u -> {
-            UserEntity userEntity = iUserService.getOne(new QueryWrapper<UserEntity>().eq("mobile", u));
-            if (null == entity) {
-                return null;
-            } else {
-                return userEntity.getMobile();
+            Map<String, Object> rMap = iUserService.getAccountBaseInfo(null, u);
+            String CANUSE_AMOUNT;
+            if (!CollectionUtils.isEmpty(rMap)) {
+                if (1 != (Integer) rMap.get("RECV_STATUS") // 正常接单
+                        && StringUtils.isNotBlank(CANUSE_AMOUNT = (String) rMap.get("CANUSE_AMOUNT"))
+                        && new BigDecimal(CANUSE_AMOUNT).intValue() > OrdersService.MIN_ACCOUNT_BALANCE_CAN_RECV) {
+                    return u;
+                }
             }
+            return null;
         }).filter(u -> null != u).collect(Collectors.toList());
 
         // 3 订单派发

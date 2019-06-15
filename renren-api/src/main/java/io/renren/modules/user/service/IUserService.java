@@ -11,6 +11,8 @@ package io.renren.modules.user.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import io.renren.modules.user.entity.UserEntity;
 
+import java.util.Map;
+
 /**
  * 用户
  *
@@ -26,4 +28,13 @@ public interface IUserService extends IService<UserEntity> {
      * 全面校验用户：所有用户状态校验
      */
     boolean overallCheckUser(UserEntity userEntity);
+
+    /**
+     * 根据用户 mobile|| userId 查询用户账户基本信息
+     *
+     * @param userId
+     * @param mobile
+     * @return
+     */
+    Map<String, Object> getAccountBaseInfo(Integer userId, String mobile);
 }

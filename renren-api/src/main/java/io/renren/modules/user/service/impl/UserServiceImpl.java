@@ -14,8 +14,10 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.renren.modules.user.dao.UserDao;
 import io.renren.modules.user.entity.UserEntity;
 import io.renren.modules.user.service.IUserService;
-import org.apache.commons.codec.digest.DigestUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
 
 
 @Service
@@ -45,6 +47,14 @@ public class UserServiceImpl extends ServiceImpl<UserDao, UserEntity> implements
             return false;
         }
         return true;
+    }
+
+    @Autowired
+    UserDao userDao;
+
+    @Override
+    public Map<String, Object> getAccountBaseInfo(Integer userId, String mobile) {
+        return userDao.getAccountBaseInfo(userId, mobile);
     }
 
 }

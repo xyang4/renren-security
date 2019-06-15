@@ -21,8 +21,7 @@ import java.util.Random;
 public class RandomUtil {
 	/**
 	 * 生成pwd_len长度的随机数
-	 * @Description: TODO
-	 * @Title: genRandomNum 
+	 * @Title: genRandomNum
 	 * @param @param pwd_len
 	 * @param @return    设定文件
 	 * @return String    返回类型

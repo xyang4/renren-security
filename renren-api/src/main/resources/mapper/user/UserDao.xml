@@ -4,4 +4,21 @@
 <mapper namespace="io.renren.modules.user.dao.UserDao">
 
 
+    <select id="getAccountBaseInfo" resultType="java.util.Map">
+        SELECT
+            u.USER_ID,
+            u.MOBILE,a.ACCOUNT_ID,a.ACCOUNT_TYPE,
+            a.BALANCE, a.CANUSE_AMOUNT, a.FROZEN_AMOUNT,a.FROZEN_AMOUNT,a.SEND_STATUS,a.RECV_STATUS,a.ACTIVE_STATUS
+        FROM
+            `user` u,
+            account a
+        WHERE
+            u.USER_ID = a.USER_ID AND U.STATUS = 1 and u.ACTIVE_STATUS = 1
+        <if test="null!=userId">
+            and u.USER_ID = #{userId}
+        </if>
+        <if  test="null!=mobile and ''!=mobile">
+            and u.MOBILE = #{mobile}
+        </if>
+    </select>
 </mapper>
