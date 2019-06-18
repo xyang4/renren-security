@@ -38,7 +38,7 @@ public interface OrdersService extends IService<OrdersEntity> {
     /**
      * TODO 可接单最小账户金额 可配
      */
-    int MIN_ACCOUNT_BALANCE_CAN_RECV = 1000;
+    BigDecimal MIN_ACCOUNT_BALANCE_CAN_RECV = BigDecimal.valueOf(1000);
 
     /**
      * 开始接单

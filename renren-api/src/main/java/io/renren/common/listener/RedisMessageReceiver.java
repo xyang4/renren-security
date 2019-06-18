@@ -13,7 +13,6 @@ import io.renren.modules.orders.domain.RushOrderInfo;
 import io.renren.modules.orders.service.OrdersService;
 import io.renren.modules.user.service.IUserService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
@@ -100,10 +99,10 @@ public class RedisMessageReceiver implements MessageListener {
         int validUserCount = 0;
         List<String> validUsers = users.stream().map(u -> {
             Map<String, Object> rMap = iUserService.getAccountBaseInfo(null, u);
-
-            if (!CollectionUtils.isEmpty(rMap)) {
-                if (1 == (Integer) rMap.get("RECV_STATUS") // 正常接单
-                        && ((BigDecimal)rMap.get("CANUSE_AMOUNT")).intValue() > OrdersService.MIN_ACCOUNT_BALANCE_CAN_RECV) {
+            BigDecimal canuseAmount;
+            if (!CollectionUtils.isEmpty(rMap) && 1 == (Integer) rMap.get("RECV_STATUS") && null != (canuseAmount = (BigDecimal) rMap.get("CANUSE_AMOUNT"))) {
+                if (OrdersService.MIN_ACCOUNT_BALANCE_CAN_RECV.subtract(entity.getSendAmount()).compareTo(canuseAmount) < 0) {
+                    // 正常接单
                     return u;
                 }
             }

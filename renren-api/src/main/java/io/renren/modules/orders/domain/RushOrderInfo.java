@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 /**
  * 抢单信息
  */
@@ -15,8 +17,9 @@ public class RushOrderInfo extends BaseOrderInfo {
     private Integer orderType;
     private Integer timeoutRecv;
     private String payType;
+    private BigDecimal sendAmount;
 
-    public RushOrderInfo(Integer orderId, String orderSn, String createTime, Integer orderType, Integer timeoutRecv, String payType) {
+    public RushOrderInfo(Integer orderId, String orderSn, String createTime, Integer orderType, Integer timeoutRecv, String payType, BigDecimal sendAmount) {
         this.orderId = orderId;
         this.orderSn = orderSn;
         this.createTime = createTime;

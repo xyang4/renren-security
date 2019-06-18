@@ -107,3 +107,6 @@ renren-security
 7. 订单操作：
   - 已下发订单取消： CANCEL_PUSHED_ORDER
   
+  
+  
+8. WS 操作流程

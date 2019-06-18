@@ -1,14 +1,7 @@
 package io.renren.modules.task.schedual;
 
-import io.renren.common.config.RenrenProperties;
-import io.renren.common.enums.OrdersEntityEnum;
-import io.renren.modules.common.service.IRedisService;
-import io.renren.modules.netty.service.INettyService;
-import io.renren.modules.orders.service.OrdersService;
 import io.renren.modules.task.BaseHandleTask;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
