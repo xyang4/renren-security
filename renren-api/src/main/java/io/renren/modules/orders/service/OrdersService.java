@@ -105,7 +105,7 @@ public interface OrdersService extends IService<OrdersEntity> {
 
     boolean addOrder(OrdersEntity ordersEntity);
 
-    List<OrdersEntity> getOrders(Map<String, Object> param);
+    List<Map> getOrders(Map<String, Object> param);
 
     /**
      * 搬运工提现
@@ -172,7 +172,7 @@ public interface OrdersService extends IService<OrdersEntity> {
     Map reciveOrderSuccess(Integer recvUserId, String orderType, String orderId);
 
     /**
-     * 确认收款
+     * 充值确认：确认收款
      */
     R sureRecvOrder(Integer orderId, BigDecimal confirmAmount);
 

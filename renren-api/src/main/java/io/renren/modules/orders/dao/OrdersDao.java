@@ -17,7 +17,7 @@ import java.util.Map;
 @Mapper
 public interface OrdersDao extends BaseMapper<OrdersEntity> {
 
-    List<OrdersEntity> getOrders(Map<String, Object> param);
+    List<Map> getOrders(Map<String, Object> param);
 
     List<OrdersEntity> getSendOrRecvOrderList(@Param("params") Map<String, Object> param, Page<OrdersEntity> page);
 

@@ -71,8 +71,8 @@ public class AppUserController extends BaseController {
         return R.ok();
     }
 
-    @PostMapping("update")
-    @ApiOperation("密码修改")
+    @PostMapping("register")
+    @ApiOperation("register")
     @AppLogin
     public R register(@RequestBody @Validated UserInfoForm form, BindingResult br) {
         TokenEntity tokenEntity = getToken();

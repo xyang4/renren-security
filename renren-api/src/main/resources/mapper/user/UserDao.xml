@@ -13,7 +13,7 @@
             `user` u,
             account a
         WHERE
-            u.USER_ID = a.USER_ID AND U.STATUS = 1 and u.ACTIVE_STATUS = 1
+            u.USER_ID = a.USER_ID AND u.STATUS = 1 and a.STATUS = 1 and a.ACTIVE_STATUS = 1
         <if test="null!=userId">
             and u.USER_ID = #{userId}
         </if>

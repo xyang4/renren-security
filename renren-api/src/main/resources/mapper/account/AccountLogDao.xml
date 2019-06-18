@@ -24,7 +24,7 @@
 
     <select id="getAccountLogsByUserId" parameterType="integer" resultMap="accountLogMap">
         select *
-        from account_log where USER_ID = #{userId} order by CREATE_TIME desc
+        from account_log where USER_ID = #{userId} order by account_log_id desc
     </select>
 
 

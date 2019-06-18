@@ -41,15 +41,54 @@
         <result property="recvRateAmount" column="RECV_RATE_AMOUNT"/>
     </resultMap>
 
-    <select id="getOrders" parameterType="map" resultMap="ordersMap">
-        select *
-        from orders
+    <select id="getOrders" parameterType="map" resultType="map">
+        select
+        o.ORDER_ID as orderId ,
+        o.ORDER_DATE as orderDate ,
+        o.SEND_USER_ID as sendUserId ,
+        o.RECV_USER_ID as recvUserId ,
+        o.ORDER_TYPE as orderType ,
+        o.ORDER_STATE as orderState ,
+        o.PAY_TYPE as payType ,
+        o.SEND_AMOUNT as sendAmount ,
+        o.AMOUNT as amount ,
+        o.RECV_AMOUNT as recvAmount ,
+        o.ORDER_SN as orderSn ,
+        o.TIMEOUT_RECV as timeoutRecv ,
+        o.TIMEOUT_PAY as timeoutPay ,
+        o.TIMEOUT_DOWN as timeoutDown ,
+        o.IS_API as isApi ,
+        o.PLAT_DATE as platDate ,
+        o.SERVICE_REMARK as serviceRemark ,
+        o.SEND_ACCOUNT_NO as sendAccountNo ,
+        o.SEND_ACCOUNT_NAME as sendAccountName ,
+        o.RECV_ACCOUNT_NO as recvAccountNo ,
+        o.RECV_ACCOUNT_NAME as recvAccountName ,
+        o.BANK_NAME as bankName ,
+        o.QRIMG_ID as qrimgId ,
+        o.NOTIFY_URL as notifyUrl ,
+        o.DATA_STATUS as dataStatus ,
+        o.MODIFY_TIME as modifyTime ,
+        o.CREATE_TIME as createTime ,
+        o.REMARK as remark ,
+        o.SEND_BANK_NAME as sendBankName ,
+        o.RECV_BANK_NAME as recvBankName ,
+        o.SEND_RATE as sendRate ,
+        o.RECV_RATE as recvRate ,
+        o.SEND_RATE_AMOUNT as sendRateAmount ,
+        o.RECV_RATE_AMOUNT as recvRateAmount,
+        i.BASE64 as base64
+        from orders o
+        left join img i on i.img_id=o.QRIMG_ID
         <where>
             <if test="orderType != null">
                 and ORDER_TYPE = #{orderType}
             </if>
             <if test="sendUserId != null">
                 and SEND_USER_ID = #{sendUserId}
+            </if>
+            <if test="recvUserId != null">
+                and RECV_USER_ID = #{recvUserId}
             </if>
             <if test="includeState != null">
                 and ORDER_STATE in
@@ -112,9 +151,10 @@
         where
             o.DATA_STATUS='valid'
         AND (
-               o.TIMEOUT_RECV is null or (o.TIMEOUT_RECV is not null and TIMESTAMPDIFF(SECOND,o.CREATE_TIME,now())>=o.TIMEOUT_RECV)
-            or o.TIMEOUT_PAY is null or (o.TIMEOUT_PAY is not null and TIMESTAMPDIFF(SECOND,o.CREATE_TIME,now())>=o.TIMEOUT_PAY)
-            or o.TIMEOUT_DOWN is null or (o.TIMEOUT_DOWN is not null and TIMESTAMPDIFF(SECOND,o.CREATE_TIME,now())>=o.TIMEOUT_DOWN)
+        (o.TIMEOUT_RECV is null or (o.ORDER_STATE=1 and o.TIMEOUT_RECV is not null and TIMESTAMPDIFF(SECOND,o.CREATE_TIME,now())>=o.TIMEOUT_RECV))
+            or
+        (o.TIMEOUT_PAY is null or (o.ORDER_STATE=2 and o.TIMEOUT_PAY is not null and TIMESTAMPDIFF(SECOND,o.CREATE_TIME,now())>=o.TIMEOUT_PAY))
+        <!--  or o.TIMEOUT_DOWN is null or (o.TIMEOUT_DOWN is not null and TIMESTAMPDIFF(SECOND,o.CREATE_TIME,now())>=o.TIMEOUT_DOWN) -->
         )
         <if test="null!=typeList">
             AND o.ORDER_TYPE IN

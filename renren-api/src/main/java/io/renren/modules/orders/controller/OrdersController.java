@@ -82,22 +82,23 @@ public class OrdersController extends BaseController {
         }
         Map<String,Object> param =new HashMap<>();
         param.put("orderType",orderType);
-        param.put("sendUserId",tokenEntity.getUserId());
+
         List<Integer> orderStates = new ArrayList<>();
         if(orderType == OrdersEntityEnum.OrderType.PORTER_RECHARGE.getValue()){
+            param.put("sendUserId",tokenEntity.getUserId());
             orderStates.add(OrdersEntityEnum.OrderState.b.getValue());
             orderStates.add(OrdersEntityEnum.OrderState.c.getValue());
         }else if(orderType == OrdersEntityEnum.OrderType.PORTER_WITHDROW.getValue()){
+            param.put("sendUserId",tokenEntity.getUserId());
             orderStates.add(OrdersEntityEnum.OrderState.INIT.getValue());
+        }else if(orderType == OrdersEntityEnum.OrderType.MER_RECHARGE.getValue()){
+            param.put("recvUserId",tokenEntity.getUserId());
+            orderStates.add(OrdersEntityEnum.OrderState.c.getValue());
         }else{
             return R.ok();
         }
         param.put("includeState",orderStates);
-        List<OrdersEntity> orders = ordersService.getOrders(param);
-        OrdersEntity ordersEntity = new OrdersEntity();
-        if(orders.size()>0){
-            ordersEntity = orders.get(0);
-        }
+        List<Map> orders = ordersService.getOrders(param);
         return R.ok(orders);
     }
 

@@ -158,13 +158,16 @@ public class RedisServiceImpl implements IRedisService {
 
     @Override
     public String getMerSignKey(String merId) {
-        String signKey = (String) stringRedisTemplate.opsForHash().get("MerSignKey",merId);
-        if(StringUtils.isBlank(signKey)){
+        String signKey = null;
+        if(stringRedisTemplate.opsForHash().get("MerSignKey",merId)==null
+                && StringUtils.isBlank(signKey)){
             UserEntity userEntity = userService.getById(merId);
             if(userEntity!=null && StringUtils.isNoneBlank(userEntity.getSignKey())){
                 stringRedisTemplate.opsForHash().put("MerSignKey",merId,userEntity.getSignKey());
                 signKey = userEntity.getSignKey();
             }
+        }else {
+            signKey = (String)stringRedisTemplate.opsForHash().get("MerSignKey",merId);
         }
         return signKey;
     }

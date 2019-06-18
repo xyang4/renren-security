@@ -158,9 +158,23 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         orders.setIsApi(1);
         orders.setPlatDate(DateUtils.format(new Date(), DateUtils.DATE_PATTERN));
         orders.setNotifyUrl(notifyUrl);//回调地址
-        orders.setTimeoutRecv(3 * 60);//抢单超时时间，秒 TODO
-        orders.setTimeoutPay(10 * 60);//支付超时
-        orders.setTimeoutDown(60 * 60);//订单总超时
+        orders.setTimeoutDown(60 * 60);//订单总超时 TODO 待定
+
+        //订单超时时间
+        String timeOutRecv = configService.selectConfigByKey("mer_charge_timeout_recv");
+        String timeOutPay = configService.selectConfigByKey("mer_charge_timeout_pay");
+        orders.setTimeoutRecv(timeOutRecv == null?30:Integer.parseInt(timeOutRecv));
+        orders.setTimeoutPay(timeOutPay == null?600:Integer.parseInt(timeOutPay));
+        //搬运工充值发单费率、搬运工充值接单费率
+        String sendRate = configService.selectConfigByKey("send_mer_chargeRate");
+        String recvRate = configService.selectConfigByKey("recv_mer_chargeRate");
+        orders.setSendRate(sendRate == null?new BigDecimal(0):new BigDecimal(sendRate));
+        orders.setRecvRate(recvRate == null?new BigDecimal(0):new BigDecimal(recvRate));
+        BigDecimal sa = orders.getSendAmount().multiply(orders.getSendRate()).setScale(2,BigDecimal.ROUND_DOWN);
+        orders.setSendRateAmount(sa);
+        BigDecimal ra = orders.getSendAmount().multiply(orders.getRecvRate()).setScale(2,BigDecimal.ROUND_DOWN);
+        orders.setRecvRateAmount(ra);
+
         orders.setCreateTime(DateUtils.format(new Date(), DateUtils.DATE_TIME_PATTERN));
         boolean boo = this.save(orders);
         //验证
@@ -238,7 +252,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         orderStates.add(OrdersEntityEnum.OrderState.b.getValue());
         orderStates.add(OrdersEntityEnum.OrderState.c.getValue());
         param.put("includeState", orderStates);
-        List<OrdersEntity> orders = ordersDao.getOrders(param);
+        List<Map> orders = ordersDao.getOrders(param);
         if (orders != null && orders.size() > 0) {
             return R.error(-1, "有进行中的订单，稍后重试");
         }
@@ -303,7 +317,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
 
 
     @Override
-    public List<OrdersEntity> getOrders(Map<String, Object> param) {
+    public List<Map> getOrders(Map<String, Object> param) {
         return ordersDao.getOrders(param);
     }
 
@@ -571,6 +585,8 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
             order.setRecvAccountNo(payChannel.getAccountNo());
             order.setRecvBankName(payChannel.getBankName());
         }else{
+            order.setRecvAccountName(payChannel.getAccountName());
+            order.setRecvAccountNo(payChannel.getAccountNo());
             order.setQrimgId(payChannel.getQrimgId());
         }
         //更新订单信息
@@ -585,14 +601,15 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         }
         //更新接单用户账户日志信息
         SpringContextUtils.getBean(AccountLogService.class).addAccountLog(recvUserId,order.getOrderId(),
-                2,"out",order.getSendAmount());
+                1,"out",order.getSendAmount());
         return order;
     }
 
     /**
-     * 确认收款
+     * 充值确认：确认收款
      */
     @Override
+    @Transactional(propagation = Propagation.REQUIRED,rollbackFor = Exception.class)
     public R sureRecvOrder(Integer orderId, BigDecimal confirmAmount){
         //查询订单状态
         OrdersEntity retOrdersEntity = SpringContextUtils.getBean(OrdersServiceImpl.class).getById(orderId);
@@ -606,42 +623,62 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
             return R.error(-1,"请确认收款金额是否一致");
         }
         //业务事务处理
+        retOrdersEntity.setRecvAmount(confirmAmount);
+
         boolean result = SpringContextUtils.getBean(OrdersServiceImpl.class).sureRecvOrderTransactional(retOrdersEntity);
         if(result){
-            //更新发单者账户日志表，记录一笔（扣除手续费后） 充值金额
-            SpringContextUtils.getBean(AccountLogService.class).addAccountLog(retOrdersEntity.getSendUserId(),retOrdersEntity.getOrderId(),
-                    4,"in",retOrdersEntity.getAmount().subtract(retOrdersEntity.getSendRateAmount()));
-            //更新接单者账户日志表，记录两笔 ，扣减一笔，奖励手续费一笔  TODO
-            SpringContextUtils.getBean(AccountLogService.class).addAccountLog(retOrdersEntity.getRecvUserId(),retOrdersEntity.getOrderId(),
-                    3,"out",retOrdersEntity.getAmount());
-            SpringContextUtils.getBean(AccountLogService.class).addAccountLog(retOrdersEntity.getRecvUserId(),retOrdersEntity.getOrderId(),
-                    12,"in",retOrdersEntity.getRecvRateAmount());
+
             return R.ok();
         }else {
             return R.error();
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
-    public boolean sureRecvOrderTransactional(OrdersEntity ordersEntity){
+    /**
+     * 充值确认：更新订单和账户
+     */
+    @Transactional(propagation = Propagation.REQUIRED,rollbackFor = Exception.class)
+    boolean sureRecvOrderTransactional(OrdersEntity ordersEntity){
         //更新订单信息
         OrdersEntity updateOrder = new OrdersEntity();
         updateOrder.setOrderId(ordersEntity.getOrderId());
         updateOrder.setOrderState(9);
-        updateOrder.setRecvAmount(ordersEntity.getAmount());
-        boolean boo = SpringContextUtils.getBean(OrdersServiceImpl.class).updateById(ordersEntity);
+        updateOrder.setRecvAmount(ordersEntity.getRecvAmount());
+        boolean boo = SpringContextUtils.getBean(OrdersServiceImpl.class).updateById(updateOrder);
         if(!boo){
             return false;
         }
+        //1 发单用户
         //更新发单者账户信息,给账户 （扣除手续费后） 增加金额，及可用金额
         BigDecimal sendUserChangeAmount = ordersEntity.getAmount().subtract(ordersEntity.getSendRateAmount());
         int su = accountService.updateAmount(ordersEntity.getSendUserId(),sendUserChangeAmount,null,sendUserChangeAmount);
+        // 更新发单者账户日志表，记录两笔
+        //收入,充值
+        SpringContextUtils.getBean(AccountLogService.class).addAccountLog(ordersEntity.getSendUserId(),ordersEntity.getOrderId(),
+                4,"in",ordersEntity.getAmount().subtract(ordersEntity.getRecvAmount()));
+        //费用,充值
+        SpringContextUtils.getBean(AccountLogService.class).addAccountLog(ordersEntity.getSendUserId(),ordersEntity.getOrderId(),
+                6,"out",ordersEntity.getSendRateAmount());
+
         if(su < 1){
             throw new RRException("确认收款-更新发单者账户信息失败");
         }
-        //更新接单者账户信息，扣减账户金额，及可用余额，增加获得的手续费
+        //2 收单用户
+
+
+        // 更新接单者账户日志表，记录三笔
+        //解冻
+        SpringContextUtils.getBean(AccountLogService.class).addAccountLog(ordersEntity.getRecvUserId(),ordersEntity.getOrderId(),
+                2,"in",ordersEntity.getRecvAmount());
+        //更新接单者账户信息，解冻,扣减账户金额，及可用余额，增加获得的手续费
         BigDecimal recevUserChangeAmount = ordersEntity.getAmount().subtract(ordersEntity.getRecvRateAmount());
         int ru = accountService.updateAmount(ordersEntity.getRecvUserId(),ordersEntity.getRecvRateAmount(),ordersEntity.getAmount().negate(),recevUserChangeAmount.negate());
+        //付出
+        SpringContextUtils.getBean(AccountLogService.class).addAccountLog(ordersEntity.getRecvUserId(),ordersEntity.getOrderId(),
+                3,"out",ordersEntity.getRecvAmount());
+        //收益
+        SpringContextUtils.getBean(AccountLogService.class).addAccountLog(ordersEntity.getRecvUserId(),ordersEntity.getOrderId(),
+                5,"in",ordersEntity.getRecvRateAmount());
         if(ru < 1){
             throw new RRException("确认收款-更新接单者账户信息失败");
         }
@@ -659,8 +696,6 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     }
 
     // 1 查询已超时的订单包括 下单超时，支付超时，接单超时
-
-
     /**
      * 订单超时处理 ，目前处理的订单类型[ORDER_TYPE]：1 搬运工充值3 商户充值 4 商户提现
      * //        按照：TIMEOUT_RECV接单超时、TIMEOUT_PAY支付超时、和当前ORDER_STATE状态进行清理
@@ -711,8 +746,5 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
                 break;
         }
     }
-
-    //下发余额 TODO
-
 
 }

@@ -100,11 +100,10 @@ public class RedisMessageReceiver implements MessageListener {
         int validUserCount = 0;
         List<String> validUsers = users.stream().map(u -> {
             Map<String, Object> rMap = iUserService.getAccountBaseInfo(null, u);
-            String CANUSE_AMOUNT;
+
             if (!CollectionUtils.isEmpty(rMap)) {
-                if (1 != (Integer) rMap.get("RECV_STATUS") // 正常接单
-                        && StringUtils.isNotBlank(CANUSE_AMOUNT = (String) rMap.get("CANUSE_AMOUNT"))
-                        && new BigDecimal(CANUSE_AMOUNT).intValue() > OrdersService.MIN_ACCOUNT_BALANCE_CAN_RECV) {
+                if (1 == (Integer) rMap.get("RECV_STATUS") // 正常接单
+                        && ((BigDecimal)rMap.get("CANUSE_AMOUNT")).intValue() > OrdersService.MIN_ACCOUNT_BALANCE_CAN_RECV) {
                     return u;
                 }
             }
