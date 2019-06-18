@@ -12,7 +12,7 @@ server:
 spring:
   # 环境 dev|test|prod|dl|yp
   profiles:
-    active: dev
+    active: yp
   servlet:
     multipart:
       max-file-size: 100MB
@@ -101,5 +101,7 @@ logging:
   pattern:
     console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%t]){faint} %clr(%-40.40logger{39}){cyan}[%line] %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} ${LOG_LEVEL_PATTERN:-%5p} ${PID:- } --- [%t] %-40.40logger{39}[%line]: %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
-
+  level: debug
+  level.io.renren: debug
+  file: logs/api.log
 
