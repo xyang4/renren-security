@@ -186,4 +186,9 @@
             <foreach collection="validStateList" item="item" index="index" open="(" close=")" separator=",">#{item}</foreach>
         </if>
     </update>
+    <update id="withdrawAudit" parameterType="io.renren.modules.orders.entity.OrdersEntity">
+        update orders
+        set ORDER_STATE = #{state},REMARK = #{remark}
+        where ORDER_ID = #{orderId} and ORDER_STATE = 0
+    </update>
 </mapper>

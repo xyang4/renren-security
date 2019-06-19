@@ -181,5 +181,14 @@ public interface OrdersService extends IService<OrdersEntity> {
      * @param handleType: 1 下单超时处理  2 接单超时处理了 3 支付超时处理
      */
     void execOrderTimeOutHandle(int handleType);
+
+    /**
+     * 提现审核
+     * @param ordersEntity
+     * @param auditStatus
+     * @param remark
+     * @return
+     */
+    R withdrawAudit(OrdersEntity ordersEntity, String auditStatus, String remark);
 }
 

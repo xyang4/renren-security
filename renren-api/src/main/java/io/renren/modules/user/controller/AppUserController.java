@@ -142,4 +142,25 @@ public class AppUserController extends BaseController {
         return R.ok();
     }
 
+    @PostMapping("recommendUser")
+    @ApiOperation("添加用户")
+    @AppLogin
+    public R recommendUser(@RequestBody Map param){
+        TokenEntity tokenEntity = getToken();
+        if (null != (checkToken(tokenEntity))) {
+            return R.error();
+        }
+
+        String mobile = (String) param.get("mobile");
+        String nickName = (String) param.get("nickName");
+        String pwd = (String) param.get("pwd");
+        String confirmPwd = (String) param.get("confirmPwd");
+        if(StringUtils.isBlank(mobile) || StringUtils.isBlank(nickName) || StringUtils.isBlank(pwd) || StringUtils.isBlank(confirmPwd)){
+            return R.error(-10002,"请求参数错误");
+        }
+        if(!pwd.equals(confirmPwd)){
+            return R.error(-10004,"确认密码不一致");
+        }
+        return iUserService.recommendUser(tokenEntity.getUserId(),mobile,nickName,pwd);
+    }
 }

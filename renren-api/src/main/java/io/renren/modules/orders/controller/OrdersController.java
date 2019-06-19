@@ -150,4 +150,25 @@ public class OrdersController extends BaseController {
     }
 
 
+    @AppLogin
+    @ApiOperation("搬运工提现申请审核")
+    @RequestMapping("/withdrawAudit")
+    public R withdrawAudit(Integer orderId,String auditStatus,String remark){
+        TokenEntity tokenEntity = getToken();
+        if(tokenEntity == null){
+            return R.error(-1,"查询用户信息失败");
+        }
+        OrdersEntity ordersEntity = ordersService.getById(orderId);
+        if(ordersEntity == null){
+            return R.error(-11,"订单不存在");
+        }
+        if(ordersEntity.getOrderType() != OrdersEntityEnum.OrderType.PORTER_WITHDROW.getValue()){
+            return R.error(-11,"订单类型错误");
+        }
+        if(ordersEntity.getOrderState() != OrdersEntityEnum.OrderState.INIT.getValue()){
+            return R.error(-11,"订单状态错误");
+        }
+        return ordersService.withdrawAudit(ordersEntity,auditStatus,remark);
+    }
+
 }

@@ -9,6 +9,7 @@
 package io.renren.modules.user.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import io.renren.common.utils.R;
 import io.renren.modules.user.entity.UserEntity;
 
 import java.util.Map;
@@ -37,4 +38,6 @@ public interface IUserService extends IService<UserEntity> {
      * @return
      */
     Map<String, Object> getAccountBaseInfo(Integer userId, String mobile);
+
+    R recommendUser(Integer userId, String mobile, String nickName, String pwd);
 }

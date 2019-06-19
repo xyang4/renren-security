@@ -40,4 +40,6 @@ public interface OrdersDao extends BaseMapper<OrdersEntity> {
      * @return
      */
     int batchUpdateState(@Param("idList") List<Integer> idList, @Param("state") int state, @Param("validStateList") List<Integer> validStateList);
+
+    int withdrawAudit(OrdersEntity updateOrder);
 }

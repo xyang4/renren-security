@@ -11,17 +11,33 @@ package io.renren.modules.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import io.renren.common.enums.UserEntityEnum;
+import io.renren.common.exception.RRException;
+import io.renren.common.utils.DateUtils;
+import io.renren.common.utils.R;
+import io.renren.common.utils.SpringContextUtils;
+import io.renren.modules.account.entity.AccountEntity;
+import io.renren.modules.account.service.AccountService;
+import io.renren.modules.user.dao.AgentUserDao;
 import io.renren.modules.user.dao.UserDao;
+import io.renren.modules.user.entity.AgentUserEntity;
 import io.renren.modules.user.entity.UserEntity;
 import io.renren.modules.user.service.IUserService;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.Map;
 
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserDao, UserEntity> implements IUserService {
+
+    @Autowired
+    private AgentUserDao agentUserDao;
 
     @Override
     public UserEntity queryByMobile(String mobile) {
@@ -57,4 +73,43 @@ public class UserServiceImpl extends ServiceImpl<UserDao, UserEntity> implements
         return userDao.getAccountBaseInfo(userId, mobile);
     }
 
+    /**
+     * 添加推荐人
+     * @param userId
+     * @param mobile
+     * @param nickName
+     * @param pwd
+     * @return
+     */
+    @Override
+    @Transactional(propagation = Propagation.REQUIRED,rollbackFor = Exception.class)
+    public R recommendUser(Integer userId, String mobile, String nickName, String pwd) {
+        UserEntity userEntity = new UserEntity();
+        userEntity.setPasswd(DigestUtils.sha256Hex(pwd));
+        userEntity.setNickName(nickName);
+        userEntity.setMobile(mobile);
+        userEntity.setCreateTime(DateUtils.format(new Date(),DateUtils.DATE_TIME_PATTERN));
+        userEntity.setUserType(UserEntityEnum.UserType.PORTER.getValue());
+        userEntity.setUserLevel(1);
+        int r = userDao.insert(userEntity);
+        if(r>0){
+            AccountEntity accountEntity = new AccountEntity();
+            accountEntity.setUserId(userEntity.getUserId());
+            accountEntity.setCreateTime(DateUtils.format(new Date(),DateUtils.DATE_TIME_PATTERN));
+            boolean rr = SpringContextUtils.getBean(AccountService.class).save(accountEntity);
+            if(!rr){
+                throw new RRException("添加推荐人失败");
+            }
+            AgentUserEntity  agentUserEntity = new AgentUserEntity();
+            agentUserEntity.setAgentId(userId);
+            agentUserEntity.setUserId(userEntity.getUserId());
+            agentUserEntity.setCreateTime(DateUtils.format(new Date(),DateUtils.DATE_TIME_PATTERN));
+            agentUserEntity.setModifyTime(DateUtils.format(new Date(),DateUtils.DATE_TIME_PATTERN));
+            int rrr = agentUserDao.insert(agentUserEntity);
+            if(rrr < 1){
+                throw new RRException("添加推荐人失败");
+            }
+        }
+        return R.ok();
+    }
 }

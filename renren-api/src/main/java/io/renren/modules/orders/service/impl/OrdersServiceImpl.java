@@ -35,6 +35,7 @@ import io.renren.modules.system.service.IConfigService;
 import io.renren.modules.user.entity.UserEntity;
 import io.renren.modules.user.service.IUserService;
 import lombok.extern.slf4j.Slf4j;
+import net.sf.jsqlparser.statement.execute.Execute;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -760,4 +761,43 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         }
     }
 
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRED,rollbackFor = Exception.class)
+    public R withdrawAudit(OrdersEntity ordersEntity, String auditStatus, String remark) {
+        if(ordersEntity == null){
+            return R.error();
+        }
+        if(auditStatus.equals("Y")){
+            //更新账户
+            int u = accountService.updateAmount(ordersEntity.getSendUserId(),null,ordersEntity.getSendAmount().negate(),ordersEntity.getSendAmount().negate());
+            if(u > 0){
+                //更新订单
+                OrdersEntity updateOrder = new OrdersEntity();
+                updateOrder.setOrderId(ordersEntity.getOrderId());
+                updateOrder.setOrderState(9);
+                updateOrder.setRemark(remark);
+                u = ordersDao.withdrawAudit(updateOrder);
+                if(u <= 0){
+                    throw new RRException("withdrawAudit fail");
+                }
+            }
+            //审核通过
+        }else if(auditStatus.equals("N")){
+            //审核不通过
+            OrdersEntity updateOrder = new OrdersEntity();
+            updateOrder.setOrderId(ordersEntity.getOrderId());
+            updateOrder.setOrderState(31);
+            updateOrder.setRemark(remark);
+            int u1 = ordersDao.withdrawAudit(updateOrder);
+            if(u1 > 0){
+                //更新account
+                u1 = accountService.updateAmount(ordersEntity.getSendUserId(),ordersEntity.getSendAmount(),ordersEntity.getSendAmount().negate(),null);
+                if(u1 <= 0){
+                    throw new RRException("withdrawAudit fail");
+                }
+            }
+        }
+        return R.ok();
+    }
 }
