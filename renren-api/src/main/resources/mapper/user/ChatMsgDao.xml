@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.renren.modules.user.dao.ChatMsgDao">
+
+	<!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="io.renren.modules.user.entity.ChatMsgEntity" id="chatMsgMap">
+        <result property="chatMsgId" column="CHAT_MSG_ID"/>
+        <result property="sendUserId" column="SEND_USER_ID"/>
+        <result property="recvUserId" column="RECV_USER_ID"/>
+        <result property="msgType" column="MSG_TYPE"/>
+        <result property="charText" column="CHAR_TEXT"/>
+        <result property="createTime" column="CREATE_TIME"/>
+    </resultMap>
+
+    <select id="getPageList" resultMap="chatMsgMap" parameterType="integer">
+        select *
+        from chat_msg
+        where USER_ID = #{userId} order by chat_msg_id desc
+    </select>
+
+</mapper>
