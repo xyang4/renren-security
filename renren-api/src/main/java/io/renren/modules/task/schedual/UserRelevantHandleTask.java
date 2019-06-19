@@ -2,7 +2,6 @@ package io.renren.modules.task.schedual;
 
 import io.renren.modules.task.BaseHandleTask;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
@@ -21,7 +20,7 @@ public class UserRelevantHandleTask extends BaseHandleTask {
     /**
      * 清理存活用户，防止用户异常下线造成OOM
      */
-    @Scheduled(cron = "0 */${renren.web-socket.expire} * * * ?")
+//    @Scheduled(cron = "0 */${renren.web-socket.expire} * * * ?")
     public void clearActiveUser() {
         iNettyService.clearActiveUser();
     }

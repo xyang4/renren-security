@@ -40,7 +40,7 @@ public class RedisMessageReceiver implements MessageListener {
     public void onMessage(Message message, byte[] pattern) {
         String topic = new String(pattern);
         String m = message.toString();
-        log.info("Redis 消息队列消费开始：Message[{}].", m);
+        log.info("Redis 队列消费[{}]开始：Message[{}].", topic, m);
         if (!m.startsWith("{") || !m.endsWith("}")) {
             log.warn("消息格式错误");
             return;
@@ -48,7 +48,7 @@ public class RedisMessageReceiver implements MessageListener {
 
         RedisMessageDomain messageDomain = JSONObject.parseObject(m, RedisMessageDomain.class);
         if (null == messageDomain || null == messageDomain.getTopic() || null == messageDomain.getContent()) {
-            log.warn("Redis 消息队列消费完成!! {}", RRExceptionEnum.MUST_PARAMS_DEFECT_ERROR.getMsg());
+            log.warn("Redis 队列消费[{}]完成!! {}", topic, RRExceptionEnum.MUST_PARAMS_DEFECT_ERROR.getMsg());
             return;
         }
 
@@ -75,7 +75,7 @@ public class RedisMessageReceiver implements MessageListener {
                 log.warn("UnSupport Topic[ {} ].", topic);
                 return;
         }
-        log.info("Consumer Execution Done：{}.", r);
+        log.info("Redis 队列消费[{}]完成，{}.", actionTypeEnum.getDescribe(), r);
     }
 
     @Autowired
@@ -97,12 +97,12 @@ public class RedisMessageReceiver implements MessageListener {
             return R.ok("可抢购用户队列为空，无需派发订单!");
         }
         int validUserCount = 0;
+
         List<String> validUsers = users.stream().map(u -> {
             Map<String, Object> rMap = iUserService.getAccountBaseInfo(null, u);
             BigDecimal canuseAmount;
             if (!CollectionUtils.isEmpty(rMap) && 1 == (Integer) rMap.get("RECV_STATUS") && null != (canuseAmount = (BigDecimal) rMap.get("CANUSE_AMOUNT"))) {
-                if (OrdersService.MIN_ACCOUNT_BALANCE_CAN_RECV.subtract(entity.getSendAmount()).compareTo(canuseAmount) < 0) {
-                    // 正常接单
+                if (canuseAmount.compareTo(OrdersService.MIN_ACCOUNT_BALANCE_CAN_RECV) > 0 && canuseAmount.subtract(entity.getSendAmount()).compareTo(OrdersService.MIN_ACCOUNT_BALANCE_CAN_RECV) > 0) {
                     return u;
                 }
             }
@@ -119,6 +119,7 @@ public class RedisMessageReceiver implements MessageListener {
 
             });
         }
+        log.info("下发订单[{}]至[{}]个用户:{}", entity.getOrderSn(), validUsers.size(), validUsers);
         return R.ok("已下发订单[ " + entity.getOrderSn() + " ]至[ " + validUserCount + " ]个用户.");
     }
 }

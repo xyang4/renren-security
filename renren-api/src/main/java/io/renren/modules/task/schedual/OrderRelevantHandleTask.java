@@ -14,12 +14,14 @@ public class OrderRelevantHandleTask extends BaseHandleTask {
     OrdersService ordersService;
 
     /**
-     * 推送可抢订单至在线可抢单用户
+     * 给在线用户推送可抢订单
      */
     @Scheduled(fixedDelay = 5 * 1000)
     public void pushOrder() {
         for (OrdersEntityEnum.OrderType item : OrdersEntityEnum.OrderType.values()) {
+//            if (item.getValue() == 3) {
             ordersService.pushSpecialOrder(false, item);
+//            }
         }
     }
 

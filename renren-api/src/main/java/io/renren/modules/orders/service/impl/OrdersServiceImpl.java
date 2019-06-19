@@ -337,12 +337,25 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     @Autowired
     INettyService iNettyService;
 
+    @Override
+    public void batchPushOrderToUser(boolean async, String mobile, int orderType) {
+        if (async) {
+            asyncBatchPushOrderToUser(mobile, orderType);
+        } else {
+            syncBatchPushOrderToUser(mobile, orderType);
+        }
+    }
+
     @Async
-    public void asyncBatchPushOrderToUser(String mobile, int orderType) {
+    void asyncBatchPushOrderToUser(String mobile, int orderType) {
+        syncBatchPushOrderToUser(mobile, orderType);
+    }
+
+    public void syncBatchPushOrderToUser(String mobile, int orderType) {
         // 1 订单拉取
         String redisKey = RedisCacheKeyConstant.ORDER_LIST_CAN_BUY_PREFIX + mobile + ":" + orderType;
         long ordersNum = iRedisService.listSize(redisKey);
-        log.info("可消费订单数量[{}] MaxAllowNum[{}]", ordersNum, renrenProperties.getBatchPushOrderNumMax());
+        log.info("订单下发开始，用户[{}] ExistNum[{}] MaxAllowNum[{}]", mobile, ordersNum, renrenProperties.getBatchPushOrderNumMax());
         if (ordersNum < 1) {
             return;
         }
@@ -383,10 +396,9 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
 
         // 1 查询并筛选有效的在线用户
         List<String> onlineUserWithMobile = WebSocketServerHandler.ONLINE_USER_WITH_MOBILE;
-
         Set<String> userSetCanRushBuy = iRedisService.setMembers(RedisCacheKeyConstant.USERS_CAN_RUSH_BUY_PREFIX + orderType.getValue());
 
-        log.info("Task[{}] Exec Begin:OrderType[{}] Users_Online[{}] Users_CanRushBuy[{}] ...", orderType.getName(), WebSocketActionTypeEnum.PULL_ORDER.getDescribe(), onlineUserWithMobile.size(), userSetCanRushBuy.size());
+        log.info("推送[ {} ]订单开始,users_online[{}] users_CanRushBuy[{}] ...", orderType.getName(), /*WebSocketActionTypeEnum.PULL_ORDER.getDescribe(),*/ onlineUserWithMobile.size(), userSetCanRushBuy.size());
         // 同 handleWebSocketRequest.handleWebSocketRequest: ACTIVE & BEGIN_RECEIPT 处理
         if (CollectionUtils.isEmpty(onlineUserWithMobile) || CollectionUtils.isEmpty(userSetCanRushBuy)) {
             return;
@@ -394,7 +406,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
 
         //2、给有效用户推送指定类型的订单
         onlineUserWithMobile.stream().filter(v -> userSetCanRushBuy.contains(v)).forEach(v -> {
-            asyncBatchPushOrderToUser(v, orderType.getValue());
+            batchPushOrderToUser(false, v, orderType.getValue());
         });
     }
 

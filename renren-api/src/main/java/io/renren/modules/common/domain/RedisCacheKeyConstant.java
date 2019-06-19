@@ -35,6 +35,6 @@ public class RedisCacheKeyConstant {
     /**
      * 已下发清单信息的用户
      */
-    public static final String USERS_PUSHED_RUSH_ORDER_PREFIX = "users_pushed_rush_order_prefix:";
+    public static final String USERS_PUSHED_RUSH_ORDER_PREFIX = "users_pushed_rush_order:";
 
 }

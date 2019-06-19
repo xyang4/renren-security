@@ -155,15 +155,7 @@ public interface OrdersService extends IService<OrdersEntity> {
     @Async
     void asyncPushSpecialOrder(OrdersEntityEnum.OrderType merRecharge);
 
-    /**
-     * 异步批量推送订单至指定用户
-     *
-     * @param mobile
-     * @param orderType
-     */
-    @Async
-    void asyncBatchPushOrderToUser(String mobile, int orderType);
-
+    void batchPushOrderToUser(boolean async, String mobile, int orderType);
 
     /**
      * 抢单成功:更新订单为接单成功状态

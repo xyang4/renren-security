@@ -31,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -143,9 +144,8 @@ public class NettyServiceImpl implements INettyService {
         } else {
             String msg = (content instanceof String) ? (String) content : JSON.toJSONString(content);
             ChannelFuture channelFuture = channel.writeAndFlush(new TextWebSocketFrame(msg));
-            // TODO 推送结果处理
             if (channelFuture.isSuccess()) {
-                log.info("消息推送成功!!! 用户[{}]", mobile);
+                log.info("消息推送成功：mobile[{}] msg[{}]", mobile);
             }
         }
     }
@@ -340,6 +340,13 @@ public class NettyServiceImpl implements INettyService {
             WebSocketServerHandler.ONLINE_USER_CHANNEL_MAP.remove(mobile);
             WebSocketServerHandler.ONLINE_USER_WITH_MOBILE.remove(mobile);
         }
+    }
+
+    @Override
+    @PostConstruct
+    public void init() {
+        log.info("服务器启动，执行[{}]初始化", "在线Channel");
+        iRedisService.delKey(RedisCacheKeyConstant.ONLINE_CHANNEL);
     }
 
     public void send() {

@@ -7,9 +7,6 @@ import io.renren.modules.netty.domain.WebSocketResponseDomain;
 import io.renren.modules.netty.enums.WebSocketActionTypeEnum;
 import org.springframework.scheduling.annotation.Async;
 
-import java.util.List;
-import java.util.Map;
-
 /**
  * netty 服务相关
  */
@@ -73,4 +70,11 @@ public interface INettyService {
      * @param channel
      */
     void optimizeChannel(Channel channel);
+
+    /**
+     * 初始化：
+     * 1 服务器重启后channel会失效，直接将redis缓存的channel进行清理
+     * 2 ...
+     */
+    void init();
 }

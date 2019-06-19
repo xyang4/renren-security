@@ -101,12 +101,37 @@ renren-security
 6. 定时任务
     - 定时推送可抢订单
     - 定时清理 redis 数据
-    
-    
-    
-7. 订单操作：
+      
+6. 订单操作：
   - 已下发订单取消： CANCEL_PUSHED_ORDER
   
   
-  
-8. WS 操作流程
+---
+
+WS 操作流程
+
+```text
+# WebSocket 连接断开
+    1 client 建立连接
+        1.1 将channel id 保存至redis中(key= online:channel:#{longTextChannelID})
+    2 client 断开
+        2.1 清除 1.1 redis缓存的查 key  
+    3 服务器重启，宕机缓存优化
+        3.1 重启是清理 key= online:channel缓存数据
+        3.2 定时清理在线用户
+        
+# 业务功能    
+    1 用户激活 redis 存储在线用户信息,k-v
+        1.1 存储用户 online:user:#{mobile}  #{longTextChannelID} 
+        1.2 online:channel:#{longTextChannelID} #{mobile}
+    2 用户接单、取消接单
+        操作集合 users_can_rush_buy:#{orderType} add/remove #{mobile}
+    3 商户下单
+        根据类型创建不同的集合，并将该订单已下发用户追加至 users_pushed_rush_order:#{orderType}:#{orderId}的集合中
+    4 可抢订单推送（定时任务）
+        获取集合 users_can_rush_buy:#{orderType} 中用户，从队列 order_list_can_buy:#{mobile}:#{orderType} 中拉取订单，并对订单进行校验( 金额+有效性... )，完成订单下发推送
+    5 用户抢单
+        5.1 使用redis简单锁实现
+        5.2 抢单成功后,通知其他用户该订单已被抢：遍历3中的集合 users_pushed_rush_order:#{orderType}:#{orderId} 进行推送
+    
+```

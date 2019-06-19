@@ -26,6 +26,7 @@ public class RushOrderInfo extends BaseOrderInfo {
         this.orderType = orderType;
         this.timeoutRecv = timeoutRecv;
         this.payType = payType;
+        this.sendAmount = sendAmount;
     }
 
 }
