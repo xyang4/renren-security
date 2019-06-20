@@ -125,8 +125,8 @@
             <if test="qrimgId != null">
                 QRIMG_ID = #{qrimgId},
             </if>
-            <if test="recvAccountName != null">
-                RECV_ACCOUNT_NO = #{recvAccountName},
+            <if test="recvAccountNo != null">
+                RECV_ACCOUNT_NO = #{recvAccountNo},
             </if>
             <if test="recvAccountName != null">
                 RECV_ACCOUNT_NAME = #{recvAccountName},

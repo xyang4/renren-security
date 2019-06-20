@@ -12,6 +12,7 @@ package io.renren.common.interceptor;
 import io.renren.common.annotation.AppLogin;
 import io.renren.common.config.RenrenProperties;
 import io.renren.common.exception.RRException;
+import io.renren.common.exception.TokenException;
 import io.renren.common.util.HttpUtils;
 import io.renren.common.util.StaticConstant;
 import io.renren.common.utils.SpringContextUtils;
@@ -70,19 +71,19 @@ public class AppAuthInterceptor extends HandlerInterceptorAdapter {
 
             // token为空
             if (StringUtils.isBlank(token)) {
-                throw new RRException(StaticConstant.TOKEN_KEY + "不能为空");
+                throw new TokenException(StaticConstant.TOKEN_KEY + "不能为空");
             }
 
             ITokenService tokenService = SpringContextUtils.getBean(ITokenService.class);
             // 查询token信息
             TokenEntity tokenEntity = tokenService.queryByToken(token);
             if(tokenEntity==null){
-                throw new RRException(StaticConstant.TOKEN_KEY + "已失效，请重新登录");
+                throw new TokenException(StaticConstant.TOKEN_KEY + "已失效，请重新登录");
             }
             long tokenExpire = tokenEntity.getExpireTime().getTime();
             long surplusExpire = 0;
             if (tokenEntity == null || (surplusExpire = tokenExpire - System.currentTimeMillis()) < 0) {
-                throw new RRException(StaticConstant.TOKEN_KEY + "已失效，请重新登录");
+                throw new TokenException(StaticConstant.TOKEN_KEY + "已失效，请重新登录");
             }
 
             RenrenProperties renrenProperties = SpringContextUtils.getBean(RenrenProperties.class);

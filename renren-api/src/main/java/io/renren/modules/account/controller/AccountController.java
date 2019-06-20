@@ -48,13 +48,13 @@ public class AccountController extends BaseController {
     public R accountInfo(){
         TokenEntity tokenEntity = getToken();
         if(tokenEntity == null){
-            return R.error(-1,"查询用户信息失败");
+            return R.error(403,"查询用户信息失败");
         }
         //查询账户和用户信息
         UserEntity userEntity = userService.getById(tokenEntity.getUserId());
         AccountEntity accountEntity = accountService.getByUserId(tokenEntity.getUserId());
         if(userEntity == null || accountEntity == null){
-            return R.error(-1,"查询用户信息失败");
+            return R.error(403,"查询用户信息失败");
         }
         Map<String,Object> rMap = new HashMap<>();
         rMap.put("user",userEntity);

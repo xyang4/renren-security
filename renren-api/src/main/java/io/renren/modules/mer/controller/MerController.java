@@ -36,9 +36,9 @@ public class MerController {
     /**
      * 商户充值订单预申请
      */
-    @PostMapping("/order/applyRecharge")
     @ApiOperation("商户充值订单预申请")
     @ResponseBody
+    @RequestMapping(value={"/order/applyRecharge"}, method = {RequestMethod.POST,RequestMethod.GET})
     public R applyRecharge(HttpServletRequest request,
                            @RequestParam(value="merId",required=true) Integer merId,
                            @RequestParam(value="orderDate",required=true) String orderDate,

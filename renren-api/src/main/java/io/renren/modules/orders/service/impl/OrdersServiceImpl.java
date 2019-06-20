@@ -184,7 +184,9 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
                     orders.getCreateTime(),
                     orders.getOrderType(),
                     orders.getTimeoutRecv(),
-                    orders.getPayType(), orders.getSendAmount());
+                    orders.getPayType(),
+                    orders.getSendAmount(),
+                    orders.getSendUserId());
             RedisMessageDomain messageDomain = new RedisMessageDomain(WebSocketActionTypeEnum.DISTRIBUTE_ORDER, System.currentTimeMillis(), rushOrderInfo);
             iRedisService.sendMessageToQueue(messageDomain);
 
@@ -292,6 +294,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         BigDecimal ra = ordersEntity.getSendAmount().multiply(ordersEntity.getRecvRate()).setScale(2, BigDecimal.ROUND_DOWN);
         ordersEntity.setRecvRateAmount(ra);
         ordersEntity.setPlatDate(DateUtils.format(new Date(), DateUtils.DATE_PATTERN));
+        ordersEntity.setCreateTime(DateUtils.format(new Date(), DateUtils.DATE_TIME_PATTERN));
         int r = ordersDao.insert(ordersEntity);
         if (r > 0) {
             // websocket 推送
@@ -302,7 +305,8 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
                     ordersEntity.getOrderType(),
                     ordersEntity.getTimeoutRecv(),
                     ordersEntity.getPayType(),
-                    ordersEntity.getSendAmount());
+                    ordersEntity.getSendAmount(),
+                    ordersEntity.getSendUserId());
             RedisMessageDomain messageDomain = new RedisMessageDomain(WebSocketActionTypeEnum.DISTRIBUTE_ORDER, System.currentTimeMillis(), rushOrderInfo);
             iRedisService.sendMessageToQueue(messageDomain);
         }
@@ -517,16 +521,34 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
 
     public Map reciveOrderSuccess(Integer recvUserId, String orderType, String orderId) {
         Map returnMap = null;
+
         //首先查询订单
         OrdersEntity order = this.getById(orderId);
         if (order == null) {
             return returnMap;
         }
+        //判断状态是否是待接单
+        if (OrdersEntityEnum.OrderState.b.getValue() != order.getOrderState()) {
+            return returnMap;
+        }
+        //判断订单类型
+        if (OrdersEntityEnum.OrderType.PORTER_RECHARGE.getValue() != Integer.parseInt(orderType)
+                && OrdersEntityEnum.OrderType.MER_WITHDROW.getValue() != Integer.parseInt(orderType)
+                && OrdersEntityEnum.OrderType.MER_RECHARGE.getValue() != Integer.parseInt(orderType)) {
+            return returnMap;
+        }
+        //搬运工充值，自己不能接自己的单子
+//        if (OrdersEntityEnum.OrderType.PORTER_RECHARGE.getValue() == Integer.parseInt(orderType)){
+//            if(order.getSendUserId().intValue()==recvUserId.intValue()){
+//                return returnMap;
+//            }
+//        }
         //接单用户校验
         UserEntity user = userService.getById(recvUserId);
         if (user == null || user.getStatus() != 1) {
             return returnMap;
         }
+
         //校验账户
         AccountEntity accountEntity = accountService.getByUserId(recvUserId);
         if (accountEntity == null) {
@@ -543,16 +565,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         if (order.getOrderType() != Integer.parseInt(orderType)) {
             return returnMap;
         }
-        //判断订单类型
-        if (OrdersEntityEnum.OrderType.PORTER_RECHARGE.getValue() != Integer.parseInt(orderType)
-                && OrdersEntityEnum.OrderType.MER_WITHDROW.getValue() != Integer.parseInt(orderType)
-                && OrdersEntityEnum.OrderType.MER_RECHARGE.getValue() != Integer.parseInt(orderType)) {
-            return returnMap;
-        }
-        //判断状态是否是待接单
-        if (OrdersEntityEnum.OrderState.b.getValue() != order.getOrderState()) {
-            return returnMap;
-        }
+
         //查询接单用户支付方式是否包含订单支付类型
         Map<String, Object> params = new HashMap<>();
         params.put("userId", recvUserId);

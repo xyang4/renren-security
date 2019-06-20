@@ -98,12 +98,18 @@ public class RedisMessageReceiver implements MessageListener {
         }
         int validUserCount = 0;
 
+        //刷选可下发的用户
         List<String> validUsers = users.stream().map(u -> {
             Map<String, Object> rMap = iUserService.getAccountBaseInfo(null, u);
             BigDecimal canuseAmount;
+            //状态判断
             if (!CollectionUtils.isEmpty(rMap) && 1 == (Integer) rMap.get("RECV_STATUS") && null != (canuseAmount = (BigDecimal) rMap.get("CANUSE_AMOUNT"))) {
-                if (canuseAmount.compareTo(OrdersService.MIN_ACCOUNT_BALANCE_CAN_RECV) > 0 && canuseAmount.subtract(entity.getSendAmount()).compareTo(OrdersService.MIN_ACCOUNT_BALANCE_CAN_RECV) > 0) {
-                    return u;
+                //搬运工充值的订单，不能接自己的单子
+                if(entity.getSendUserId().intValue()!= ((Integer) rMap.get("USER_ID")).intValue()){
+                    //金额判断
+                    if (canuseAmount.compareTo(OrdersService.MIN_ACCOUNT_BALANCE_CAN_RECV) > 0 && canuseAmount.subtract(entity.getSendAmount()).compareTo(OrdersService.MIN_ACCOUNT_BALANCE_CAN_RECV) > 0) {
+                        return u;
+                    }
                 }
             }
             return null;
@@ -119,7 +125,7 @@ public class RedisMessageReceiver implements MessageListener {
 
             });
         }
-        log.info("下发订单[{}]至[{}]个用户:{}", entity.getOrderSn(), validUsers.size(), validUsers);
-        return R.ok("已下发订单[ " + entity.getOrderSn() + " ]至[ " + validUserCount + " ]个用户.");
+        log.info("下发订单OrderId[{}]至[{}]个用户:{}", entity.getOrderId(), validUsers.size(), validUsers);
+        return R.ok("已下发订单OrderId[ " + entity.getOrderId() + " ]至[ " + validUserCount + " ]个用户.");
     }
 }

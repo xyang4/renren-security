@@ -18,8 +18,11 @@ public class RushOrderInfo extends BaseOrderInfo {
     private Integer timeoutRecv;
     private String payType;
     private BigDecimal sendAmount;
+    private Integer sendUserId;
 
-    public RushOrderInfo(Integer orderId, String orderSn, String createTime, Integer orderType, Integer timeoutRecv, String payType, BigDecimal sendAmount) {
+    public RushOrderInfo(Integer orderId, String orderSn, String createTime,
+                         Integer orderType, Integer timeoutRecv, String payType,
+                         BigDecimal sendAmount,Integer sendUserId) {
         this.orderId = orderId;
         this.orderSn = orderSn;
         this.createTime = createTime;
@@ -27,6 +30,7 @@ public class RushOrderInfo extends BaseOrderInfo {
         this.timeoutRecv = timeoutRecv;
         this.payType = payType;
         this.sendAmount = sendAmount;
+        this.sendUserId = sendUserId;
     }
 
 }
