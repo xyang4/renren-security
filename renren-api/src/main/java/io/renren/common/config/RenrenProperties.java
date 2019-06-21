@@ -34,7 +34,7 @@ public class RenrenProperties {
     /**
      * token 有效连接时间（分钟）
      */
-    private Long jwtExpire = 30L;
+    private Long jwtExpire = 60L;
     /**
      * 金额格式化
      */

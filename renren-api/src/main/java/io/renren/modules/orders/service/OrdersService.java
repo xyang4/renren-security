@@ -164,6 +164,10 @@ public interface OrdersService extends IService<OrdersEntity> {
     Map reciveOrderSuccess(Integer recvUserId, String orderType, String orderId);
 
     /**
+     * 发单确认付款
+     */
+    R sureSendAmount(Integer orderId);
+    /**
      * 充值确认：确认收款
      */
     R sureRecvOrder(Integer orderId, BigDecimal confirmAmount);

@@ -630,6 +630,20 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
                 1, "out", order.getSendAmount());
         return order;
     }
+    /**
+     * 发单确认付款
+     */
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+    public R sureSendAmount(Integer orderId){
+        //查询订单状态
+        OrdersEntity retOrdersEntity = SpringContextUtils.getBean(OrdersServiceImpl.class).getById(orderId);
+        if (retOrdersEntity.getOrderState() == 2 ) {
+            retOrdersEntity.setOrderState(8);
+            SpringContextUtils.getBean(OrdersServiceImpl.class).save(retOrdersEntity);
+            return R.error(-1, "订单状态错误，提交失败");
+        }
+        return R.ok();
+    }
 
     /**
      * 充值确认：确认收款

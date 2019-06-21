@@ -32,14 +32,28 @@ public class TokenServiceImpl extends ServiceImpl<TokenDao, TokenEntity> impleme
 
     @Override
     public TokenEntity queryByToken(String token) {
-        return this.getOne(new QueryWrapper<TokenEntity>().eq(StaticConstant.TOKEN_KEY, token));
+        TokenEntity tokenEntity =  this.getOne(new QueryWrapper<TokenEntity>().eq(StaticConstant.TOKEN_KEY, token));
+
+        if(tokenEntity!=null){
+            long tokenExpire = tokenEntity.getExpireTime().getTime();
+            long a= tokenExpire - System.currentTimeMillis();
+            if(a<1000*60*50 && a>0){
+                //更新用户token时间
+                //当前时间
+                Date now = new Date();
+                Date expireTime = new Date(now.getTime() + renrenProperties.getJwtExpire() * 60000 );
+                tokenEntity.setExpireTime(expireTime);
+                saveOrUpdate(tokenEntity);
+            }
+        }
+        return tokenEntity;
     }
 
     @Override
     public TokenEntity createToken(Integer userId, String mobile) {
         //当前时间
         Date now = new Date();
-        Date expireTime = new Date(now.getTime() + renrenProperties.getJwtExpire() * 60 * 1000 * 60);
+        Date expireTime = new Date(now.getTime() + renrenProperties.getJwtExpire() * 60000 );
 
         //生成token
         String token = generateToken();
