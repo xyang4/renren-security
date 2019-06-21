@@ -35,7 +35,6 @@ import io.renren.modules.system.service.IConfigService;
 import io.renren.modules.user.entity.UserEntity;
 import io.renren.modules.user.service.IUserService;
 import lombok.extern.slf4j.Slf4j;
-import net.sf.jsqlparser.statement.execute.Execute;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -630,14 +629,15 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
                 1, "out", order.getSendAmount());
         return order;
     }
+
     /**
      * 发单确认付款
      */
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
-    public R sureSendAmount(Integer orderId){
+    public R sureSendAmount(Integer orderId) {
         //查询订单状态
         OrdersEntity retOrdersEntity = SpringContextUtils.getBean(OrdersServiceImpl.class).getById(orderId);
-        if (retOrdersEntity.getOrderState() == 2 ) {
+        if (retOrdersEntity.getOrderState() == 2) {
             retOrdersEntity.setOrderState(8);
             SpringContextUtils.getBean(OrdersServiceImpl.class).save(retOrdersEntity);
             return R.error(-1, "订单状态错误，提交失败");
@@ -758,9 +758,12 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
                 validOrderList = listValidOrders(Arrays.asList(1, 3, 4), Arrays.asList(0, 1), null, 10);
                 if (!CollectionUtils.isEmpty(validOrderList)) {
                     rNum = validOrderList.size();
-                    handleNum[0] = ordersDao.batchUpdateState(validOrderList.stream().map(v -> (Integer) v.get("orderId"))/*.mapToInt(x -> x)*/.collect(Collectors.toList()), 4, Arrays.asList(0, 1));
+                    List<Integer> modifiedOrderList = validOrderList.stream().map(v -> (Integer) v.get("orderId"))/*.mapToInt(x -> x)*/.collect(Collectors.toList());
+                    handleNum[0] = ordersDao.batchUpdateState(modifiedOrderList, 4, Arrays.asList(0, 1));
+                    log.info("接单超时处理：orderList[{}/{}]{}.", modifiedOrderList.size(), handleNum[0], modifiedOrderList);
                 }
-                log.info("接单超时处理completely[{}]: [{}/{}]条。", handleNum[0] == rNum, handleNum[0], rNum);
+                // TODO 用余额回退
+                log.info("接单超时处理结束（completely[{}]-[{}/{}]条）。", handleNum[0] == rNum, handleNum[0], rNum);
                 break;
             case 3: // 支付超时处理
                 validOrderList = listValidOrders(Arrays.asList(1, 3, 4), Arrays.asList(2, 5), null, 10);
@@ -772,14 +775,16 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
                         Integer orderId = (Integer) v.get("orderId");
                         String orderSn = (String) v.get("orderSn");
                         int fNum = ordersDao.batchUpdateState(Arrays.asList(orderId), 6, Arrays.asList(2, 5));
-                        if (fNum == 1) {
-                            // 下发通知至client
+                        if (fNum == 1) { // 下发通知至client
                             String mobile = (String) v.get("recvUserMobile");
-                            log.info("下发超时订单[id-{},orderSn-{}]至用户[{}].", orderId, orderSn, mobile);
-                            WebSocketResponseDomain webSocketResponseDomain = new WebSocketResponseDomain(WebSocketActionTypeEnum.ORDER_TIMEOUT_PAY.getCommand());
-                            webSocketResponseDomain.setData(new BaseOrderInfo(orderId, orderSn, (String) v.get("createTime"), 6));
-                            iNettyService.asyncSendMessage(mobile, webSocketResponseDomain);
-                            handleNum[0]++;
+                            if (StringUtils.isNotBlank(mobile)) {
+                                log.info("支付超时处理：订单[id-{},orderSn-{}] 状态[{}]更改成功，下发至用户[{}].", orderId, orderSn, (String) v.get("orderState"), mobile);
+                                WebSocketResponseDomain webSocketResponseDomain = new WebSocketResponseDomain(WebSocketActionTypeEnum.ORDER_TIMEOUT_PAY.getCommand());
+                                webSocketResponseDomain.setData(new BaseOrderInfo(orderId, orderSn, (String) v.get("createTime"), 6));
+                                iNettyService.asyncSendMessage(mobile, webSocketResponseDomain);
+                                handleNum[0]++;
+                                // TODO 用余额回退
+                            }
                         }
                     });
                     log.info("支付超时处理completely[{}]: [{}/{}]条。", handleNum[0] == rNum, handleNum[0], rNum);
@@ -790,37 +795,37 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
 
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRED,rollbackFor = Exception.class)
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public R withdrawAudit(OrdersEntity ordersEntity, String auditStatus, String remark) {
-        if(ordersEntity == null){
+        if (ordersEntity == null) {
             return R.error();
         }
-        if(auditStatus.equals("Y")){
+        if (auditStatus.equals("Y")) {
             //更新账户
-            int u = accountService.updateAmount(ordersEntity.getSendUserId(),null,ordersEntity.getSendAmount().negate(),ordersEntity.getSendAmount().negate());
-            if(u > 0){
+            int u = accountService.updateAmount(ordersEntity.getSendUserId(), null, ordersEntity.getSendAmount().negate(), ordersEntity.getSendAmount().negate());
+            if (u > 0) {
                 //更新订单
                 OrdersEntity updateOrder = new OrdersEntity();
                 updateOrder.setOrderId(ordersEntity.getOrderId());
                 updateOrder.setOrderState(9);
                 updateOrder.setRemark(remark);
                 u = ordersDao.withdrawAudit(updateOrder);
-                if(u <= 0){
+                if (u <= 0) {
                     throw new RRException("withdrawAudit fail");
                 }
             }
             //审核通过
-        }else if(auditStatus.equals("N")){
+        } else if (auditStatus.equals("N")) {
             //审核不通过
             OrdersEntity updateOrder = new OrdersEntity();
             updateOrder.setOrderId(ordersEntity.getOrderId());
             updateOrder.setOrderState(31);
             updateOrder.setRemark(remark);
             int u1 = ordersDao.withdrawAudit(updateOrder);
-            if(u1 > 0){
+            if (u1 > 0) {
                 //更新account
-                u1 = accountService.updateAmount(ordersEntity.getSendUserId(),ordersEntity.getSendAmount(),ordersEntity.getSendAmount().negate(),null);
-                if(u1 <= 0){
+                u1 = accountService.updateAmount(ordersEntity.getSendUserId(), ordersEntity.getSendAmount(), ordersEntity.getSendAmount().negate(), null);
+                if (u1 <= 0) {
                     throw new RRException("withdrawAudit fail");
                 }
             }

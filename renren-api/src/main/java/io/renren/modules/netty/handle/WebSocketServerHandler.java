@@ -52,12 +52,11 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<TextWebS
         Channel channel = ctx.channel();
         String msgContent = textWebSocketFrame.text();
         TextWebSocketFrame socketFrame;
-        if (StringUtils.isBlank(msgContent)) {
+        WebSocketRequestDomain requestDomain;
+        if (StringUtils.isBlank(msgContent) || null == (requestDomain = JSONObject.parseObject(msgContent, WebSocketRequestDomain.class))) {
             socketFrame = new TextWebSocketFrame("无效的请求参数");
         } else {
-            WebSocketRequestDomain requestDomain = JSONObject.parseObject(msgContent, WebSocketRequestDomain.class);
             WebSocketActionTypeEnum webSocketAction = requestDomain.getWebSocketAction();
-
             INettyService iNettyService = SpringContextUtils.getBean(INettyService.class);
             WebSocketResponseDomain responseDomain = iNettyService.handleWebSocketRequest(webSocketAction, channel, requestDomain.getToken(), requestDomain.getContent());
             socketFrame = new TextWebSocketFrame(JSON.toJSONString(responseDomain));
