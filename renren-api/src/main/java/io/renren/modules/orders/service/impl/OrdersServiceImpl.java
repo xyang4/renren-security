@@ -689,14 +689,14 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
             return false;
         }
         //1 发单用户
-        //更新发单者账户信息,给账户 （扣除手续费后） 增加金额，及可用金额
+        // 更新发单者账户信息,给账户 （扣除手续费后） 增加金额，及可用金额
         BigDecimal sendUserChangeAmount = ordersEntity.getAmount().subtract(ordersEntity.getSendRateAmount());
         int su = accountService.updateAmount(ordersEntity.getSendUserId(), sendUserChangeAmount, null, sendUserChangeAmount);
         // 更新发单者账户日志表，记录两笔
-        //收入,充值
+        // 收入,充值
         SpringContextUtils.getBean(AccountLogService.class).addAccountLog(ordersEntity.getSendUserId(), ordersEntity.getOrderId(),
                 4, "in", ordersEntity.getAmount().subtract(ordersEntity.getRecvAmount()));
-        //费用,充值
+        // 费用,充值
         SpringContextUtils.getBean(AccountLogService.class).addAccountLog(ordersEntity.getSendUserId(), ordersEntity.getOrderId(),
                 6, "out", ordersEntity.getSendRateAmount());
 
@@ -735,10 +735,9 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         return rList;
     }
 
-    // 1 查询已超时的订单包括 下单超时，支付超时，接单超时
-
     /**
      * 订单超时处理 ，目前处理的订单类型[ORDER_TYPE]：1 搬运工充值3 商户充值 4 商户提现
+     * 处理逻辑：
      * //        按照：TIMEOUT_RECV接单超时、TIMEOUT_PAY支付超时、和当前ORDER_STATE状态进行清理
      * //        0、如果订单类型不是4、6、9、30、31，则执行以下：
      * //        1、 如果当前时间超过“接单超时”时间,且订单状态是0、或1，则认为订单失败，更新订单为4。
@@ -751,21 +750,23 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         int rNum = 0;
         final int[] handleNum = {0};
         switch (handleType) {
-            case 1: // 下单超时处理
+            case 1:
                 // todo 下单超时处理
                 break;
-            case 2: // 接单超时处理
+            case 2: // 接单超时处理:不涉及接单用户资金变动，直接批量修改即可
                 validOrderList = listValidOrders(Arrays.asList(1, 3, 4), Arrays.asList(0, 1), null, 10);
                 if (!CollectionUtils.isEmpty(validOrderList)) {
                     rNum = validOrderList.size();
                     List<Integer> modifiedOrderList = validOrderList.stream().map(v -> (Integer) v.get("orderId"))/*.mapToInt(x -> x)*/.collect(Collectors.toList());
+                    /*validOrderList.forEach(v->{
+                        Long userId = v.get("");
+                    });*/
                     handleNum[0] = ordersDao.batchUpdateState(modifiedOrderList, 4, Arrays.asList(0, 1));
                     log.info("接单超时处理：orderList[{}/{}]{}.", modifiedOrderList.size(), handleNum[0], modifiedOrderList);
                 }
-                // TODO 用余额回退
                 log.info("接单超时处理结束（completely[{}]-[{}/{}]条）。", handleNum[0] == rNum, handleNum[0], rNum);
                 break;
-            case 3: // 支付超时处理
+            case 3: // 用户支付超时处理：发单用户
                 validOrderList = listValidOrders(Arrays.asList(1, 3, 4), Arrays.asList(2, 5), null, 10);
 
                 if (!CollectionUtils.isEmpty(validOrderList)) {
@@ -774,23 +775,56 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
                     validOrderList.forEach(v -> {
                         Integer orderId = (Integer) v.get("orderId");
                         String orderSn = (String) v.get("orderSn");
-                        int fNum = ordersDao.batchUpdateState(Arrays.asList(orderId), 6, Arrays.asList(2, 5));
-                        if (fNum == 1) { // 下发通知至client
-                            String mobile = (String) v.get("recvUserMobile");
-                            if (StringUtils.isNotBlank(mobile)) {
-                                log.info("支付超时处理：订单[id-{},orderSn-{}] 状态[{}]更改成功，下发至用户[{}].", orderId, orderSn, (String) v.get("orderState"), mobile);
-                                WebSocketResponseDomain webSocketResponseDomain = new WebSocketResponseDomain(WebSocketActionTypeEnum.ORDER_TIMEOUT_PAY.getCommand());
-                                webSocketResponseDomain.setData(new BaseOrderInfo(orderId, orderSn, (String) v.get("createTime"), 6));
-                                iNettyService.asyncSendMessage(mobile, webSocketResponseDomain);
-                                handleNum[0]++;
-                                // TODO 用余额回退
-                            }
+                        Long sendUserId = (Long) v.get("sendUserId"), recvUserId = (Long) v.get("recvUserId");
+                        Integer orderState = (Integer) v.get("orderState");
+                        BigDecimal sendAmount = (BigDecimal) v.get("sendAmount"), amount = (BigDecimal) v.get("amount"), recvAmount = (BigDecimal) v.get("recvAmount");
+                        if (payTimeOutHandleWithAccountTrans(
+                                orderId, orderSn, orderState,
+                                sendUserId, sendAmount, (String) v.get("sendUserMobile"),
+                                recvUserId, recvAmount, (String) v.get("recvUserMobile"),
+                                (String) v.get("createTime"))) {
+                            handleNum[0]++;
                         }
                     });
                     log.info("支付超时处理completely[{}]: [{}/{}]条。", handleNum[0] == rNum, handleNum[0], rNum);
                 }
                 break;
         }
+    }
+
+    /**
+     * 支付超时用户账户处理,新建事务
+     *
+     * @param orderState
+     * @param sendUserId
+     * @param sendAmount
+     * @param recvUserId
+     * @param recvAmount
+     */
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public boolean payTimeOutHandleWithAccountTrans(Integer orderId, String orderSn, Integer orderState,
+                                                    Long sendUserId, BigDecimal sendAmount, String sendUserMobile,
+                                                    Long recvUserId, BigDecimal recvAmount, String recvUserMobile,
+                                                    String createTime
+    ) {
+        boolean rFlag = false;
+        // 1 更新订单状态
+        int fNum = ordersDao.batchUpdateState(Arrays.asList(orderId), 6, Arrays.asList(2, 5));
+
+        // 2 TODO 订单支付超时 用户账户处理
+
+        // 3 下单通知给client
+        if (fNum == 1) { // 下发通知给接单用户client 发单用户也通知？
+            if (StringUtils.isNotBlank(recvUserMobile)) {
+                log.info("支付超时处理：订单[id-{},orderSn-{}] 状态[{}]更改成功，下发至用户[{}].", orderId, orderSn, orderState, recvUserMobile);
+                WebSocketResponseDomain webSocketResponseDomain = new WebSocketResponseDomain(WebSocketActionTypeEnum.ORDER_TIMEOUT_PAY.getCommand());
+                webSocketResponseDomain.setData(new BaseOrderInfo(orderId, orderSn, createTime, 6));
+                iNettyService.asyncSendMessage(recvUserMobile, webSocketResponseDomain);
+            }
+            rFlag = true;
+        }
+        return rFlag;
     }
 
 
@@ -832,4 +866,5 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         }
         return R.ok();
     }
+
 }

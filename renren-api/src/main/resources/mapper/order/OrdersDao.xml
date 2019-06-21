@@ -143,7 +143,8 @@
             o.ORDER_ID orderId, o.ORDER_SN orderSn,o.SEND_USER_ID sendUserId,us.MOBILE sendUserMobile,ur.MOBILE recvUserMobile,o.RECV_USER_ID recvUserId,
             o.ORDER_TYPE orderType,o.ORDER_STATE orderState,
             o.IS_API isApi,o.PLAT_DATE platDate,
-            o.CREATE_TIME createTime,o.TIMEOUT_DOWN timeoutDown,o.TIMEOUT_RECV timeoutRecv,o.TIMEOUT_PAY timeoutPay,SERVICE_REMARK serviceRemark
+            o.CREATE_TIME createTime,o.TIMEOUT_DOWN timeoutDown,o.TIMEOUT_RECV timeoutRecv,o.TIMEOUT_PAY timeoutPay,SERVICE_REMARK serviceRemark,
+            o.SEND_AMOUNT sendAmount,o.AMOUNT amount,o.RECV_AMOUNT recvAmount
         FROM
             orders o
         LEFT JOIN `user` us on us.USER_ID = o.SEND_USER_ID

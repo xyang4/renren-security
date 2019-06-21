@@ -167,6 +167,7 @@ public interface OrdersService extends IService<OrdersEntity> {
      * 发单确认付款
      */
     R sureSendAmount(Integer orderId);
+
     /**
      * 充值确认：确认收款
      */
@@ -182,17 +183,38 @@ public interface OrdersService extends IService<OrdersEntity> {
     List<Map<String, Object>> listValidOrders(List<Integer> typeList, List<Integer> stateList, List<Integer> excludeStatusList, int limit);
 
     /**
-     * @param handleType: 1 下单超时处理  2 接单超时处理了 3 支付超时处理
+     * @param handleType: 1 下单超时处理  2 接单超时处理 3 支付超时处理
      */
     void execOrderTimeOutHandle(int handleType);
 
     /**
      * 提现审核
+     *
      * @param ordersEntity
      * @param auditStatus
      * @param remark
      * @return
      */
     R withdrawAudit(OrdersEntity ordersEntity, String auditStatus, String remark);
+
+    /**
+     * 订单支付超时，用户账户处理
+     *
+     * @param orderId
+     * @param orderSn
+     * @param orderState
+     * @param sendUserId
+     * @param sendAmount
+     * @param sendUserMobile
+     * @param recvUserId
+     * @param recvAmount
+     * @param recvUserMobile
+     * @param createTime
+     * @return true|false
+     */
+    boolean payTimeOutHandleWithAccountTrans(Integer orderId, String orderSn, Integer orderState,
+                                             Long sendUserId, BigDecimal sendAmount, String sendUserMobile,
+                                             Long recvUserId, BigDecimal recvAmount, String recvUserMobile,
+                                             String createTime);
 }
 
