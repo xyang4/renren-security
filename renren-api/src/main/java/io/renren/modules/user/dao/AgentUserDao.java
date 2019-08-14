@@ -1,8 +1,14 @@
 package io.renren.modules.user.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.renren.modules.orders.entity.OrdersEntity;
 import io.renren.modules.user.entity.AgentUserEntity;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * 
@@ -13,5 +19,8 @@ import org.apache.ibatis.annotations.Mapper;
  */
 @Mapper
 public interface AgentUserDao extends BaseMapper<AgentUserEntity> {
-	
+
+    List<Map<String, Object>> agentUserList(@Param("params") Map<String, Object> param);
+    //修改
+    int agentUserEdit(Map<String, Object> param);
 }

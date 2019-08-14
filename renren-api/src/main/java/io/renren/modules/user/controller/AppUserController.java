@@ -39,7 +39,7 @@ public class AppUserController extends BaseController {
     public R loginOrRegister(@RequestBody @Validated LoginForm vo, BindingResult br) {
 
         // 1 验证码校验
-        iSmsService.validCode(vo.getMobile(), vo.getSmsCode());
+        //iSmsService.validCode(vo.getMobile(), vo.getSmsCode());l
 
         // 2 未注册快速注册
         UserEntity userEntity = iUserService.queryByMobile(vo.getMobile());
@@ -47,10 +47,16 @@ public class AppUserController extends BaseController {
         if (null == userEntity) {
             // 快速注册 外部注册功能不开放，后台注册
             //userId = iUserService.registeredQuickly(vo.getMobile());
-            return R.error(-1,"用户未注册");
+            return R.error(-1,"用户或密码错误");
         } else {
             userId = userEntity.getUserId();
         }
+        //密码验证
+        if(!userEntity.getPasswd().equalsIgnoreCase(DigestUtils.sha256Hex(vo.getPassword())) ){
+            return R.error(-1,"用户或密码错误");
+        }
+
+
         TokenEntity token = iTokenService.createToken(userId, userEntity.getMobile());
 
 

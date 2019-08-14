@@ -50,10 +50,8 @@ public class MerAuthInterceptor extends HandlerInterceptorAdapter {
 //        }
         //校验签名sign 从缓存中获取签名key? TODO
         String signKey = SpringContextUtils.getBean(IRedisService.class).getMerSignKey(merId);
-        if(StringUtils.isBlank(signKey)){
-            return false;
-        }
-        return checkSign(request,signKey);
+        return !StringUtils.isBlank(signKey);
+        //return checkSign(request,signKey);
     }
 
 

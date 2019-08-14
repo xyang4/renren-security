@@ -86,8 +86,9 @@ public class PayChannelController extends BaseController {
     @AppLogin
     @ApiOperation("查询支付方式")
     @RequestMapping("/list")
-    public R payChannelFormList(@RequestBody Map payType){
-        String payTypeString = (String)payType.get("payType");
+    public R payChannelFormList(@RequestBody Map map){
+        String payType = (String)map.get("payType");
+        String useStatus = (String)map.get("useStatus");
         TokenEntity tokenEntity = getToken();
         if(tokenEntity == null){
             return R.error(-1,"查询用户信息失败");
@@ -95,7 +96,9 @@ public class PayChannelController extends BaseController {
         Integer userId = tokenEntity.getUserId();
         Map<String,Object> params =new HashMap<>();
         params.put("userId",userId);
-        params.put("payType",payTypeString);
+        params.put("payType",payType);
+        params.put("useStatus",useStatus);
+
         List<PayChannelEntity> payChannelEntityList = payChannelService.getPayChannelListByUserId(params);
         return R.ok(payChannelEntityList);
     }

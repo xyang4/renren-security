@@ -26,12 +26,9 @@ public class MerServiceImpl implements MerService {
     public boolean checkMer(Integer userId){
         UserEntity mer = iUserService.getById(userId);
         //用户状态有效、是商户类型
-        if( mer!=null &&
+        return mer != null &&
                 mer.getStatus() == UserEntityEnum.Status.VALID.getValue() &&
-                mer.getUserType() == UserEntityEnum.UserType.MER.getValue()  ){
-            return true;
-        }
-        return false;
+                mer.getUserType() == UserEntityEnum.UserType.MER.getValue();
     }
 
     /**

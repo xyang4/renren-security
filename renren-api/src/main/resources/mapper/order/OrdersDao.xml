@@ -99,6 +99,70 @@
         </where>
     </select>
 
+    <select id="getOrdersSameAmount" parameterType="map" resultType="map">
+        select
+        o.ORDER_ID as orderId ,
+        o.ORDER_DATE as orderDate ,
+        o.SEND_USER_ID as sendUserId ,
+        o.RECV_USER_ID as recvUserId ,
+        o.ORDER_TYPE as orderType ,
+        o.ORDER_STATE as orderState ,
+        o.PAY_TYPE as payType ,
+        o.SEND_AMOUNT as sendAmount ,
+        o.AMOUNT as amount ,
+        o.RECV_AMOUNT as recvAmount ,
+        o.ORDER_SN as orderSn ,
+        o.TIMEOUT_RECV as timeoutRecv ,
+        o.TIMEOUT_PAY as timeoutPay ,
+        o.TIMEOUT_DOWN as timeoutDown ,
+        o.IS_API as isApi ,
+        o.PLAT_DATE as platDate ,
+        o.SERVICE_REMARK as serviceRemark ,
+        o.SEND_ACCOUNT_NO as sendAccountNo ,
+        o.SEND_ACCOUNT_NAME as sendAccountName ,
+        o.RECV_ACCOUNT_NO as recvAccountNo ,
+        o.RECV_ACCOUNT_NAME as recvAccountName ,
+        o.BANK_NAME as bankName ,
+        o.QRIMG_ID as qrimgId ,
+        o.NOTIFY_URL as notifyUrl ,
+        o.DATA_STATUS as dataStatus ,
+        o.MODIFY_TIME as modifyTime ,
+        o.CREATE_TIME as createTime ,
+        o.REMARK as remark ,
+        o.SEND_BANK_NAME as sendBankName ,
+        o.RECV_BANK_NAME as recvBankName ,
+        o.SEND_RATE as sendRate ,
+        o.RECV_RATE as recvRate ,
+        o.SEND_RATE_AMOUNT as sendRateAmount ,
+        o.RECV_RATE_AMOUNT as recvRateAmount
+        from orders o
+        where order_id = #{orderId}
+        and amount in (
+            select
+                amount
+            from orders o
+            <where>
+                <if test="orderType != null">
+                    and ORDER_TYPE = #{orderType}
+                </if>
+                <if test="sendUserId != null">
+                    and SEND_USER_ID = #{sendUserId}
+                </if>
+                <if test="recvUserId != null">
+                    and RECV_USER_ID = #{recvUserId}
+                </if>
+                <if test="includeState != null">
+                    and ORDER_STATE in
+                    <foreach collection="includeState" item="orderState" open="(" separator="," close=")">
+                        #{orderState}
+                    </foreach>
+                </if>
+            </where>
+
+        )
+
+
+    </select>
 
     <select id="getSendOrRecvOrderList"  parameterType="map" resultMap="ordersMap">
         select *
@@ -133,6 +197,12 @@
             </if>
             <if test="recvBankName != null">
                 RECV_BANK_NAME = #{recvBankName},
+            </if>
+            <if test="recvRateAmount != null">
+                RECV_RATE_AMOUNT = #{recvRateAmount},
+            </if>
+            <if test="recvRate != null">
+                RECV_RATE = #{recvRate},
             </if>
         </set>
         where ORDER_ID = #{orderId} and ORDER_STATE = 1

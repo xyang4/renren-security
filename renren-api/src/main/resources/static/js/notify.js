@@ -2288,25 +2288,25 @@
 
         }, {"has-cors": 22}],
         11: [function (_dereq_, module, exports) {
-            module.exports = after
+            module.exports = after;
 
             function after(count, callback, err_cb) {
-                var bail = false
-                err_cb = err_cb || noop
-                proxy.count = count
+                var bail = false;
+                err_cb = err_cb || noop;
+                proxy.count = count;
 
-                return (count === 0) ? callback() : proxy
+                return (count === 0) ? callback() : proxy;
 
                 function proxy(err, result) {
                     if (proxy.count <= 0) {
                         throw new Error('after called too many times')
                     }
-                    --proxy.count
+                    --proxy.count;
 
                     // after first error, rest are passed to err_cb
                     if (err) {
-                        bail = true
-                        callback(err)
+                        bail = true;
+                        callback(err);
                         // future error callbacks will go to error handler
                         callback = err_cb
                     } else if (proxy.count === 0 && !bail) {
@@ -2503,13 +2503,11 @@
                     }
 
                     return (options.type) ? bb.getBlob(options.type) : bb.getBlob();
-                };
-
+                }
                 function BlobConstructor(ary, options) {
                     mapArrayBufferViews(ary);
                     return new Blob(ary, options || {});
-                };
-
+                }
                 module.exports = (function () {
                     if (blobSupported) {
                         return blobSupportsArrayBufferView ? global.Blob : BlobConstructor;
@@ -2538,8 +2536,7 @@
 
             function Emitter(obj) {
                 if (obj) return mixin(obj);
-            };
-
+            }
             /**
              * Mixin the emitter properties.
              *
@@ -4054,7 +4051,6 @@
         29: [function (_dereq_, module, exports) {
             (function (global) {
                 /*! https://mths.be/utf8js v2.0.0 by @mathias */
-                ;
                 (function (root) {
 
                     // Detect free variables `exports`
@@ -5702,8 +5698,7 @@
 
             function Emitter(obj) {
                 if (obj) return mixin(obj);
-            };
-
+            }
             /**
              * Mixin the emitter properties.
              *
@@ -6506,7 +6501,6 @@
         50: [function (_dereq_, module, exports) {
             (function (global) {
                 /*! JSON v3.3.2 | http://bestiejs.github.io/json3 | Copyright 2012-2014, Kit Cambridge | http://kit.mit-license.org */
-                ;
                 (function () {
                     // Detect the `define` function exposed by asynchronous module loaders. The
                     // strict `define` check is necessary for compatibility with `r.js`.
@@ -6605,8 +6599,8 @@
                                                 stringify(0) === "0" &&
                                                 // FF 3.1b1, b2, and JSON 2 serialize wrapped primitives as object
                                                 // literals.
-                                                stringify(new Number()) === "0" &&
-                                                stringify(new String()) == '""' &&
+                                                stringify(Number()) === "0" &&
+                                                stringify(String()) == '""' &&
                                                 // FF 3.1b1, 2 throw an error if the value is `null`, `undefined`, or
                                                 // does not define a canonical JSON representation (this applies to
                                                 // objects with `toJSON` properties as well, *unless* they are nested
@@ -7438,12 +7432,12 @@
             }).call(this, typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : {})
         }, {}],
         51: [function (_dereq_, module, exports) {
-            module.exports = toArray
+            module.exports = toArray;
 
             function toArray(list, index) {
-                var array = []
+                var array = [];
 
-                index = index || 0
+                index = index || 0;
 
                 for (var i = index || 0; i < list.length; i++) {
                     array[i - index] = list[i]

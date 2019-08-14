@@ -34,6 +34,9 @@
         <if test="payType != null and payType != ''">
             and PAY_TYPE = #{payType}
         </if>
+        <if test="useStatus != null and useStatus != ''">
+            and USE_STATUS= #{useStatus}
+        </if>
     </select>
 
     <select id="getPayChannelGroupData" parameterType="integer" resultType="map">

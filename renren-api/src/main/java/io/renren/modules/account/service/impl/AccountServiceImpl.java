@@ -38,10 +38,7 @@ public class AccountServiceImpl extends ServiceImpl<AccountDao, AccountEntity> i
             return false;
         }
         //检查接单状态:0-禁止接单1-正常接单2-禁止接单1天 3-禁止接单2小时
-        if(accountEntity.getRecvStatus()!=1){
-            return false;
-        }
-        return true;
+        return accountEntity.getRecvStatus() == 1;
     }
 
     @Override

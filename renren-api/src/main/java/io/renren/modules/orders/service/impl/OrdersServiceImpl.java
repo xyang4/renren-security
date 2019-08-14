@@ -1,6 +1,7 @@
 package io.renren.modules.orders.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.renren.common.config.RenrenProperties;
@@ -32,6 +33,8 @@ import io.renren.modules.orders.form.OrderPageForm;
 import io.renren.modules.orders.service.OrdersLogService;
 import io.renren.modules.orders.service.OrdersService;
 import io.renren.modules.system.service.IConfigService;
+import io.renren.modules.user.dao.AgentUserDao;
+import io.renren.modules.user.entity.AgentUserEntity;
 import io.renren.modules.user.entity.UserEntity;
 import io.renren.modules.user.service.IUserService;
 import lombok.extern.slf4j.Slf4j;
@@ -68,15 +71,19 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     private OrdersLogService ordersLogService;
     @Autowired
     private IConfigService configService;
-
+    @Autowired
+    private AgentUserDao agentUserDao;
     @Override
     public List<Map<String, Object>> receiveValidOrder(String mobile, OrderRule orderRule, int size) {
         //        TODO
         return null;
     }
 
+    /**
+     * 抢单
+     */
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public WebSocketResponseDomain rushToBuy(Integer recvUserId, String mobile, String orderType, String orderId) {
         WebSocketResponseDomain r = new WebSocketResponseDomain(WebSocketActionTypeEnum.RUSH_ORDERS_RESULT.getCommand(), null);
         if (null != checkValidity(orderId)) {
@@ -84,6 +91,26 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
             r.setMsg(WebSocketResponseDomain.ResponseCode.ERROR_INVALID_ORDER.getMsg());
             return r;
         }
+
+        //查询用户进行中的订单，金额不能跟本订单相等
+        //查询用户是否有进行中的充值
+        Map<String, Object> param = new HashMap<>();
+        param.put("orderId", orderId);
+        param.put("recvUserId", recvUserId);
+        param.put("orderType", OrdersEntityEnum.OrderType.MER_RECHARGE.getValue());
+        List<Integer> orderStates = new ArrayList<>();
+        orderStates.add(OrdersEntityEnum.OrderState.INIT.getValue());
+        orderStates.add(OrdersEntityEnum.OrderState.b.getValue());
+        orderStates.add(OrdersEntityEnum.OrderState.c.getValue());
+        param.put("includeState", orderStates);
+        List<Map> orders = ordersDao.getOrdersSameAmount(param);
+        if (orders != null && orders.size() > 0) {
+            //存在相同金额订单
+            r.setCode(WebSocketResponseDomain.ResponseCode.ORDER_AMOUNT_SAME.getCode());
+            r.setMsg(WebSocketResponseDomain.ResponseCode.ORDER_AMOUNT_SAME.getMsg());
+            return r;
+        }
+
         String lockVal = iRedisService.getVal(RedisCacheKeyConstant.LOCK_ORDER_PREFIX + orderId);
         if (StringUtils.isBlank(lockVal)) {
             String lockKey = RedisCacheKeyConstant.LOCK_ORDER_PREFIX + orderId;
@@ -91,8 +118,8 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
 
             Map rMap = reciveOrderSuccess(recvUserId, orderType, orderId);
             if (null == rMap) {
-                r.setCode(WebSocketResponseDomain.ResponseCode.ERROR_HANDLE.getCode());
-                r.setMsg(WebSocketResponseDomain.ResponseCode.ERROR_HANDLE.getMsg());
+                r.setCode(WebSocketResponseDomain.ResponseCode.ERROR_RUSH_BY_HASBEAN.getCode());
+                r.setMsg(WebSocketResponseDomain.ResponseCode.ERROR_RUSH_BY_HASBEAN.getMsg());
             } else {
                 // 操作成功，通知所有用户该单已被抢
                 orderStatusNotice(1, orderType, orderId);
@@ -146,7 +173,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         //创建新订单
         OrdersEntity orders = new OrdersEntity();
         orders.setSendUserId(merId);//发送用户
-        orders.setOrderDate(orderDate);//订单日期
+        orders.setOrderDate(DateUtils.format(new Date(), DateUtils.DATE_PATTERN));//订单日期orderDate
         orders.setOrderType(orderType);
         orders.setOrderSn(orderSn);//商户原始订单
         orders.setPayType(payType);//付款类型
@@ -165,7 +192,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         orders.setTimeoutPay(timeOutPay == null ? 600 : Integer.parseInt(timeOutPay));
         //搬运工充值发单费率、搬运工充值接单费率
         String sendRate = configService.selectConfigByKey("send_mer_chargeRate");
-        String recvRate = configService.selectConfigByKey("recv_mer_chargeRate");
+        String recvRate = configService.selectConfigByKey("recv_mer_chargeRate");//公共收益率
         orders.setSendRate(sendRate == null ? new BigDecimal(0) : new BigDecimal(sendRate));
         orders.setRecvRate(recvRate == null ? new BigDecimal(0) : new BigDecimal(recvRate));
         BigDecimal sa = orders.getSendAmount().multiply(orders.getSendRate()).setScale(2, BigDecimal.ROUND_DOWN);
@@ -202,6 +229,11 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public R hamalWithdraw(Integer userId, String amount, String accountName, String accountNo, String bankName) {
+        //查询用户状态
+        UserEntity user = userService.getById(userId);
+        if (user == null || user.getStatus() != 1) {
+            return R.error(-1, "账户已冻结，请联系管理员");
+        }
         //查询搬运工提现相关配置
         String minAmountStr = configService.selectConfigByKey("send_porter_withMin");
         BigDecimal minAmount = minAmountStr == null ? new BigDecimal(100) : new BigDecimal(minAmountStr);
@@ -243,6 +275,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     }
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public R hamalRecharge(Integer userId, String amount, String accountName, String accountNo) {
         //查询用户是否有进行中的充值
         Map<String, Object> param = new HashMap<>();
@@ -258,7 +291,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         }
         //查询搬运工充值相关配置
         String minAmountStr = configService.selectConfigByKey("send_porter_chargeMin");
-        BigDecimal minAmount = minAmountStr == null ? new BigDecimal(3000) : new BigDecimal(minAmountStr);
+        BigDecimal minAmount = minAmountStr == null ? new BigDecimal(500) : new BigDecimal(minAmountStr);
         if (new BigDecimal(amount).compareTo(minAmount) < 0) {
             return R.error(-1, "充值金额不能小于" + minAmount);
         }
@@ -276,7 +309,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         ordersEntity.setOrderType(OrdersEntityEnum.OrderType.PORTER_RECHARGE.getValue());
         ordersEntity.setOrderState(OrdersEntityEnum.OrderState.b.getValue());
         ordersEntity.setOrderDate(DateUtils.format(new Date(), DateUtils.DATE_PATTERN));
-        ordersEntity.setPayType(OrdersEntityEnum.PayType.BANK.getValue());
+        ordersEntity.setPayType("digicash");
         //订单超时时间
         String timeOutRecv = configService.selectConfigByKey("porter_charge_timeout_recv");
         String timeOutPay = configService.selectConfigByKey("porter_charge_timeout_pay");
@@ -356,8 +389,18 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     }
 
     public void syncBatchPushOrderToUser(String mobile, int orderType) {
+        //搬运工充值1 只能 clerk接单员，抢单
+        if(orderType==1){
+            //查询用户类型
+            UserEntity user = userService.queryByMobile(mobile);
+            if(user.getUserType()!=null&&!user.getUserType().equalsIgnoreCase("clerk")){
+                return;//返回
+            }
+        }
+
         // 1 订单拉取
         String redisKey = RedisCacheKeyConstant.ORDER_LIST_CAN_BUY_PREFIX + mobile + ":" + orderType;
+
         long ordersNum = iRedisService.listSize(redisKey);
         log.info("订单下发开始，用户[{}] ExistNum[{}] MaxAllowNum[{}]", mobile, ordersNum, renrenProperties.getBatchPushOrderNumMax());
         if (ordersNum < 1) {
@@ -598,6 +641,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         return returnMap;
     }
 
+    //抢单成功后数据操作
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public OrdersEntity reciveOrderSuccessTransactional(Integer recvUserId, PayChannelDetail payChannel, OrdersEntity order) {
         //OrdersEntity updateOrder = new OrdersEntity();
@@ -614,6 +658,15 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
             order.setRecvAccountNo(payChannel.getAccountNo());
             order.setQrimgId(payChannel.getQrimgId());
         }
+
+        //查询用户是否是邀请用户，是邀请用户重新设置接单收益
+        AgentUserEntity agentUserEntity= agentUserDao.selectOne(new QueryWrapper<AgentUserEntity>().eq("user_id", recvUserId));
+        if(agentUserEntity!=null){
+            order.setRecvRate(agentUserEntity.getRecvChargeRate());
+            BigDecimal ra = order.getSendAmount().multiply(order.getRecvRate()).setScale(2, BigDecimal.ROUND_DOWN);
+            order.setRecvRateAmount(ra);
+        }
+
         //更新订单信息
         int u1 = ordersDao.reciveOrderSuccess(order);
         if (u1 <= 0) {
@@ -637,10 +690,13 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     public R sureSendAmount(Integer orderId) {
         //查询订单状态
         OrdersEntity retOrdersEntity = SpringContextUtils.getBean(OrdersServiceImpl.class).getById(orderId);
-        if (retOrdersEntity.getOrderState() == 2) {
+        if(retOrdersEntity==null){
+            return R.ok();
+        }
+        if (retOrdersEntity.getOrderState().intValue() == 2) {
             retOrdersEntity.setOrderState(8);
-            SpringContextUtils.getBean(OrdersServiceImpl.class).save(retOrdersEntity);
-            return R.error(-1, "订单状态错误，提交失败");
+            SpringContextUtils.getBean(OrdersServiceImpl.class).updateById(retOrdersEntity);
+            return R.ok();
         }
         return R.ok();
     }
@@ -653,14 +709,17 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     public R sureRecvOrder(Integer orderId, BigDecimal confirmAmount) {
         //查询订单状态
         OrdersEntity retOrdersEntity = SpringContextUtils.getBean(OrdersServiceImpl.class).getById(orderId);
+        if(retOrdersEntity.getOrderType().intValue()!=1 && retOrdersEntity.getOrderType().intValue()!=3){
+            return R.error(-1,"订单类型错误");
+        }
         if (retOrdersEntity.getOrderState() == 9) {
             return R.ok();
         }
-        if (retOrdersEntity.getOrderState() != 2 && retOrdersEntity.getOrderState() != 5) {
+        if (retOrdersEntity.getOrderState() != 2 && retOrdersEntity.getOrderState() != 5 && retOrdersEntity.getOrderState() != 8) {
             return R.error(-1, "订单状态错误，提交失败");
         }
         if (retOrdersEntity.getAmount().compareTo(confirmAmount) != 0) {
-            return R.error(-1, "请确认收款金额是否一致");
+            return R.error(-1, "与订单金额不一致，无法提交");
         }
         //业务事务处理
         retOrdersEntity.setRecvAmount(confirmAmount);
@@ -690,9 +749,9 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         }
         //1 发单用户
         // 更新发单者账户信息,给账户 （扣除手续费后） 增加金额，及可用金额
-        BigDecimal sendUserChangeAmount = ordersEntity.getAmount().subtract(ordersEntity.getSendRateAmount());
+        BigDecimal sendUserChangeAmount = ordersEntity.getRecvAmount().subtract(ordersEntity.getSendRateAmount());
         int su = accountService.updateAmount(ordersEntity.getSendUserId(), sendUserChangeAmount, null, sendUserChangeAmount);
-        // 更新发单者账户日志表，记录两笔
+        // 更新“发单者”账户日志表，记录两笔
         // 收入,充值
         SpringContextUtils.getBean(AccountLogService.class).addAccountLog(ordersEntity.getSendUserId(), ordersEntity.getOrderId(),
                 4, "in", ordersEntity.getAmount().subtract(ordersEntity.getRecvAmount()));
@@ -705,13 +764,12 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         }
         //2 收单用户
 
-
-        // 更新接单者账户日志表，记录三笔
+        // 更新“接单者”账户日志表，记录三笔
         //解冻
         SpringContextUtils.getBean(AccountLogService.class).addAccountLog(ordersEntity.getRecvUserId(), ordersEntity.getOrderId(),
                 2, "in", ordersEntity.getRecvAmount());
         //更新接单者账户信息，解冻,扣减账户金额，及可用余额，增加获得的手续费
-        BigDecimal recevUserChangeAmount = ordersEntity.getAmount().subtract(ordersEntity.getRecvRateAmount());
+        BigDecimal recevUserChangeAmount = ordersEntity.getRecvAmount().subtract(ordersEntity.getRecvRateAmount());
         int ru = accountService.updateAmount(ordersEntity.getRecvUserId(), ordersEntity.getRecvRateAmount(), ordersEntity.getAmount().negate(), recevUserChangeAmount.negate());
         //付出
         SpringContextUtils.getBean(AccountLogService.class).addAccountLog(ordersEntity.getRecvUserId(), ordersEntity.getOrderId(),
@@ -775,7 +833,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
                     validOrderList.forEach(v -> {
                         Integer orderId = (Integer) v.get("orderId");
                         String orderSn = (String) v.get("orderSn");
-                        Long sendUserId = (Long) v.get("sendUserId"), recvUserId = (Long) v.get("recvUserId");
+                        Integer sendUserId = (Integer) v.get("sendUserId"), recvUserId = (Integer) v.get("recvUserId");
                         Integer orderState = (Integer) v.get("orderState");
                         BigDecimal sendAmount = (BigDecimal) v.get("sendAmount"), amount = (BigDecimal) v.get("amount"), recvAmount = (BigDecimal) v.get("recvAmount");
                         if (payTimeOutHandleWithAccountTrans(
@@ -804,16 +862,19 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean payTimeOutHandleWithAccountTrans(Integer orderId, String orderSn, Integer orderState,
-                                                    Long sendUserId, BigDecimal sendAmount, String sendUserMobile,
-                                                    Long recvUserId, BigDecimal recvAmount, String recvUserMobile,
+                                                    Integer sendUserId, BigDecimal sendAmount, String sendUserMobile,
+                                                    Integer recvUserId, BigDecimal recvAmount, String recvUserMobile,
                                                     String createTime
     ) {
         boolean rFlag = false;
         // 1 更新订单状态
         int fNum = ordersDao.batchUpdateState(Arrays.asList(orderId), 6, Arrays.asList(2, 5));
 
-        // 2 TODO 订单支付超时 用户账户处理
-
+        // 2 订单支付超时 用户账户处理 TODO
+        log.info("支付超时：账户解冻开始");
+        OrdersEntity order = this.getById(orderId);
+        this.orderPayOut(order);
+        log.info("支付超时：账户解冻结束");
         // 3 下单通知给client
         if (fNum == 1) { // 下发通知给接单用户client 发单用户也通知？
             if (StringUtils.isNotBlank(recvUserMobile)) {
@@ -867,4 +928,44 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         return R.ok();
     }
 
+    /**
+     * 支付超时：账户解冻处理，账户日志记录
+     */
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+    public boolean orderPayOut(OrdersEntity ordersEntity){
+        //2 收单用户
+        // 更新“接单者”账户日志表，记录三笔
+        //解冻
+        SpringContextUtils.getBean(AccountLogService.class).addAccountLog(ordersEntity.getRecvUserId(), ordersEntity.getOrderId(),
+                2, "in", ordersEntity.getAmount());
+        //更新接单者账户信息，解冻,扣减账户金额，及可用余额，增加获得的手续费
+        int ru = accountService.updateAmount(ordersEntity.getRecvUserId(), ordersEntity.getAmount(),
+                ordersEntity.getAmount().negate(), new BigDecimal(0.00));
+        log.info("支付超时-更新接单者账户信息成功");
+        if (ru < 1) {
+            throw new RRException("支付超时-更新接单者账户信息失败");
+        }
+        return true;
+
+    }
+
+    /**
+     * 假订单发起程序
+     */
+    public void shamOrders(){
+
+        //查询开启开关，如果关闭，直接返回
+
+
+        //创建虚假订单
+
+
+
+        //发送请求
+
+
+
+
+
+    }
 }

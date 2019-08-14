@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.renren.modules.user.dao.AgentSettleDao">
+
+	<!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="io.renren.modules.user.entity.AgentSettleEntity" id="agentSettleMap">
+        <result property="anentSettleId" column="ANENT_SETTLE_ID"/>
+        <result property="settleDate" column="SETTLE_DATE"/>
+        <result property="orderId" column="ORDER_ID"/>
+        <result property="orderType" column="ORDER_TYPE"/>
+        <result property="orderState" column="ORDER_STATE"/>
+        <result property="sendUserId" column="SEND_USER_ID"/>
+        <result property="recvUserId" column="RECV_USER_ID"/>
+        <result property="sendAmount" column="SEND_AMOUNT"/>
+        <result property="amount" column="AMOUNT"/>
+        <result property="recvAmount" column="RECV_AMOUNT"/>
+        <result property="dataStatus" column="DATA_STATUS"/>
+        <result property="modifyTime" column="MODIFY_TIME"/>
+        <result property="createTime" column="CREATE_TIME"/>
+        <result property="remark" column="REMARK"/>
+        <result property="sendRate" column="SEND_RATE"/>
+        <result property="recvRate" column="RECV_RATE"/>
+        <result property="sendRateAmount" column="SEND_RATE_AMOUNT"/>
+        <result property="recvRateAmount" column="RECV_RATE_AMOUNT"/>
+        <result property="settleAmount" column="SETTLE_AMOUNT"/>
+    </resultMap>
+
+
+</mapper>

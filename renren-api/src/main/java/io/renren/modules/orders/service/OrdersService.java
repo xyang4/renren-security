@@ -38,7 +38,7 @@ public interface OrdersService extends IService<OrdersEntity> {
     /**
      * TODO 可接单最小账户金额 可配
      */
-    BigDecimal MIN_ACCOUNT_BALANCE_CAN_RECV = BigDecimal.valueOf(1000);
+    BigDecimal MIN_ACCOUNT_BALANCE_CAN_RECV = BigDecimal.valueOf(220);
 
     /**
      * 开始接单
@@ -51,7 +51,7 @@ public interface OrdersService extends IService<OrdersEntity> {
     List<Map<String, Object>> receiveValidOrder(String mobile, OrderRule orderRule, int size);
 
     /**
-     * 抢购
+     * 抢单
      *
      * @param recvUserId 接单用户编号
      * @param mobile     接单用户手机号
@@ -213,8 +213,10 @@ public interface OrdersService extends IService<OrdersEntity> {
      * @return true|false
      */
     boolean payTimeOutHandleWithAccountTrans(Integer orderId, String orderSn, Integer orderState,
-                                             Long sendUserId, BigDecimal sendAmount, String sendUserMobile,
-                                             Long recvUserId, BigDecimal recvAmount, String recvUserMobile,
+                                             Integer sendUserId, BigDecimal sendAmount, String sendUserMobile,
+                                             Integer recvUserId, BigDecimal recvAmount, String recvUserMobile,
                                              String createTime);
+
+    void shamOrders();
 }
 

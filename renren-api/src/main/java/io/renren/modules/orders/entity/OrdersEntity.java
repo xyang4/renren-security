@@ -23,6 +23,7 @@ public class OrdersEntity implements Serializable {
     /**
      * 平台订单号
      */
+    //@TableId
     @TableId
     private Integer orderId;
     /**

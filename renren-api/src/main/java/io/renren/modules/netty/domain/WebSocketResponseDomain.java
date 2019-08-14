@@ -29,7 +29,7 @@ public class WebSocketResponseDomain {
     @Getter
     public enum ResponseCode {
         SUCCESS(200, "请求成功"), REQUEST_ACTION_ERROR(400, "参数错误"),
-        ERROR_INVALID_ORDER(400,"无效的订单"),
+        ERROR_INVALID_ORDER(400,"无效的订单"),ORDER_AMOUNT_SAME(401, "存在相同金额订单"),
         /**
          * 未在线
          */
@@ -37,7 +37,7 @@ public class WebSocketResponseDomain {
         /**
          *
          */
-        ERROR_RUSH_BEING_QUEUE(501, "抢单排队中");
+        ERROR_RUSH_BEING_QUEUE(501, "抢单排队中"),ERROR_RUSH_BY_HASBEAN(502, "订单已被抢"),;
         private int code;
         private String msg;
 

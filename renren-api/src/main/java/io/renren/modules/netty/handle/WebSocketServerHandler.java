@@ -30,7 +30,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<TextWebS
     private static int onlineUserInitCapacity;
 
     public WebSocketServerHandler(int onlineUserInitCapacity) {
-        this.onlineUserInitCapacity = onlineUserInitCapacity;
+        WebSocketServerHandler.onlineUserInitCapacity = onlineUserInitCapacity;
     }
 
     /**

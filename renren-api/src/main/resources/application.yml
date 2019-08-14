@@ -10,9 +10,9 @@ server:
 
 # mysql
 spring:
-  # 环境 dev|test|prod|dl|yp
+  # 环境 dev|test|prod|dl|online
   profiles:
-    active: yp
+    active: dev
   servlet:
     multipart:
       max-file-size: 100MB
@@ -63,13 +63,13 @@ spring:
     request-context-attribute: request
 
 renren:
-  jwt-expire: 30 # jwt 过期时间 （分钟）
+  jwt-expire: 60 # jwt 过期时间 （分钟）
   decimal-format: "##.##" # decimal 数值格式化
   web-socket:
     server:
       port: 10001
       path: "/ws"  # webSocket 客户端访问路由
-    expire: 4
+    expire: 38
   http-obj-max-content-length: 65536
   online-user-init-capacity: 20  # 初始在线人数
   batch-push-order-num-max: 10  # 每次可抢订单下发最大数

@@ -62,6 +62,7 @@ public class AccountController extends BaseController {
         rMap.put("wxqr",0);
         rMap.put("aliqr",0);
         rMap.put("bank",0);
+        rMap.put("digicash",0);
         //查询用户支付方式信息
         List<Map<String,Object>> payChannelMap = payChannelService.getPayChannelGroupData(tokenEntity.getUserId());
         if(payChannelMap != null){
@@ -72,6 +73,8 @@ public class AccountController extends BaseController {
                     rMap.put("aliqr",map.get("count"));
                 }else if("bank".equals(map.get("payType"))){
                     rMap.put("bank",map.get("count"));
+                }else if("digicash".equals(map.get("payType"))){
+                    rMap.put("digicash",map.get("count"));
                 }
             }
         }

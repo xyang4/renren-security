@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 
 /**
@@ -40,5 +41,8 @@ public class AgentUserEntity implements Serializable {
 	 * 创建时间
 	 */
 	private String createTime;
-
+	/**
+	 * 接单充值收益费率
+	 */
+	private BigDecimal recvChargeRate;
 }

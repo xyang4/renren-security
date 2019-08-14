@@ -12,12 +12,14 @@ import io.renren.modules.orders.service.OrdersService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,6 +35,66 @@ public class MerController {
     private ImgService imgService;
     @Autowired
     MerService merService;
+
+
+    /**
+     * 商户充值订单预申请+支付页面，合并接口
+     */
+    @RequestMapping(value={"/order/applyRechargeAndPayIndex"}, method = {RequestMethod.POST,RequestMethod.GET})
+    public String applyRechargeAndPayIndex(HttpServletRequest request,Model model,
+                                           @RequestParam(value="merId",required=true) Integer merId,
+                                           @RequestParam(value="orderDate",required=false) String orderDate,
+                                           @RequestParam(value="orderSn",required=true) String orderSn,
+                                           @RequestParam(value="payType",required=true) String payType,
+                                           @RequestParam(value="sendAmount",required=true) String sendAmount,
+                                           @RequestParam(value="notifyUrl",required=true) String notifyUrl){
+
+        log.info("商户充值订单申请：merId：{},orderSn:{},payType:{},sendAmount:{},notifyUrl:{}",
+                merId,orderSn,payType,sendAmount,notifyUrl);
+        //校验payType类型
+//        if(!OrdersEntityEnum.PayType.contains(payType)){
+//            return R.error(400,"payType类型不合法");
+//        }
+        //校验sendAmount发送金额
+        if((Double.parseDouble(sendAmount))>50000 ||(Double.parseDouble(sendAmount))<50){
+            //return R.error(400,"金额超出范围");
+            return "api/html/mer/payFail.html";
+        }
+        //校验notifyUrl回调地址
+//        if(!notifyUrl.contains("http")){
+//            return R.error(400,"notifyUrl http地址不合法");
+//        }
+        if(StringUtils.isEmpty(orderSn) ){
+            //return R.error(400,"orderSn不能为空");
+            return "api/html/mer/payFail.html";
+        }
+        //校验orderSn是否已经存在
+        Wrapper<OrdersEntity> queryWrapper = new QueryWrapper<>();
+        ((QueryWrapper<OrdersEntity>) queryWrapper).eq("order_Sn",orderSn);
+        OrdersEntity ordersEntity= ordersService.getOne(queryWrapper);
+        if(ordersEntity==null){
+            //创建预处理订单
+            Map retMap= ordersService.applyOrder(merId, orderDate,3, orderSn,  payType,  sendAmount,  notifyUrl);
+            if((int)retMap.get("code")==0) {//返回成功，返回给冲值订单页面：带签名/orderId"
+                ordersEntity = (OrdersEntity) retMap.get("orders");
+            }
+        }
+        if(ordersEntity==null){
+            return "api/html/mer/payFail.html";
+        }
+        Map ordersMap = new HashMap();
+        ordersMap.put("merId",ordersEntity.getSendUserId()+"");//merId
+        ordersMap.put("orderId",ordersEntity.getOrderId()+"");//orderId
+        ordersMap.put("orderSn",ordersEntity.getOrderSn());//商户订单orderSn
+        ordersMap.put("createTime",ordersEntity.getCreateTime());//创建时间
+        ordersMap.put("timeOut",ordersEntity.getTimeoutPay());//支付超时时间秒数
+        //原timeStamp+sign
+        ordersMap.put("timeStamp","");//timeStamp
+        ordersMap.put("sign","");//sign
+        model.addAttribute("pageMap",ordersMap);
+        return "mer/payIndex";
+    }
+
     /**
      * 商户充值订单预申请
      */
@@ -41,7 +103,7 @@ public class MerController {
     @RequestMapping(value={"/order/applyRecharge"}, method = {RequestMethod.POST,RequestMethod.GET})
     public R applyRecharge(HttpServletRequest request,
                            @RequestParam(value="merId",required=true) Integer merId,
-                           @RequestParam(value="orderDate",required=true) String orderDate,
+                           @RequestParam(value="orderDate",required=false) String orderDate,
                            @RequestParam(value="orderSn",required=true) String orderSn,
                            @RequestParam(value="payType",required=true) String payType,
                            @RequestParam(value="sendAmount",required=true) String sendAmount,
@@ -49,16 +111,19 @@ public class MerController {
         log.info("商户充值订单申请：merId：{},orderSn:{},payType:{},sendAmount:{},notifyUrl:{}",
                 merId,orderSn,payType,sendAmount,notifyUrl);
         //校验payType类型
-        if(!OrdersEntityEnum.PayType.contains(payType)){
-            return R.error(400,"payType类型不合法");
-        }
+//        if(!OrdersEntityEnum.PayType.contains(payType)){
+//            return R.error(400,"payType类型不合法");
+//        }
         //校验sendAmount发送金额
-        if((Double.parseDouble(sendAmount))>50000 ||(Double.parseDouble(sendAmount))<100){
+        if((Double.parseDouble(sendAmount))>50000 ||(Double.parseDouble(sendAmount))<50){
             return R.error(400,"金额超出范围");
         }
         //校验notifyUrl回调地址
-        if(!notifyUrl.contains("http")){
-            return R.error(400,"notifyUrl http地址不合法");
+//        if(!notifyUrl.contains("http")){
+//            return R.error(400,"notifyUrl http地址不合法");
+//        }
+        if(StringUtils.isEmpty(orderSn) ){
+            return R.error(400,"orderSn不能为空");
         }
         //校验orderSn是否已经存在
         Wrapper<OrdersEntity> queryWrapper = new QueryWrapper<>();
@@ -87,11 +152,15 @@ public class MerController {
      */
     @RequestMapping(value={"/order/payIndex"}, method = {RequestMethod.POST,RequestMethod.GET})
     public String payIndex(HttpServletRequest request,Model model,
-                           @RequestParam(value="orderId",required=true) Integer orderId,
+                           @RequestParam(value="orderId",required=false) Integer orderId,
+                           @RequestParam(value="orderSn",required=false) String orderSn,
                            @RequestParam(value="timeStamp",required=true) String timeStamp,
                            @RequestParam(value="sign",required=true) String sign){
         //查询订单信息
-        OrdersEntity ordersEntity = ordersService.getById(orderId);
+//        OrdersEntity ordersEntity = ordersService.getById(orderId);
+        Wrapper<OrdersEntity> queryWrapper = new QueryWrapper<>();
+        ((QueryWrapper<OrdersEntity>) queryWrapper).eq("order_Sn",orderSn);
+        OrdersEntity ordersEntity= ordersService.getOne(queryWrapper);
         //校验订单状态
 //        if(ordersEntity.getOrderState()){//超时返回
 //            return "mer/error";
@@ -103,7 +172,7 @@ public class MerController {
 
         Map ordersMap = new HashMap();
         ordersMap.put("merId",ordersEntity.getSendUserId()+"");//merId
-        ordersMap.put("orderId",ordersEntity.getOrderId());//orderId
+        ordersMap.put("orderId",ordersEntity.getOrderId()+"");//orderId
         ordersMap.put("orderSn",ordersEntity.getOrderSn());//商户订单orderSn
         ordersMap.put("createTime",ordersEntity.getCreateTime());//创建时间
         ordersMap.put("timeOut",ordersEntity.getTimeoutPay());//支付超时时间秒数
@@ -128,6 +197,7 @@ public class MerController {
         ordersMap.put("createTime",ordersEntity.getCreateTime());//创建时间
         ordersMap.put("timeoutPay",ordersEntity.getTimeoutPay());//订单超时时间秒数
         ordersMap.put("amount",ordersEntity.getAmount());//应支付金额
+        ordersMap.put("recvAccountNo",ordersEntity.getRecvAccountNo());//账号/地址
         //原timeStamp+sign
         ordersMap.put("timeStamp",timeStamp);//timeStamp
         ordersMap.put("payType",ordersEntity.getPayType());
@@ -135,14 +205,21 @@ public class MerController {
 
         //符合条件的查询二维码
         if(!(ordersEntity.getOrderState()==9 || ordersEntity.getOrderState()==4 || ordersEntity.getOrderState()==6)
-            && (ordersEntity.getPayType().equals(OrdersEntityEnum.PayType.WXQR.getValue())
-                ||ordersEntity.getOrderType().equals(OrdersEntityEnum.PayType.ALIQR.getValue())) ){
-            ImgEntity imgEntity = imgService.getById(ordersEntity.getQrimgId());
-            ordersMap.put("base64",imgEntity.getBase64());
+//            && (ordersEntity.getPayType().equals(OrdersEntityEnum.PayType.WXQR.getValue())
+//                ||ordersEntity.getOrderType().equals(OrdersEntityEnum.PayType.ALIQR.getValue()))
+//                ||ordersEntity.getPayType().equals(OrdersEntityEnum.PayType.DIGICASH.getValue())
+        ){
+            if(ordersEntity.getQrimgId()!=null){
+                ImgEntity imgEntity = imgService.getById(ordersEntity.getQrimgId());
+                ordersMap.put("base64",imgEntity.getBase64());
+            }
         }
         ImgEntity imgEntity = imgService.getById(ordersEntity.getQrimgId());
-        ordersMap.put("base64",imgEntity.getBase64());
-
+        if(imgEntity!=null && StringUtils.isNotEmpty(imgEntity.getBase64())){
+            ordersMap.put("base64",imgEntity.getBase64());
+        }else{
+            ordersMap.put("base64","");
+        }
         return R.ok(ordersMap);
     }
 
@@ -165,6 +242,25 @@ public class MerController {
         ordersMap.put("amount",ordersEntity.getAmount());//应支付金额
         ordersMap.put("orderState",ordersEntity.getOrderState());//订单状态
         return R.ok(ordersMap);
+    }
+
+    /**
+     * 强制确认付款成功
+     */
+    @ApiOperation("商户充值订单预申请")
+    @ResponseBody
+    @RequestMapping(value={"/order/coerceSureRecvOrder"}, method = {RequestMethod.POST,RequestMethod.GET})
+    public R coerceSureRecvOrder(HttpServletRequest request,
+                           @RequestParam(value="orderId",required=true) Integer orderId,
+                           @RequestParam(value="confirmAmount",required=true) String confirmAmount){
+        log.info("强制确认付款成功：orderId：{},confirmAmount:{}",
+                orderId,confirmAmount);
+        BigDecimal confirmAmount2 = new BigDecimal(confirmAmount);
+        if(orderId == null){
+            return R.error(-1001,"请求参数错误");
+        }
+        //确认收款
+        return ordersService.sureRecvOrder(orderId,confirmAmount2);
     }
 
 

@@ -18,14 +18,14 @@ public interface AccountService extends IService<AccountEntity> {
     /**
      * 全面校验用户账户：所有账户状态校验
      */
-    public boolean overallCheckUserAccount(AccountEntity accountEntity);
+    boolean overallCheckUserAccount(AccountEntity accountEntity);
 
     /**
      * 更改账户金额
      * @param userId
-     * @param canuseAmount
-     * @param frozenAmount
-     * @param balance
+     * @param canuseAmount 可用余额，带符号
+     * @param frozenAmount 冻结金额，带符号
+     * @param balance 余额，带符号
      * @return
      */
     int updateAmount(Integer userId, BigDecimal canuseAmount, BigDecimal frozenAmount,BigDecimal balance);

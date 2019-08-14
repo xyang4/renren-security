@@ -18,6 +18,7 @@ import io.renren.common.utils.R;
 import io.renren.common.utils.SpringContextUtils;
 import io.renren.modules.account.entity.AccountEntity;
 import io.renren.modules.account.service.AccountService;
+import io.renren.modules.system.service.IConfigService;
 import io.renren.modules.user.dao.AgentUserDao;
 import io.renren.modules.user.dao.UserDao;
 import io.renren.modules.user.entity.AgentUserEntity;
@@ -29,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Map;
 
@@ -38,7 +40,8 @@ public class UserServiceImpl extends ServiceImpl<UserDao, UserEntity> implements
 
     @Autowired
     private AgentUserDao agentUserDao;
-
+    @Autowired
+    private IConfigService configService;
     @Override
     public UserEntity queryByMobile(String mobile) {
         return baseMapper.selectOne(new QueryWrapper<UserEntity>().eq("mobile", mobile));
@@ -59,10 +62,7 @@ public class UserServiceImpl extends ServiceImpl<UserDao, UserEntity> implements
      */
     public boolean overallCheckUser(UserEntity userEntity) {
         //校验用户状态
-        if (userEntity.getStatus() != 1) {
-            return false;
-        }
-        return true;
+        return userEntity.getStatus() == 1;
     }
 
     @Autowired
@@ -91,6 +91,8 @@ public class UserServiceImpl extends ServiceImpl<UserDao, UserEntity> implements
         userEntity.setCreateTime(DateUtils.format(new Date(),DateUtils.DATE_TIME_PATTERN));
         userEntity.setUserType(UserEntityEnum.UserType.PORTER.getValue());
         userEntity.setUserLevel(1);
+        userEntity.setStatus(1);
+        userEntity.setUserGroup(1);
         int r = userDao.insert(userEntity);
         if(r>0){
             AccountEntity accountEntity = new AccountEntity();
@@ -105,6 +107,9 @@ public class UserServiceImpl extends ServiceImpl<UserDao, UserEntity> implements
             agentUserEntity.setUserId(userEntity.getUserId());
             agentUserEntity.setCreateTime(DateUtils.format(new Date(),DateUtils.DATE_TIME_PATTERN));
             agentUserEntity.setModifyTime(DateUtils.format(new Date(),DateUtils.DATE_TIME_PATTERN));
+            //添加默认收益费率
+            String recvRate = configService.selectConfigByKey("recv_mer_chargeRate");//公共收益率
+            agentUserEntity.setRecvChargeRate(recvRate == null ? new BigDecimal(0) : new BigDecimal(recvRate));
             int rrr = agentUserDao.insert(agentUserEntity);
             if(rrr < 1){
                 throw new RRException("添加推荐人失败");

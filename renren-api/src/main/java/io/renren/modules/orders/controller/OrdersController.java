@@ -41,9 +41,10 @@ public class OrdersController extends BaseController {
         }
         //短信验证码校验
         boolean check = iSmsService.validCode(tokenEntity.getMobile(), hamalOrderForm.getSmsCode());
-        if(!check){
-            return R.error(-1,"验证码错误");
-        }
+        //TODO 临时关闭
+        //        if(!check){
+//            return R.error(-1,"验证码错误");
+//        }
         return ordersService.hamalRecharge(tokenEntity.getUserId(),hamalOrderForm.getAmount(),hamalOrderForm.getAccountName(),hamalOrderForm.getAccountNo());
     }
 
@@ -56,11 +57,52 @@ public class OrdersController extends BaseController {
             return R.error(-1,"查询用户信息失败");
         }
         //短信验证码校验
-        boolean check = iSmsService.validCode(tokenEntity.getMobile(), hamalOrderForm.getSmsCode());
-        if(!check){
-            return R.error(-1,"验证码错误");
-        }
+//        boolean check = iSmsService.validCode(tokenEntity.getMobile(), hamalOrderForm.getSmsCode());
+//        if(!check){
+//            return R.error(-1,"验证码错误");
+//        }
         return ordersService.hamalWithdraw(tokenEntity.getUserId(),hamalOrderForm.getAmount(),hamalOrderForm.getAccountName(),hamalOrderForm.getAccountNo(),hamalOrderForm.getBankName());
+    }
+
+    /**
+     *
+     * @param orderTypeMap(orderType) recharge:充值，withdraw:提现
+     * @return
+     */
+    @AppLogin
+    @ApiOperation("首页进行中查询")
+    @RequestMapping("/hamal/indexprocessingOrderList")
+    public R indexprocessingOrderList(@RequestBody Map orderTypeMap){
+        TokenEntity tokenEntity = getToken();
+        if(tokenEntity == null){
+            return R.error(-1,"查询用户信息失败");
+        }
+        Map<String,Object> param =new HashMap<>();
+        param.put("orderType",1);
+
+        List<Integer> orderStates = new ArrayList<>();
+        param.put("recvUserId",tokenEntity.getUserId());
+        orderStates.add(OrdersEntityEnum.OrderState.b.getValue());
+        orderStates.add(OrdersEntityEnum.OrderState.c.getValue());
+        orderStates.add(8);
+
+        param.put("includeState",orderStates);
+        List<Map> orders = new ArrayList<>();
+        List<Map> ordersRet = ordersService.getOrders(param);
+        if(ordersRet!=null){
+            orders = ordersRet;
+        }
+        Map<String,Object> param2 =new HashMap<>();
+        param2.put("orderType",3);
+        param2.put("recvUserId",tokenEntity.getUserId());
+        List<Integer> orderStates2 = new ArrayList<>();
+        orderStates2.add(OrdersEntityEnum.OrderState.c.getValue());
+        param2.put("includeState",orderStates2);
+        List<Map> orders2 = ordersService.getOrders(param2);
+        if(orders2!=null){
+            orders.addAll(orders2);
+        }
+        return R.ok(orders);
     }
 
     /**
@@ -88,6 +130,7 @@ public class OrdersController extends BaseController {
             param.put("sendUserId",tokenEntity.getUserId());
             orderStates.add(OrdersEntityEnum.OrderState.b.getValue());
             orderStates.add(OrdersEntityEnum.OrderState.c.getValue());
+            orderStates.add(8);
         }else if(orderType == OrdersEntityEnum.OrderType.PORTER_WITHDROW.getValue()){
             param.put("sendUserId",tokenEntity.getUserId());
             orderStates.add(OrdersEntityEnum.OrderState.INIT.getValue());
@@ -128,9 +171,38 @@ public class OrdersController extends BaseController {
         if(orderId == null){
             return R.error(-1001,"请求参数错误");
         }
-        OrdersEntity ordersEntity = ordersService.getById(orderId);
+        //检查订单是否是自己的
+        OrdersEntity ordersEntity= ordersService.getById(orderId);
+//        if(ordersEntity.getRecvUserId().equals(tokenEntity.getUserId())){
+//            log.error("告警：订单不是该用户的订单UserId {} orderId{}",tokenEntity.getUserId(),orderId);
+//            return R.error(-1,"订单不合法");
+//        }
+
         return R.ok(ordersEntity);
     }
+
+    @AppLogin
+    @ApiOperation("发单确认付款")
+    @RequestMapping("/sureSendAmount")
+    public R sureSendAmount(@RequestBody Map map){
+        TokenEntity tokenEntity = getToken();
+        if(tokenEntity == null){
+            return R.error(-1,"查询用户信息失败");
+        }
+        Integer orderId = (Integer)map.get("orderId");
+        if(orderId == null){
+            return R.error(-1001,"请求参数错误");
+        }
+        //检查订单是否是自己的
+//        OrdersEntity ordersEntity= ordersService.getById(orderId);
+//        if(ordersEntity.getSendUserId().equals(tokenEntity.getUserId())){
+//            log.error("告警：发单确认付款,订单不是该用户的订单UserId {} orderId{}",tokenEntity.getUserId(),orderId);
+//            return R.error(-1,"订单不合法");
+//        }
+        //确认收款
+        return ordersService.sureSendAmount(orderId);
+    }
+
 
     @AppLogin
     @ApiOperation("订单收款确认")
@@ -141,6 +213,20 @@ public class OrdersController extends BaseController {
             return R.error(-1,"查询用户信息失败");
         }
         Integer orderId = (Integer)map.get("orderId");
+        //检查订单是否是自己的
+        OrdersEntity ordersEntity= ordersService.getById(orderId);
+        //商户充值订单
+        if(ordersEntity.getOrderType()==3 &&
+                ordersEntity.getRecvUserId().intValue()!=tokenEntity.getUserId().intValue()){
+            log.error("告警：商户充值订单收款确认,订单不是该用户的订单UserId {} orderId{}",tokenEntity.getUserId(),orderId);
+            return R.error(-1,"商户充值订单不合法");
+        }
+        //搬运工充值
+        if(ordersEntity.getOrderType()==1 &&
+                ordersEntity.getRecvUserId().intValue()!=tokenEntity.getUserId().intValue()){
+            log.error("告警：搬运工充值订单收款确认,订单不是该用户的订单UserId {} orderId{}",tokenEntity.getUserId(),orderId);
+            return R.error(-1,"搬运工充值不合法");
+        }
         BigDecimal confirmAmount = BigDecimal.valueOf(Double.parseDouble((String)map.get("confirmAmount")));
         if(orderId == null){
             return R.error(-1001,"请求参数错误");

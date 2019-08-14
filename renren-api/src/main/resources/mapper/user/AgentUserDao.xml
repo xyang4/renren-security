@@ -10,7 +10,31 @@
         <result property="userId" column="USER_ID"/>
         <result property="modifyTime" column="MODIFY_TIME"/>
         <result property="createTime" column="CREATE_TIME"/>
+        <result property="recvChargeRate" column="RECV_CHARGE_RATE"/>
     </resultMap>
+
+    <select id="agentUserList" resultType="map" parameterType="map">
+        select au.AGENT_USER_ID as agentUserId,
+            au.AGENT_ID as agentId,
+            au.User_id as userId,
+            au.RECV_CHARGE_RATE as recvChargeRate,
+            u.mobile as mobile,
+            u.NICK_NAME as nickName
+        from agent_user au
+        left join user u on u.user_id=au.user_id
+        where AGENT_ID = #{params.agentId}
+    </select>
+
+    <update id="agentUserEdit" parameterType="map">
+        update agent_user
+        <set>
+            <if test="recvChargeRate != null">
+                RECV_CHARGE_RATE = #{recvChargeRate},
+            </if>
+        </set>
+        where AGENT_USER_ID = #{agentUserId}
+        and AGENT_ID = #{agentId}
+    </update>
 
 
 </mapper>
