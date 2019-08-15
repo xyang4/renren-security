@@ -98,7 +98,7 @@ renren-security
     - 取消抢单        √
     - 消息推送        √ 
 
-6. 定时任务
+6. 定时任务(通过 renren.task-open参数控制是否开启)
     - 定时推送可抢订单
     - 定时清理 redis 数据
       
@@ -135,3 +135,5 @@ WS 操作流程
         5.2 抢单成功后,通知其他用户该订单已被抢：遍历3中的集合 users_pushed_rush_order:#{orderType}:#{orderId} 进行推送
     
 ```
+
+

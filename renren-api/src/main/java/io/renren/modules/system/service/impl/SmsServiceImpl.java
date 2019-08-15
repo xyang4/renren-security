@@ -2,11 +2,13 @@ package io.renren.modules.system.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import io.renren.common.config.RenrenProperties;
 import io.renren.common.enums.RRExceptionEnum;
 import io.renren.common.exception.RRException;
 import io.renren.common.util.StaticConstant;
 import io.renren.common.utils.DateUtils;
 import io.renren.common.utils.NumUtil;
+import io.renren.common.utils.SpringContextUtils;
 import io.renren.modules.common.domain.RedisCacheKeyConstant;
 import io.renren.modules.common.service.IRedisService;
 import io.renren.modules.system.dao.UserSmsRecordDao;
@@ -126,16 +128,27 @@ public class SmsServiceImpl extends ServiceImpl<UserSmsRecordDao, UserSmsRecord>
      * @param smsAccountEntity
      * @return
      */
-
     private boolean doSmsCodeSend(String mobile, String ip, Integer type, String code, Boolean sendSmsCode, SmsAccountEntity smsAccountEntity) {
+        log.info("短信下发开始:mobile[{}] IP[{}] code[{}] type[{}].", mobile, ip, code, type);
         if (sendSmsCode) {
-            exeSendCodeViaRestTemplate(mobile, code, smsAccountEntity);
+            if (null != smsAccountEntity) {
+                exeSendCodeViaRestTemplate(mobile, code, smsAccountEntity);
+            } else {
+                exeSendCodeViaHttp(mobile, code);
+            }
         }
         int num = userSmsRecordDao.insert(new UserSmsRecord(mobile, ip, type, code));
         if (num > 0) {
             iRedsiService.set(RedisCacheKeyConstant.SMS_CODE_PREFIX.concat(mobile), code, expireTime, TimeUnit.SECONDS);
         }
         return true;
+    }
+
+    private void exeSendCodeViaHttp(String mobile, String code) {
+        String url = SpringContextUtils.getBean(RenrenProperties.class).getSmschineseApi();
+        url = url.replace("${smsMob}", mobile).replace("${smsText}", code);
+        String rContent = restTemplate.getForObject(url, String.class);
+        log.info("SMS短信通响应:[{}].", rContent);
     }
 
 
@@ -157,7 +170,7 @@ public class SmsServiceImpl extends ServiceImpl<UserSmsRecordDao, UserSmsRecord>
         String response = restTemplate.postForObject(smsAccountEntity.getUrl(), formEntity, String.class);
 
         // result valid
-        log.info(">>> invoke 253 接口响应:[{}] 耗时[{}]s.", response, System.currentTimeMillis() - beginTime);
+        log.info(">>> 发送短信 253 接口响应:[{}] 耗时[{}]s.", response, System.currentTimeMillis() - beginTime);
 
         return result;
     }

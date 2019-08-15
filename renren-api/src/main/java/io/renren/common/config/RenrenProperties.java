@@ -35,6 +35,7 @@ public class RenrenProperties {
      * token 有效连接时间（分钟）
      */
     private Long jwtExpire = 60L;
+    private Long kaptchaExpire = jwtExpire;
     /**
      * 金额格式化
      */
@@ -50,6 +51,8 @@ public class RenrenProperties {
 
     private String dataSignKey;
 
+    private Boolean checkAndRecordRequestParams = true;
+
     private boolean smsSendOpen = false;
     private String smsCodeDefault;
     private String smsAccount;
@@ -59,4 +62,6 @@ public class RenrenProperties {
 
     private long orderRushLockSecond = 3;
     private long batchPushOrderNumMax = 10;
+
+    private String smschineseApi;
 }

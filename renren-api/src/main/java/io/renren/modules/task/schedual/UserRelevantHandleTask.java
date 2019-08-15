@@ -2,6 +2,7 @@ package io.renren.modules.task.schedual;
 
 import io.renren.modules.task.BaseHandleTask;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
+@ConditionalOnProperty(prefix = "renren", name = "task-open", havingValue = "true")
 public class UserRelevantHandleTask extends BaseHandleTask {
 
 

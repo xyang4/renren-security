@@ -26,3 +26,4 @@ renren:
   sms-code-default: #"123456"
   sign-open: false
   smschinese-api: http://utf8.api.smschinese.cn/?Uid=zhangyang&Key=d41d8cd98f00b204e980&smsMob=${smsMob}&smsText=${smsText}
+  task-open: true # 是否开启定时任务

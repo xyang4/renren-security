@@ -12,7 +12,7 @@ server:
 spring:
   # 环境 dev|test|prod|dl|online
   profiles:
-    active: dev
+    active: yp
   servlet:
     multipart:
       max-file-size: 100MB
@@ -65,6 +65,7 @@ spring:
 renren:
   jwt-expire: 60 # jwt 过期时间 （分钟）
   decimal-format: "##.##" # decimal 数值格式化
+  kaptcha-expire: 120 # 图形验证码有效期（秒）
   web-socket:
     server:
       port: 10001
@@ -74,6 +75,7 @@ renren:
   online-user-init-capacity: 20  # 初始在线人数
   batch-push-order-num-max: 10  # 每次可抢订单下发最大数
   order-rush-lock-second: 10
+  check-and-record-request-params: true # 是否开启requestBody 参数校验,默认true
 #mybatis
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml

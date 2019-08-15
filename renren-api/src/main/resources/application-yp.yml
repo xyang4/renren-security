@@ -22,7 +22,8 @@ renren:
   sms-password: SdJmGUYWEq1291
   sms-url: https://sms.253.com/msg/send
   sms-template: 【xxx】验证码${verifyCode}，用于您注册成为用户，5分钟内有效，请勿泄露他人，如非本人操作请忽略。
-  sms-send-open: false
+  sms-send-open: false # 是否开启短信下发
   sms-code-default: #"123456"
   sign-open: false
   smschinese-api: http://utf8.api.smschinese.cn/?Uid=zhangyang&Key=d41d8cd98f00b204e980&smsMob=${smsMob}&smsText=${smsText}
+  task-open: false # 是否开启定时任务

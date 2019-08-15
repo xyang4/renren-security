@@ -4,6 +4,7 @@ import io.renren.common.config.RenrenProperties;
 import io.renren.common.util.HttpUtils;
 import io.renren.common.util.StaticConstant;
 import io.renren.common.utils.R;
+import io.renren.modules.common.service.IRedisService;
 import io.renren.modules.user.entity.TokenEntity;
 import io.renren.modules.user.service.ITokenService;
 import io.renren.modules.user.service.IUserService;
@@ -16,7 +17,8 @@ public class BaseController {
     public ITokenService iTokenService;
     @Autowired
     public IUserService iUserService;
-
+    @Autowired
+    public IRedisService iRedisService;
     @Autowired
     RenrenProperties renrenProperties;
 

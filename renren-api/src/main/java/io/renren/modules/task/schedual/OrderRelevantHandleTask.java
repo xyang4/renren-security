@@ -4,10 +4,12 @@ import io.renren.common.enums.OrdersEntityEnum;
 import io.renren.modules.orders.service.OrdersService;
 import io.renren.modules.task.BaseHandleTask;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConditionalOnProperty(prefix = "renren", name = "task-open", havingValue = "true")
 public class OrderRelevantHandleTask extends BaseHandleTask {
 
     @Autowired

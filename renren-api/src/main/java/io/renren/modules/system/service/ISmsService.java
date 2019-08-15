@@ -13,5 +13,4 @@ public interface ISmsService {
     boolean validCode(String mobile, String smsCode);
 
     boolean sendCode(String mobile, String ip, Integer type, Boolean sendSmsCode, String defaultSmsCode, SmsAccountEntity smsAccountEntity);
-
 }

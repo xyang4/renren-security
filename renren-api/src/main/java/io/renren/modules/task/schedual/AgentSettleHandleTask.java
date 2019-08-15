@@ -2,9 +2,9 @@ package io.renren.modules.task.schedual;
 
 import io.renren.modules.task.BaseHandleTask;
 import io.renren.modules.user.service.AgentSettleService;
-import io.renren.modules.user.service.AgentUserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -13,10 +13,12 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
+@ConditionalOnProperty(prefix = "renren", name = "task-open", havingValue = "true")
 public class AgentSettleHandleTask extends BaseHandleTask {
 
     @Autowired
     AgentSettleService agentSettleService;
+
     /**
      * 代理商每日结算
      */
