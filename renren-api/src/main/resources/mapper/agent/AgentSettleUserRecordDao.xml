@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.renren.modules.agent.dao.AgentSettleUserRecordDao">
+
+	<!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="io.renren.modules.agent.entity.AgentSettleUserRecordEntity" id="agentSettleUserRecordMap">
+        <result property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="orderType" column="order_type"/>
+        <result property="settleDate" column="settle_date"/>
+        <result property="chargeRate" column="charge_rate"/>
+        <result property="num" column="num"/>
+        <result property="amount" column="amount"/>
+        <result property="profit" column="profit"/>
+        <result property="agentId" column="agent_id"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <update id="execUserRecvReport" statementType="CALLABLE" parameterType="string">
+        CALL exec_user_recv_report(#{settleDate})
+    </update>
+</mapper>

@@ -15,5 +15,7 @@ public interface AgentSettleService extends IService<AgentSettleEntity> {
      * 代理商每日结算
      */
     void agentSettle();
+
+
 }
 

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.renren.modules.agent.dao.AgentSettleDetailDao">
+
+	<!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="io.renren.modules.agent.entity.AgentSettleDetailEntity" id="agentSettleDetailMap">
+        <result property="id" column="id"/>
+        <result property="agentId" column="agent_id"/>
+        <result property="settleType" column="settle_type"/>
+        <result property="settleDate" column="settle_date"/>
+        <result property="chargeRate" column="charge_rate"/>
+        <result property="settleAmount" column="settle_amount"/>
+        <result property="settleOrderNum" column="settle_order_num"/>
+        <result property="settleUserNum" column="settle_user_num"/>
+        <result property="settleProfit" column="settle_profit"/>
+        <result property="createTime" column="create_time"/>
+        <result property="settleRecord" column="settle_record"/>
+        <result property="settleStatus" column="settle_status"/>
+
+    </resultMap>
+
+
+</mapper>
