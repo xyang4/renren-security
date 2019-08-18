@@ -19,6 +19,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service("agentSettleDetailService")
@@ -49,39 +50,14 @@ public class AgentSettleDetailServiceImpl extends ServiceImpl<AgentSettleDetailD
 //                Map<Integer, Set<Integer>> agentUserSetMap = new HashMap<>(agentUserList.size());
                 Map<Integer, AgentSettleDetailEntity> agentSettleDetaiMap = new HashMap<>(agentUserList.size());
                 // 避免顶级代理没数据 fixme 容量待定
-                Set<Integer> agentSet = new HashSet<>(agentUserList.size() + 1);
+                final Set<Integer> agentSet = new HashSet<>(agentUserList.size() + 1);
 //                1.2 init
                 agentUserList.forEach(v -> {
                     agentSet.add(v.getUserId());
                     agentSet.add(v.getAgentId());
                     userAgentMap.put(v.getUserId(), v.getAgentId());
                     agentChargeRateMap.put(v.getUserId(), v.getRecvChargeRate());
-//                    agentSettleDetaiMap.put(
-////                            v.getUserId(),
-////                            AgentSettleDetailEntity.builder()
-////                                    .agentId(v.getAgentId())
-////                                    .createTime(new Date()).settleStatus(1)
-////                                    .chargeRate(v.getRecvChargeRate())
-////                                    .settleAmount(BigDecimal.ZERO).settleUserNum(0).settleOrderNum(0).settleProfit(BigDecimal.ZERO)
-////                                    .build());
-////                    3
-                 /*   Set<Integer> users = agentUserSetMap.get(v.getAgentId());
-                    if (null == users) {
-                        users = new HashSet<>();
-                    }
-                    users.add(v.getUserId());
-                    agentUserSetMap.put(v.getAgentId(), users);*/
                 });
-//                Set<Integer> agentSettleDetaiMapKey = agentSettleDetaiMap.keySet();
-//                agentSet.stream()
-//                        .filter(v -> agentSettleDetaiMapKey.contains(v))
-//                        .forEach(v -> agentSettleDetaiMap.put(v, AgentSettleDetailEntity.builder()
-//                                .agentId(v)
-//                                .createTime(new Date()).settleStatus(1)
-//                                .chargeRate(BigDecimal.ONE) // TODO 顶级代理???
-//                                .settleAmount(BigDecimal.ZERO).settleUserNum(0).settleOrderNum(0).settleProfit(BigDecimal.ZERO)
-//                                .build()));
-
                 Map<Integer, AgentSettleUserRecordEntity> userBaseReportDataMap = new HashMap<>(agentUserList.size());
                 for (AgentSettleUserRecordEntity item : agentSettleUserRecordEntities) {
                     userBaseReportDataMap.put(item.getUserId(), item);
@@ -104,12 +80,26 @@ public class AgentSettleDetailServiceImpl extends ServiceImpl<AgentSettleDetailD
                                         .createTime(DateTime.now().toDate())
                                         .build();
                                 agentSettleDetaiMap.put(v, asde);
-
                             }
                         }
                 );
+                // 代理排序，根据上级代理数倒序排，便于逐级计算代理费
+                Map<Integer, Integer> agentDepth = new HashMap<>(agentSet.size());
+                for (Integer agentId : agentSet) {
+                    Integer num = agentDepth.get(agentId);
+                    if (null == num) num = 0;
+                    if (userAgentMap.containsKey(agentId)) {
+                        num = execAgentCount(agentId, num, userAgentMap);
+                    }
+                    agentDepth.put(agentId, num);
+                }
+
+                List<Integer> sortedAgentList = agentDepth.entrySet().stream()
+                        .sorted((Map.Entry<Integer, Integer> o1, Map.Entry<Integer, Integer> o2) -> o2.getValue() - o1.getValue())
+                        .map(entry -> entry.getKey())
+                        .collect(Collectors.toList());
                 // 2.2
-                agentSet.forEach(v -> {
+                sortedAgentList.forEach(v -> {
                             if (userAgentMap.containsKey(v)) {
                                 AgentSettleDetailEntity selfSDE = agentSettleDetaiMap.get(v);
                                 execAgentSettleProfitHandle(v, userAgentMap, selfSDE, agentChargeRateMap, agentSettleDetaiMap);
@@ -118,15 +108,25 @@ public class AgentSettleDetailServiceImpl extends ServiceImpl<AgentSettleDetailD
                 );
 //                3 批量保存
                 Collection<AgentSettleDetailEntity> agentSettleDetailEntities = agentSettleDetaiMap.values();
-                saveBatch(agentSettleDetailEntities);
+                saveBatch(agentSettleDetailEntities, 20);
+//                saveBatch(agentSettleDetailEntities);
             } else {
                 log.warn("agent_settle_user_record表当日[{}]数据为空，不参与计算!!", settleDate);
             }
         } else {
             log.warn("agent_user数据为null，不参与计算!!");
         }
-        log.info("[{}]代理收益结算结束，耗时[{}].", settleDate, System.currentTimeMillis() - sT);
+        log.info("[{}]代理收益结算结束，保存成功[{}]条，耗时[{}].", settleDate, rNum, System.currentTimeMillis() - sT);
         return rNum;
+    }
+
+    private int execAgentCount(Integer agentId, Integer num, Map<Integer, Integer> userAgentMap) {
+        Integer sa = userAgentMap.get(agentId);
+        if (null != sa) {
+            num++;
+            num = execAgentCount(sa, num, userAgentMap);
+        }
+        return num;
     }
 
     /**
@@ -157,7 +157,7 @@ public class AgentSettleDetailServiceImpl extends ServiceImpl<AgentSettleDetailD
 
             agentSDE = AgentSettleDetailEntity.builder()
                     .agentId(superiorAgentId)
-                    .chargeRate(null == chargeRate ? BigDecimal.ONE : chargeRate)
+                    .chargeRate(null == chargeRate ? new BigDecimal("0.012") : chargeRate)
                     .settleType(selfSDE.getSettleType())
                     .settleDate(selfSDE.getSettleDate())
                     .settleAmount(selfSDE.getSettleAmount())
