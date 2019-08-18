@@ -110,6 +110,7 @@ public class AgentSettleDetailServiceImpl extends ServiceImpl<AgentSettleDetailD
                 Collection<AgentSettleDetailEntity> agentSettleDetailEntities = agentSettleDetaiMap.values();
                 saveBatch(agentSettleDetailEntities, 20);
 //                saveBatch(agentSettleDetailEntities);
+                rNum = agentSettleDetailEntities.size();
             } else {
                 log.warn("agent_settle_user_record表当日[{}]数据为空，不参与计算!!", settleDate);
             }
