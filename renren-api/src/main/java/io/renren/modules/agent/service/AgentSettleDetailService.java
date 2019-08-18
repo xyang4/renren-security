@@ -19,4 +19,3 @@ public interface AgentSettleDetailService extends IService<AgentSettleDetailEnti
      */
     int execProfitSettleReport(String settleDate);
 }
-

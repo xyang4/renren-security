@@ -31,8 +31,9 @@ public class AgentSettleDetailServiceImpl extends ServiceImpl<AgentSettleDetailD
 
     @Override
     public int execProfitSettleReport(String settleDate) {
+        long sT = System.currentTimeMillis();
         settleDate = StringUtils.isBlank(settleDate) ? DateUtils.getDate(null, -1) : settleDate;
-        log.info("代理收益结算开始，settleDate[{}]", settleDate);
+        log.info("[{}]代理收益结算开始，[{}]", settleDate);
         int rNum = 0;
         List<AgentUserEntity> agentUserList = agentUserService.list();
         if (!CollectionUtils.isEmpty(agentUserList)) {
@@ -99,7 +100,7 @@ public class AgentSettleDetailServiceImpl extends ServiceImpl<AgentSettleDetailD
                                         .settleProfit(asure.getAmount().multiply(asure.getChargeRate()).setScale(4))
                                         .settleOrderNum(asure.getNum())
                                         .settleUserNum(1)
-                                        .settleRecord("结算过程:" + v + Constant.SPLIT_CHAR_UNDERLINE + asure.getAmount() + Constant.SPLIT_CHAR_UNDERLINE + asure.getChargeRate())
+                                        .settleRecord("结算过程[userId_amount_chargeRate]:" + v + Constant.SPLIT_CHAR_UNDERLINE + asure.getAmount() + Constant.SPLIT_CHAR_UNDERLINE + asure.getChargeRate())
                                         .createTime(DateTime.now().toDate())
                                         .build();
                                 agentSettleDetaiMap.put(v, asde);
@@ -124,7 +125,7 @@ public class AgentSettleDetailServiceImpl extends ServiceImpl<AgentSettleDetailD
         } else {
             log.warn("agent_user数据为null，不参与计算!!");
         }
-        log.info("代理收益结算结束，settleDate[{}]", settleDate);
+        log.info("[{}]代理收益结算结束，耗时[{}].", settleDate, System.currentTimeMillis() - sT);
         return rNum;
     }
 
@@ -180,7 +181,7 @@ public class AgentSettleDetailServiceImpl extends ServiceImpl<AgentSettleDetailD
                 return;
             } else {
                 agentSDE.setSettleProfit(agentSDE.getSettleProfit().add(selfSDE.getSettleAmount().multiply(diffChargeRate)).setScale(4));
-                agentSDE.setSettleRecord(agentSDE.getSettleRecord() + " " + selfSDE.getSettleRecord().replace("结算过程:", " "));
+                agentSDE.setSettleRecord(agentSDE.getSettleRecord() + " " + selfSDE.getSettleRecord().replace("结算过程[userId_amount_chargeRate]:", " "));
             }
         }
         // 递归最近上级代理
