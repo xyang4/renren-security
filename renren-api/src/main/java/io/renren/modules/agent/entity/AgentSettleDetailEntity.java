@@ -71,5 +71,6 @@ public class AgentSettleDetailEntity implements Serializable {
      * 结算状态
      */
     private Integer settleStatus;
+    private String remark;
 
 }

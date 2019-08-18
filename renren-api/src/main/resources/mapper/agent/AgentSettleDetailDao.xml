@@ -17,6 +17,7 @@
         <result property="createTime" column="create_time"/>
         <result property="settleRecord" column="settle_record"/>
         <result property="settleStatus" column="settle_status"/>
+        <result property="remark" column="remark"/>
 
     </resultMap>
 

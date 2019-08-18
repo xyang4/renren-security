@@ -7,6 +7,7 @@ import io.renren.modules.user.service.AgentSettleService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @ConditionalOnProperty(prefix = "renren", name = "task-open", havingValue = "true")
+@PropertySource("classpath:config/corn.properties")
 public class AgentSettleHandleTask extends BaseHandleTask {
 
     @Autowired
@@ -36,8 +38,8 @@ public class AgentSettleHandleTask extends BaseHandleTask {
     /**
      * 用户接单统计跑批任务
      */
-//    @Scheduled(cron = "${renren.task.recv-user-report}")
-    @Scheduled(cron = "0 0 2 /1 * ?")
+    @Scheduled(cron = "${job.recv-user-report}")
+//    @Scheduled(cron = "0 0 2 /1 * ?")
     public void execUserRecvReport() {
         String settleDate = DateUtils.getDate(null, -1);
         log.info("用户接单统计开始，settleDate[{}]", settleDate);
@@ -48,8 +50,7 @@ public class AgentSettleHandleTask extends BaseHandleTask {
     /**
      * 代理收益结算跑批任务
      */
-//    @Scheduled(cron = "${renren.task.agent-profit-settle}")
-    @Scheduled(cron = "0 0 2 /1 * ?")
+    @Scheduled(cron = "${job.agent-profit-settle}")
     public void execAgentProfitSettle() {
         String settleDate = DateUtils.getDate(null, -1);
         log.info("用户接单统计开始，settleDate[{}]", settleDate);
