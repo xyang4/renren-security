@@ -142,7 +142,7 @@ public class NettyServiceImpl implements INettyService {
             String msg = (content instanceof String) ? (String) content : JSON.toJSONString(content);
             ChannelFuture channelFuture = channel.writeAndFlush(new TextWebSocketFrame(msg));
             if (channelFuture.isSuccess()) {
-                log.info("消息推送成功：mobile[{}] msg[{}]", mobile);
+                log.info("消息推送成功：mobile[{}] msg[{}]", mobile,msg);
             }
         }
     }

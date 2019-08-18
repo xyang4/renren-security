@@ -3,14 +3,14 @@ spring:
     type: com.alibaba.druid.pool.DruidDataSource
     druid:
       driver-class-name: com.mysql.jdbc.Driver
-      url: jdbc:mysql://192.168.13.56:3306/pay?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8&useSSL=false
+      url: jdbc:mysql://148.66.135.118:3306/pay?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8&useSSL=false
       username: root
-      password: 123456
+      password: XNtMha9po[wO
   redis:
     host: 127.0.0.1
     port: 6379
     database: 4
-    password: 123456
+    password:
 
 
 # 自定义属性配置
@@ -25,3 +25,5 @@ renren:
   sms-send-open: false
   sms-code-default: #"123456"
   sign-open: false
+  smschinese-api: http://utf8.api.smschinese.cn/?Uid=zhangyang&Key=d41d8cd98f00b204e980&smsMob=${smsMob}&smsText=${smsText}
+  task-open: true # 是否开启定时任务

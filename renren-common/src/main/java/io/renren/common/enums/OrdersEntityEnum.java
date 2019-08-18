@@ -54,7 +54,8 @@ public class OrdersEntityEnum {
     @Getter
     public static enum PayType {
         WXQR("wxqr", "微信二维码"), ALIQR("aliqr", "支付宝二维码"),
-        BANK("bank", "银行卡转账"), ALITR("alitr", "支付宝转账");
+        BANK("bank", "银行卡转账"), ALITR("alitr", "支付宝转账"),
+        DIGICASH("digicash", "支付宝转账");
         private String value;
         private String name;
 
@@ -79,7 +80,7 @@ public class OrdersEntityEnum {
      * 15-等待打款--更换付款方式30-客服处理为取消31-客服处理为完成
      */
     @Getter
-    public static enum OrderState {
+    public enum OrderState {
         INIT(0, "初始"), b(1, "订单提交 通知抢单,待接单"),
         c(2, "已接单"), d(3, "用户取消");
         private int value;

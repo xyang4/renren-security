@@ -37,7 +37,8 @@ public class WebSocketResponseDomain {
         /**
          *
          */
-        ERROR_RUSH_BEING_QUEUE(501, "抢单排队中"),ERROR_RUSH_BY_HASBEAN(502, "订单已被抢"),;
+        ERROR_RUSH_BEING_QUEUE(501, "抢单排队中"),ERROR_RUSH_BY_HASBEAN(502, "订单已被抢"),
+        ERROR_RUSH_BY_HASBEAN_ERROR(503, "订单已被抢"),ERROR_RUSH_BY_HASBEAN_USE(504, "订单已被抢");
         private int code;
         private String msg;
 

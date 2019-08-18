@@ -1,12 +1,14 @@
 package io.renren.modules.orders.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.renren.common.config.RenrenProperties;
 import io.renren.common.enums.OrdersEntityEnum;
 import io.renren.common.exception.RRException;
+import io.renren.common.util.GenerateDateTimeUniqueID;
 import io.renren.common.util.StaticConstant;
 import io.renren.common.utils.DateUtils;
 import io.renren.common.utils.R;
@@ -92,6 +94,24 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
             return r;
         }
 
+        //判断是否是假单
+        String apply_order_Id = iRedisService.getVal("apply_order_Id_" + orderId);
+        if(StringUtils.isBlank(apply_order_Id)){
+            r.setCode(WebSocketResponseDomain.ResponseCode.ERROR_RUSH_BY_HASBEAN_ERROR.getCode());
+            r.setMsg(WebSocketResponseDomain.ResponseCode.ERROR_RUSH_BY_HASBEAN_ERROR.getMsg());
+            return r;
+        }else {
+            if(apply_order_Id.indexOf("orderss_")>=0){
+                // 操作成功，通知所有用户该单已被抢
+                orderStatusNotice(1, orderType, orderId);
+
+                r.setCode(WebSocketResponseDomain.ResponseCode.ERROR_RUSH_BY_HASBEAN_USE.getCode());
+                r.setMsg(WebSocketResponseDomain.ResponseCode.ERROR_RUSH_BY_HASBEAN_USE.getMsg());
+                return r;
+            }
+        }
+
+
         //查询用户进行中的订单，金额不能跟本订单相等
         //查询用户是否有进行中的充值
         Map<String, Object> param = new HashMap<>();
@@ -112,6 +132,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         }
 
         String lockVal = iRedisService.getVal(RedisCacheKeyConstant.LOCK_ORDER_PREFIX + orderId);
+
         if (StringUtils.isBlank(lockVal)) {
             String lockKey = RedisCacheKeyConstant.LOCK_ORDER_PREFIX + orderId;
             iRedisService.set(lockKey, mobile, renrenProperties.getOrderRushLockSecond(), TimeUnit.SECONDS);
@@ -201,7 +222,13 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         orders.setRecvRateAmount(ra);
 
         orders.setCreateTime(DateUtils.format(new Date(), DateUtils.DATE_TIME_PATTERN));
+        //orders.setOrderId(GenerateDateTimeUniqueID.generateDateTimeUniqueId());
         boolean boo = this.save(orders);
+
+        //加入缓存
+        iRedisService.set("apply_order_Id_"+orders.getOrderId(), orders.getOrderSn(), orders.getTimeoutRecv(), TimeUnit.SECONDS);
+
+
         //验证
         if (boo == true && (orders.getOrderId() != null && orders.getOrderId() > 0)) {//检查订单是否创建成功
             RushOrderInfo rushOrderInfo = new RushOrderInfo(
@@ -274,6 +301,9 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         return R.ok(ordersEntity);
     }
 
+    /**
+     * 搬运工充值
+     */
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public R hamalRecharge(Integer userId, String amount, String accountName, String accountNo) {
@@ -689,13 +719,13 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public R sureSendAmount(Integer orderId) {
         //查询订单状态
-        OrdersEntity retOrdersEntity = SpringContextUtils.getBean(OrdersServiceImpl.class).getById(orderId);
+        OrdersEntity retOrdersEntity = SpringContextUtils.getBean(OrdersService.class).getById(orderId);
         if(retOrdersEntity==null){
             return R.ok();
         }
         if (retOrdersEntity.getOrderState().intValue() == 2) {
             retOrdersEntity.setOrderState(8);
-            SpringContextUtils.getBean(OrdersServiceImpl.class).updateById(retOrdersEntity);
+            SpringContextUtils.getBean(OrdersService.class).updateById(retOrdersEntity);
             return R.ok();
         }
         return R.ok();
@@ -708,7 +738,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public R sureRecvOrder(Integer orderId, BigDecimal confirmAmount) {
         //查询订单状态
-        OrdersEntity retOrdersEntity = SpringContextUtils.getBean(OrdersServiceImpl.class).getById(orderId);
+        OrdersEntity retOrdersEntity = SpringContextUtils.getBean(OrdersService.class).getById(orderId);
         if(retOrdersEntity.getOrderType().intValue()!=1 && retOrdersEntity.getOrderType().intValue()!=3){
             return R.error(-1,"订单类型错误");
         }
@@ -726,7 +756,6 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
 
         boolean result = SpringContextUtils.getBean(OrdersServiceImpl.class).sureRecvOrderTransactional(retOrdersEntity);
         if (result) {
-
             return R.ok();
         } else {
             return R.error();
@@ -743,9 +772,9 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
         updateOrder.setOrderId(ordersEntity.getOrderId());
         updateOrder.setOrderState(9);
         updateOrder.setRecvAmount(ordersEntity.getRecvAmount());
-        boolean boo = SpringContextUtils.getBean(OrdersServiceImpl.class).updateById(updateOrder);
-        if (!boo) {
-            return false;
+        int boo = ordersDao.sureRecv(updateOrder);
+        if (boo<=0) {
+            throw new RRException("确认收款-已确认");
         }
         //1 发单用户
         // 更新发单者账户信息,给账户 （扣除手续费后） 增加金额，及可用金额
@@ -952,20 +981,27 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersDao, OrdersEntity> impl
     /**
      * 假订单发起程序
      */
-    public void shamOrders(){
+    public Map shamOrders(Integer merId,String orderDate,String payType,String sendAmount){
 
         //查询开启开关，如果关闭，直接返回
-
-
+        String orderSn = "orderss_"+GenerateDateTimeUniqueID.generateDateTimeUniqueId()+"";
+        log.info("创建假单订单号开始，{}",orderSn);
         //创建虚假订单
-
-
-
-        //发送请求
-
-
-
-
-
+        //校验orderSn是否已经存在
+//        Wrapper<OrdersEntity> queryWrapper = new QueryWrapper<>();
+//        ((QueryWrapper<OrdersEntity>) queryWrapper).eq("order_Sn",orderSn);
+//        OrdersEntity ordersEntity= this.getOne(queryWrapper);
+        OrdersEntity ordersEntity= null;
+        if(ordersEntity==null){
+            //创建预处理订单
+            Map retMap= this.applyOrder(merId, orderDate,3, orderSn,  payType,  sendAmount,  "http://127.0.0.1/no");
+            if((int)retMap.get("code")==0) {//返回成功
+                ordersEntity = (OrdersEntity) retMap.get("orders");
+            }
+            return retMap;
+        }else {
+            log.info("假单订单号重复。。"+orderSn);
+        }
+        return null;
     }
 }

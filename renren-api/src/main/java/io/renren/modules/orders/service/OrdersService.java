@@ -217,6 +217,9 @@ public interface OrdersService extends IService<OrdersEntity> {
                                              Integer recvUserId, BigDecimal recvAmount, String recvUserMobile,
                                              String createTime);
 
-    void shamOrders();
+    /**
+     * 假单创建
+     */
+    Map shamOrders(Integer merId,String orderDate,String payType,String sendAmount);
 }
 

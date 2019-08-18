@@ -5,6 +5,7 @@ import io.renren.common.annotation.RequestDataSign;
 import io.renren.common.utils.DateUtils;
 import io.renren.common.utils.R;
 import io.renren.modules.common.controller.BaseController;
+import io.renren.modules.system.service.IConfigService;
 import io.renren.modules.system.service.ISmsService;
 import io.renren.modules.user.entity.TokenEntity;
 import io.renren.modules.user.entity.UserEntity;
@@ -15,12 +16,10 @@ import io.swagger.annotations.ApiOperation;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
 import java.util.Map;
@@ -32,10 +31,10 @@ public class AppUserController extends BaseController {
 
     @Autowired
     ISmsService iSmsService;
-
+    @Autowired
+    private IConfigService configService;
     @PostMapping("login")
     @ApiOperation("登录")
-    @RequestDataSign
     public R loginOrRegister(@RequestBody @Validated LoginForm vo, BindingResult br) {
 
         // 1 验证码校验
@@ -168,5 +167,25 @@ public class AppUserController extends BaseController {
             return R.error(-10004,"确认密码不一致");
         }
         return iUserService.recommendUser(tokenEntity.getUserId(),mobile,nickName,pwd);
+    }
+
+    @ApiOperation("版本更新")
+    @ResponseBody
+    @RequestMapping(value={"updateVersion"}, method = {RequestMethod.POST,RequestMethod.GET})
+    public String updateVersion(@RequestBody Map param) throws Exception{
+        String appid =(String) param.get("appid");
+        String version =(String) param.get("version");
+        String imei =(String) param.get("imei");
+        //查询需要升级的版本
+        String updateVersionString = configService.selectConfigByKey("updateVersion");
+        JSONObject jsonObj = new JSONObject(updateVersionString);
+        String newVersion = (String)jsonObj.get("version");
+        if(version.compareTo(newVersion)<0){
+            String  str="";
+            return updateVersionString;
+        }else {
+            //无需升级
+            return "{\"status\":0}";
+        }
     }
 }

@@ -262,4 +262,38 @@
         set ORDER_STATE = #{state},REMARK = #{remark}
         where ORDER_ID = #{orderId} and ORDER_STATE = 0
     </update>
+
+    <update id="sureRecv" parameterType="io.renren.modules.orders.entity.OrdersEntity">
+        update orders
+        <set>
+            <if test="orderState != null">
+                ORDER_STATE = #{orderState},
+            </if>
+            <if test="recvAmount != null">
+                RECV_AMOUNT = #{recvAmount},
+            </if>
+            <if test="recvUserId != null">
+                RECV_USER_ID = #{recvUserId},
+            </if>
+            <if test="recvAccountNo != null">
+                RECV_ACCOUNT_NO = #{recvAccountNo},
+            </if>
+            <if test="recvAccountName != null">
+                RECV_ACCOUNT_NAME = #{recvAccountName},
+            </if>
+            <if test="recvBankName != null">
+                RECV_BANK_NAME = #{recvBankName},
+            </if>
+            <if test="recvRateAmount != null">
+                RECV_RATE_AMOUNT = #{recvRateAmount},
+            </if>
+            <if test="recvRate != null">
+                RECV_RATE = #{recvRate},
+            </if>
+        </set>
+        where ORDER_ID = #{orderId}
+        and ORDER_STATE != 9
+        and (ORDER_STATE = 2 or ORDER_STATE = 5 or ORDER_STATE = 8 )
+    </update>
+
 </mapper>
