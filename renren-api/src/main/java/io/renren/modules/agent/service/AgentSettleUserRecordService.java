@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import io.renren.modules.agent.entity.AgentSettleUserRecordEntity;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 代理每日收益记录
@@ -27,5 +28,8 @@ public interface AgentSettleUserRecordService extends IService<AgentSettleUserRe
      * @return
      */
     List<AgentSettleUserRecordEntity> listBySettleDate(String settleDate);
+
+
+    List<Map<String,Object>> listAgentSettleRecord(String settleDate);
 }
 

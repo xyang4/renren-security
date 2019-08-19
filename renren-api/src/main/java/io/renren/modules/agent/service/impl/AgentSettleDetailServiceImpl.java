@@ -34,13 +34,16 @@ public class AgentSettleDetailServiceImpl extends ServiceImpl<AgentSettleDetailD
     public int execProfitSettleReport(String settleDate) {
         long sT = System.currentTimeMillis();
         settleDate = StringUtils.isBlank(settleDate) ? DateUtils.getDate(null, -1) : settleDate;
-        log.info("[{}]代理收益结算开始，[{}]", settleDate);
+        log.info("[{}]代理收益结算开始.", settleDate);
         int rNum = 0;
         List<AgentUserEntity> agentUserList = agentUserService.list();
         if (!CollectionUtils.isEmpty(agentUserList)) {
             // 1 接单基础数据查询
-            List<AgentSettleUserRecordEntity> agentSettleUserRecordEntities = agentSettleUserRecordService.listBySettleDate(settleDate);
-            if (!CollectionUtils.isEmpty(agentSettleUserRecordEntities)) {
+//            List<AgentSettleUserRecordEntity> agentSettleUserRecordEntities = agentSettleUserRecordService.listBySettleDate(settleDate);
+            List<Map<String, Object>> agentSettleRecordList = agentSettleUserRecordService.listAgentSettleRecord(settleDate);
+
+//            if (!CollectionUtils.isEmpty(agentSettleUserRecordEntities)) {
+            if (!CollectionUtils.isEmpty(agentSettleRecordList)) {
 //                1 数据初始化
                 // userId - agentId
 //                1.1 define
@@ -58,27 +61,48 @@ public class AgentSettleDetailServiceImpl extends ServiceImpl<AgentSettleDetailD
                     userAgentMap.put(v.getUserId(), v.getAgentId());
                     agentChargeRateMap.put(v.getUserId(), v.getRecvChargeRate());
                 });
-                Map<Integer, AgentSettleUserRecordEntity> userBaseReportDataMap = new HashMap<>(agentUserList.size());
-                for (AgentSettleUserRecordEntity item : agentSettleUserRecordEntities) {
+//                Map<Integer, AgentSettleUserRecordEntity> userBaseReportDataMap = new HashMap<>(agentUserList.size());
+                Map<Integer, Map<String, Object>> userBaseReportDataMap = new HashMap<>(agentUserList.size());
+
+                /*for (AgentSettleUserRecordEntity item : agentSettleUserRecordEntities) {
                     userBaseReportDataMap.put(item.getUserId(), item);
+                }*/
+                for (Map<String, Object> item : agentSettleRecordList) {
+                    userBaseReportDataMap.put((Integer) item.get("agentId"), item);
                 }
                 // 2 代理收益分级计算
                 // 2.1
                 agentSet.forEach(v -> {
                             // 基础报表数据
-                            AgentSettleUserRecordEntity asure = userBaseReportDataMap.get(v);
-                            if (null != asure) {// 先查接单人的报表数据， 通过 execAgentSettleProfitHandle 进行代理费计算
+//                            AgentSettleUserRecordEntity asure = userBaseReportDataMap.get(v);
+                            Map<String, Object> tMap = userBaseReportDataMap.get(v);
+
+//                            if (null != asure) {// 先查接单人的报表数据， 通过 execAgentSettleProfitHandle 进行代理费计算
+                            if (null != tMap) {// 先查接单人的报表数据， 通过 execAgentSettleProfitHandle 进行代理费计算
+//                                AGENT_ID agentId,settle_date settleDate,order_type orderType,COUNT(1) userNum,SUM(num) orderNum,SUM(AMOUNT)
+                                BigDecimal chargeRate = agentChargeRateMap.get(v);
+                                chargeRate = null == chargeRate ? new BigDecimal("0.012") : chargeRate;
+                                AgentSettleUserRecordEntity asure = AgentSettleUserRecordEntity.builder()
+                                        .agentId((Integer) tMap.get("agentId"))
+                                        .settleDate((String) tMap.get("settleDate"))
+                                        .orderType((Integer) tMap.get("orderType"))
+                                        .num(((BigDecimal) tMap.get("orderNum")).intValue())
+                                        .amount((BigDecimal) tMap.get("recvAmount"))
+                                        .chargeRate(chargeRate)
+                                        .build();
                                 AgentSettleDetailEntity asde = AgentSettleDetailEntity.builder()
-                                        .agentId(v).settleStatus(1)
+                                        .agentId(v)
                                         .settleType(asure.getOrderType()).settleDate(asure.getSettleDate())
                                         .settleAmount(asure.getAmount())
                                         .chargeRate(asure.getChargeRate())
                                         .settleProfit(asure.getAmount().multiply(asure.getChargeRate()).setScale(4))
                                         .settleOrderNum(asure.getNum())
-                                        .settleUserNum(1)
-                                        .settleRecord("结算过程[userId_amount_chargeRate]:" + v + Constant.SPLIT_CHAR_UNDERLINE + asure.getAmount() + Constant.SPLIT_CHAR_UNDERLINE + asure.getChargeRate())
+                                        .settleUserNum(Integer.valueOf(tMap.get("userNum") + "")) // 下级代理人数
+                                        .settleStatus(1)
+                                        .settleRecord("结算过程[userId_amount_chargeRate]: " + v + Constant.SPLIT_CHAR_UNDERLINE + asure.getAmount() + Constant.SPLIT_CHAR_UNDERLINE + asure.getChargeRate())
                                         .createTime(DateTime.now().toDate())
                                         .build();
+
                                 agentSettleDetaiMap.put(v, asde);
                             }
                         }
@@ -102,7 +126,9 @@ public class AgentSettleDetailServiceImpl extends ServiceImpl<AgentSettleDetailD
                 sortedAgentList.forEach(v -> {
                             if (userAgentMap.containsKey(v)) {
                                 AgentSettleDetailEntity selfSDE = agentSettleDetaiMap.get(v);
-                                execAgentSettleProfitHandle(v, userAgentMap, selfSDE, agentChargeRateMap, agentSettleDetaiMap);
+                                if (null != selfSDE) { //  末端人员不在 agentSettleDetaiMap 里，无直接有接单用户的代理也不在 agentSettleDetaiMap 里，通过 execAgentSettleProfitHandle 计算结算收益
+                                    execAgentSettleProfitHandle(v, userAgentMap, selfSDE, agentChargeRateMap, agentSettleDetaiMap);
+                                }
                             }
                         }
                 );
@@ -182,7 +208,7 @@ public class AgentSettleDetailServiceImpl extends ServiceImpl<AgentSettleDetailD
                 return;
             } else {
                 agentSDE.setSettleProfit(agentSDE.getSettleProfit().add(selfSDE.getSettleAmount().multiply(diffChargeRate)).setScale(4));
-                agentSDE.setSettleRecord(agentSDE.getSettleRecord() + " " + selfSDE.getSettleRecord().replace("结算过程[userId_amount_chargeRate]:", " "));
+                agentSDE.setSettleRecord(agentSDE.getSettleRecord() + "|" + selfSDE.getSettleRecord().replace("结算过程[userId_amount_chargeRate]: ", "|"));
             }
         }
         // 递归最近上级代理

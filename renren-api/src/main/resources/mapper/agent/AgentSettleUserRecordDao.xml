@@ -3,7 +3,7 @@
 
 <mapper namespace="io.renren.modules.agent.dao.AgentSettleUserRecordDao">
 
-	<!-- 可根据自己的需求，是否要使用 -->
+    <!-- 可根据自己的需求，是否要使用 -->
     <resultMap type="io.renren.modules.agent.entity.AgentSettleUserRecordEntity" id="agentSettleUserRecordMap">
         <result property="id" column="id"/>
         <result property="userId" column="user_id"/>
@@ -20,4 +20,15 @@
     <update id="execUserRecvReport" statementType="CALLABLE" parameterType="string">
         CALL exec_user_recv_report(#{settleDate})
     </update>
+    <select id="listAgentSettleRecord" resultType="java.util.Map" parameterType="string">
+        SELECT
+            AGENT_ID agentId,settle_date settleDate,order_type orderType,COUNT(1) userNum,SUM(num) orderNum,SUM(AMOUNT) recvAmount
+        FROM
+            agent_settle_user_record
+        WHERE
+          amount>0 AND settle_date=#{settleDate}
+        GROUP BY agent_id,order_type
+        ORDER BY userNum DESC
+    </select>
+
 </mapper>

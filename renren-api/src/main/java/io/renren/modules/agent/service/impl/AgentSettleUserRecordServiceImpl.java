@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 
 @Service("agentSettleUserRecordService")
@@ -37,6 +38,11 @@ public class AgentSettleUserRecordServiceImpl extends ServiceImpl<AgentSettleUse
         Wrapper<AgentSettleUserRecordEntity> wrapper = new QueryWrapper<AgentSettleUserRecordEntity>()
                 .eq("settle_date", settleDate);
         return list(wrapper);
+    }
+
+    @Override
+    public List<Map<String, Object>> listAgentSettleRecord(String settleDate) {
+        return dao.listAgentSettleRecord(settleDate);
     }
 
 }

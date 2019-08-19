@@ -4,6 +4,9 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import io.renren.modules.agent.entity.AgentSettleUserRecordEntity;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * 代理每日收益记录
  *
@@ -20,4 +23,12 @@ public interface AgentSettleUserRecordDao extends BaseMapper<AgentSettleUserReco
      * @return
      */
     int execUserRecvReport(String settleDate);
+
+    /**
+     * 代理结算记录查询
+     *
+     * @param settleDate
+     * @return
+     */
+    List<Map<String, Object>> listAgentSettleRecord(String settleDate);
 }
