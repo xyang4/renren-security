@@ -76,7 +76,7 @@ public class AgentSettleDetailServiceImpl extends ServiceImpl<AgentSettleDetailD
                                         .orderType((Integer) tMap.get("orderType"))
                                         .num(((BigDecimal) tMap.get("orderNum")).intValue())
                                         .amount((BigDecimal) tMap.get("recvAmount"))
-                                        .profit((BigDecimal)tMap.get("profit"))
+                                        .profit((BigDecimal) tMap.get("profit"))
                                         .chargeRate(chargeRate)
                                         .build();
                                 AgentSettleDetailEntity asde = AgentSettleDetailEntity.builder()
@@ -174,7 +174,7 @@ public class AgentSettleDetailServiceImpl extends ServiceImpl<AgentSettleDetailD
         // 代理及上级代理的费率差
         BigDecimal diffChargeRate = agentChargeRate.subtract(selfSDE.getChargeRate());
         if (diffChargeRate.compareTo(BigDecimal.ZERO) < 0) {
-            log.error("代理费率异常[userId:" + selfSDE.getAgentId() + ",selfChargeRate:" + selfSDE.getChargeRate() + " ,agentChargeRate:" + agentSDE.getChargeRate() + ",diffChargeRate:" + diffChargeRate + "]");
+            log.error("代理费率异常:self[{}/{}] agent[{}/{}] diffRate[{}]", selfSDE.getAgentId(), selfSDE.getChargeRate(), superiorAgentId, agentChargeRate, diffChargeRate);
             return;
         }
         if (null == agentSDE) { // 上级代理不存在，初始化（复制自己的基础数据,收益须单独计算!!!）
