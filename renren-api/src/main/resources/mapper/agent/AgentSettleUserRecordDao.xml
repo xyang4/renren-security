@@ -22,11 +22,13 @@
     </update>
     <select id="listAgentSettleRecord" resultType="java.util.Map" parameterType="string">
         SELECT
-            AGENT_ID agentId,settle_date settleDate,order_type orderType,COUNT(1) userNum,SUM(num) orderNum,SUM(AMOUNT) recvAmount
+            asur.AGENT_ID agentId,asur.settle_date settleDate,asur.order_type orderType,
+            COUNT(1) userNum,SUM(asur.num) orderNum,SUM(asur.AMOUNT) recvAmount,
+            IFNULL(SUM(asur.`amount`*((SELECT RECV_CHARGE_RATE FROM agent_user WHERE user_id = asur.agent_id)-asur.charge_rate)),0) profit
         FROM
-            agent_settle_user_record
+            agent_settle_user_record asur
         WHERE
-          amount>0 AND settle_date=#{settleDate}
+          asur.amount>0 AND settle_date=#{settleDate}
         GROUP BY agent_id,order_type
         ORDER BY userNum DESC
     </select>

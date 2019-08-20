@@ -76,6 +76,7 @@ public class AgentSettleDetailServiceImpl extends ServiceImpl<AgentSettleDetailD
                                         .orderType((Integer) tMap.get("orderType"))
                                         .num(((BigDecimal) tMap.get("orderNum")).intValue())
                                         .amount((BigDecimal) tMap.get("recvAmount"))
+                                        .profit((BigDecimal)tMap.get("profit"))
                                         .chargeRate(chargeRate)
                                         .build();
                                 AgentSettleDetailEntity asde = AgentSettleDetailEntity.builder()
@@ -84,7 +85,8 @@ public class AgentSettleDetailServiceImpl extends ServiceImpl<AgentSettleDetailD
                                         .settleAmount(asure.getAmount())
                                         .chargeRate(asure.getChargeRate())
                                         // fixme 最末级代理收益已计算，该处不做计算
-                                        .settleProfit(/*selfSDE.getSettleProfit()*/BigDecimal.ZERO)
+//                                        .settleProfit(/*selfSDE.getSettleProfit()*/BigDecimal.ZERO)
+                                        .settleProfit(asure.getProfit())
                                         .settleOrderNum(asure.getNum())
                                         .settleUserNum(Integer.valueOf(tMap.get("userNum") + "")) // 下级代理人数
                                         .settleStatus(1)

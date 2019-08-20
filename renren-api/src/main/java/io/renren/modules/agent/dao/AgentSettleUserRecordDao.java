@@ -3,6 +3,7 @@ package io.renren.modules.agent.dao;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import io.renren.modules.agent.entity.AgentSettleUserRecordEntity;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 import java.util.Map;
@@ -30,5 +31,5 @@ public interface AgentSettleUserRecordDao extends BaseMapper<AgentSettleUserReco
      * @param settleDate
      * @return
      */
-    List<Map<String, Object>> listAgentSettleRecord(String settleDate);
+    List<Map<String, Object>> listAgentSettleRecord(@Param("settleDate") String settleDate);
 }
